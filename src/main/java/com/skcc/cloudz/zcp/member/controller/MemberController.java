@@ -18,7 +18,9 @@ import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.RtnVO;
 import com.skcc.cloudz.zcp.member.service.MemberService;
 import com.skcc.cloudz.zcp.member.vo.KubeDeleteOptionsVO;
+import com.skcc.cloudz.zcp.member.vo.LimitRangeVO;
 import com.skcc.cloudz.zcp.member.vo.MemberVO;
+import com.skcc.cloudz.zcp.member.vo.ResourceQuotaVO;
 import com.skcc.cloudz.zcp.member.vo.RoleVO;
 import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
 
@@ -87,6 +89,63 @@ public class MemberController {
 		}
 		else {
 			vo.setData(memberSvc.getServiceAccountToken(map.get("namespace"), map.get("username")));	
+		}
+		
+		return vo;
+	}
+	
+	
+	/**
+	 * 네임 스페이스 정보
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 * @throws ParseException 
+	 */
+	@RequestMapping("/getNamespace")
+	Object getNamespace(HttpServletRequest httpServletRequest, @RequestBody HashMap<String, String> map) throws IOException, ApiException, ParseException{
+		RtnVO vo = new RtnVO();
+		String msg = ValidUtil.required(map,  "namespace");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			vo.setData(memberSvc.getNamespace(map.get("namespace")));	
+		}
+		
+		return vo;
+	}
+	
+	
+	@RequestMapping("/createLimitRanges")
+	Object createLimitRanges(HttpServletRequest httpServletRequest, @RequestBody LimitRangeVO data) throws IOException, ApiException, ParseException{
+		RtnVO vo = new RtnVO();
+		String msg = ValidUtil.required(data,  "namespace");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			vo.setData(memberSvc.createLimitRanges(data.getNamespace(), data));	
+		}
+		
+		return vo;
+	}
+	
+	
+	@RequestMapping("/createQuota")
+	Object createQuota(HttpServletRequest httpServletRequest, @RequestBody ResourceQuotaVO data) throws IOException, ApiException, ParseException{
+		RtnVO vo = new RtnVO();
+		String msg = ValidUtil.required(data,  "namespace");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			vo.setData(memberSvc.createQuota(data.getNamespace(), data));	
 		}
 		
 		return vo;

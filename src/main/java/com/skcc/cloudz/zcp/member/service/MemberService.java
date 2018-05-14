@@ -17,7 +17,9 @@ import com.google.gson.internal.LinkedTreeMap;
 import com.skcc.cloudz.zcp.member.dao.MemberKeycloakDao;
 import com.skcc.cloudz.zcp.member.dao.MemberKubeDao;
 import com.skcc.cloudz.zcp.member.vo.KubeDeleteOptionsVO;
+import com.skcc.cloudz.zcp.member.vo.LimitRangeVO;
 import com.skcc.cloudz.zcp.member.vo.MemberVO;
+import com.skcc.cloudz.zcp.member.vo.ResourceQuotaVO;
 import com.skcc.cloudz.zcp.member.vo.RoleVO;
 import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
 
@@ -136,6 +138,15 @@ public class MemberService {
 	 */
 	public LinkedTreeMap getNamespace(String namespace) throws ApiException, ParseException{
 		return (LinkedTreeMap) KubeDao.namespaceList(namespace);
+	}
+	
+	
+	public LinkedTreeMap createLimitRanges(String namespace, LimitRangeVO vo) throws ApiException, ParseException{
+		return (LinkedTreeMap) KubeDao.createLimitRanges(namespace, vo);
+	}
+	
+	public LinkedTreeMap createQuota(String namespace, ResourceQuotaVO vo) throws ApiException, ParseException{
+		return (LinkedTreeMap) KubeDao.createQuota(namespace, vo);
 	}
 	
 	

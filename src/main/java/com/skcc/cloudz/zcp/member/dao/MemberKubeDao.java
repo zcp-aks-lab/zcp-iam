@@ -17,7 +17,9 @@ import io.kubernetes.client.Configuration;
 import io.kubernetes.client.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.models.V1ClusterRoleList;
 import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1NamespaceList;
+import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1RoleList;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1ServiceAccount;
@@ -191,6 +193,24 @@ public class MemberKubeDao {
 			return mapData;
 		});
 	}
+
+	@SuppressWarnings("unchecked")
+	public LinkedTreeMap createLimitRanges(String namespace, Object limitRange) throws ApiException{
+		ApiResponse<V1LimitRange> data = (ApiResponse<V1LimitRange>) api.postApiCall(
+				"/api/v1/namespaces/{namespace}/limitranges".replace("{namespace}", namespace)
+				,limitRange, null, null, null);
+		Object map = (Object)data.getData();
+		return (LinkedTreeMap)map;
+	}
 	
+	
+	@SuppressWarnings("unchecked")
+	public LinkedTreeMap createQuota(String namespace, Object quota) throws ApiException{
+		ApiResponse<V1ResourceQuota> data = (ApiResponse<V1ResourceQuota>) api.postApiCall(
+				"/api/v1/namespaces/{namespace}/resourcequotas".replace("{namespace}", namespace)
+				,quota, null, null, null);
+		Object map = (Object)data.getData();
+		return (LinkedTreeMap)map;
+	}
 		
 }

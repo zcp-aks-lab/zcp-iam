@@ -1,8 +1,10 @@
 package com.skcc.cloudz.zcp.member.vo;
 
-import io.kubernetes.client.models.V1ClusterRole;
+import io.kubernetes.client.models.V1ResourceQuota;
+import io.swagger.annotations.ApiModel;
 
-public class RoleVO extends V1ClusterRole implements Ivo{
+@ApiModel(description = "Custom")
+public class ResourceQuotaVO extends V1ResourceQuota implements Ivo{
 	String namespace;
 
 	public String getNamespace() {
@@ -11,5 +13,6 @@ public class RoleVO extends V1ClusterRole implements Ivo{
 
 	public void setNamespace(String namespace) {
 		this.namespace = namespace;
-	}	
+	}
+	
 }

@@ -1,8 +1,8 @@
 package com.skcc.cloudz.zcp.member.vo;
 
-import io.kubernetes.client.models.V1ClusterRole;
+import io.kubernetes.client.models.V1LimitRange;
 
-public class RoleVO extends V1ClusterRole implements Ivo{
+public class LimitRangeVO extends V1LimitRange implements Ivo{
 	String namespace;
 
 	public String getNamespace() {
@@ -11,5 +11,6 @@ public class RoleVO extends V1ClusterRole implements Ivo{
 
 	public void setNamespace(String namespace) {
 		this.namespace = namespace;
-	}	
+	}
+	
 }

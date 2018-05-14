@@ -2,7 +2,7 @@ package com.skcc.cloudz.zcp.member.vo;
 
 import io.kubernetes.client.models.V1DeleteOptions;
 
-public class KubeDeleteOptionsVO extends V1DeleteOptions {
+public class KubeDeleteOptionsVO extends V1DeleteOptions implements Ivo{
 
 	String name;
 	String namespace;
