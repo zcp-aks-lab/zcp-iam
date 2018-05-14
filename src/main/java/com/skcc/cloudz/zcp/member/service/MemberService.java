@@ -17,9 +17,7 @@ import com.google.gson.internal.LinkedTreeMap;
 import com.skcc.cloudz.zcp.member.dao.MemberKeycloakDao;
 import com.skcc.cloudz.zcp.member.dao.MemberKubeDao;
 import com.skcc.cloudz.zcp.member.vo.KubeDeleteOptionsVO;
-import com.skcc.cloudz.zcp.member.vo.LimitRangeVO;
 import com.skcc.cloudz.zcp.member.vo.MemberVO;
-import com.skcc.cloudz.zcp.member.vo.ResourceQuotaVO;
 import com.skcc.cloudz.zcp.member.vo.RoleVO;
 import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
 
@@ -27,7 +25,9 @@ import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
+import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1Subject;
 
@@ -141,12 +141,9 @@ public class MemberService {
 	}
 	
 	
-	public LinkedTreeMap createLimitRanges(String namespace, LimitRangeVO vo) throws ApiException, ParseException{
-		return (LinkedTreeMap) KubeDao.createLimitRanges(namespace, vo);
-	}
-	
-	public LinkedTreeMap createQuota(String namespace, ResourceQuotaVO vo) throws ApiException, ParseException{
-		return (LinkedTreeMap) KubeDao.createQuota(namespace, vo);
+	public void createNamespace(String namespace, V1ResourceQuota quotavo, V1LimitRange limitvo) throws ApiException {
+		KubeDao.createLimitRanges(namespace, limitvo);
+		KubeDao.createQuota(namespace, quotavo);
 	}
 	
 	
@@ -254,5 +251,7 @@ public class MemberService {
 	public void deleteRole(KubeDeleteOptionsVO data) throws IOException, ApiException{
 		LinkedTreeMap status = KubeDao.deleteRole(data.getNamespace(), data.getName(), data);
 	}
+	
+
 	
 }
