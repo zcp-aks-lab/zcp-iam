@@ -1,0 +1,355 @@
+{
+	"id": "fdec681a-8a81-452f-c58c-590872a30f48",
+	"name": "zcp",
+	"description": "",
+	"order": [
+		"78e9b4c1-7e5a-64ab-d053-41ea5f4b7c44",
+		"d19eb51c-d4cc-3060-f762-3ad075e9abc6",
+		"ae3b0d3f-825b-08f8-8631-20be326d6018",
+		"5c5bc572-25cf-9ec3-c8d4-d9909d4ea1ad",
+		"7fafdf38-0e9b-d7d5-369f-8a84d586a660",
+		"5f23c7ae-00f4-f0d7-ed41-28ad4e054062",
+		"9069fac9-1ab9-1d28-d7af-0374f15498b1",
+		"e7ba9914-34d0-b243-4141-ef5b24b479fc",
+		"04f25e07-63dd-7832-912b-e5e0c1a2d95c",
+		"49b57bb9-27b7-c15d-de2c-03e77da1d220",
+		"fc120b3a-12d4-f38a-b676-cbaf6366d054"
+	],
+	"folders": [],
+	"folders_order": [],
+	"timestamp": 1525331306311,
+	"owner": "398280",
+	"public": false,
+	"requests": [
+		{
+			"id": "04f25e07-63dd-7832-912b-e5e0c1a2d95c",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://root:1111@localhost:8181/iam/member/createQuota",
+			"folder": null,
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1526286877162,
+			"name": "create resourceQuota",
+			"description": "create resourceQuota",
+			"collectionId": "fdec681a-8a81-452f-c58c-590872a30f48",
+			"responses": [],
+			"rawModeData": "{\r\n\t\"namespace\" : \"test-nm\",\r\n\t\"apiVersion\" : \"v1\",  \r\n\t\"kind\": \"ResourceQuota\",  \r\n\t\"metadata\": {  \r\n\t\t\"name\": \"mem-cpu-demo\"  \r\n\t},  \r\n\t\"spec\": {\r\n\t  \"hard\" : {\r\n\t    \"requests.cpu\" : \"1\",\r\n\t    \"requests.memory\" : \"1Gi\"\r\n\t  }\r\n\t}\r\n}"
+		},
+		{
+			"id": "49b57bb9-27b7-c15d-de2c-03e77da1d220",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://root:1111@localhost:8181/iam/member/createNamespace",
+			"folder": null,
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1526364206685,
+			"name": "create Namespace",
+			"description": "create limitRange",
+			"collectionId": "fdec681a-8a81-452f-c58c-590872a30f48",
+			"responses": [],
+			"rawModeData": "{\r\n\t\"namespace\" : {\r\n\t    \"apiVersion\": \"v1\",\r\n\t    \"kind\": \"Namespace\",\r\n\t    \"metadata\": {\r\n\t        \"name\": \"test-nm2\"\r\n\t    },\r\n\t    \"spec\": {\r\n\t        \"finalizers\": [\r\n\t            \"kubernetes\"\r\n\t        ]\r\n\t    }\r\n\t},\r\n\t\"resourceQuota\" :{\r\n\t\t\"apiVersion\" : \"v1\",  \r\n\t\t\"kind\": \"ResourceQuota\",  \r\n\t\t\"metadata\": {  \r\n\t\t\t\"name\": \"mem-cpu-demo\"  \r\n\t\t},  \r\n\t\t\"spec\": {\r\n\t\t  \"hard\" : {\r\n\t\t    \"requests.cpu\" : \"2\",\r\n\t\t    \"requests.memory\" : \"1Gi\"\r\n\t\t  }\r\n\t\t}\r\n\t},\r\n\t\"limitRange\" : {\r\n\t  \"apiVersion\" : \"v1\",\r\n\t  \"kind\": \"LimitRange\",\r\n\t  \"metadata\" : {\r\n\t    \"name\" : \"cpu-limit-range\"\r\n\t  },\r\n\t  \"spec\": {\r\n\t    \"limits\" : [{\r\n\t      \"default\" :{\r\n\t        \"cpu\" : \"4\"\r\n\t      },\r\n\t      \"defaultRequest\" : {\r\n\t        \"cpu\" : \"1\"\r\n\t      },\r\n\t      \"type\": \"Container\"\r\n\t    }]\r\n\t  }\r\n\t}\r\n}"
+		},
+		{
+			"id": "5c5bc572-25cf-9ec3-c8d4-d9909d4ea1ad",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://root:1111@localhost:8181/iam/member/createRole",
+			"folder": null,
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1525400262916,
+			"name": "create Role",
+			"description": "create role",
+			"collectionId": "fdec681a-8a81-452f-c58c-590872a30f48",
+			"responses": [],
+			"rawModeData": "{\r\n  \"apiVersion\" : \"rbac.authorization.k8s.io/v1\",  \r\n  \"kind\": \"Role\",  \r\n  \r\n  \"metadata\": {  \r\n      \"name\": \"pod-reader\",\r\n      \"namespace\": \"default\"\r\n  },\r\n  \"rules\" : [{\r\n  \t\"apiGroups\" : [\"\"],\r\n    \"resources\" : [\"pods\"],\r\n    \"verbs\" : [\"get\", \"watch\", \"list\"]\r\n  }]\r\n}"
+		},
+		{
+			"id": "5f23c7ae-00f4-f0d7-ed41-28ad4e054062",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://root:1111@localhost:8181/iam/member/createServiceAccount",
+			"folder": null,
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1525757714016,
+			"name": "create service account",
+			"description": "create service account",
+			"collectionId": "fdec681a-8a81-452f-c58c-590872a30f48",
+			"responses": [],
+			"rawModeData": "{\r\n\t\"namespace\": \"default\",\r\n\t\"apiVersion\" : \"v1\",  \r\n\t\"kind\": \"ServiceAccount\",  \r\n  \t\"metadata\" : {\r\n\t  \t\"name\" : \"build-robot\"\r\n\t}\r\n}"
+		},
+		{
+			"id": "78e9b4c1-7e5a-64ab-d053-41ea5f4b7c44",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://root:1111@localhost:8181/iam/member/createClusterRoleBinding",
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1525412785282,
+			"name": "createClusterRoleBinding",
+			"description": "createClusterRoleBinding",
+			"collectionId": "fdec681a-8a81-452f-c58c-590872a30f48",
+			"responses": [],
+			"rawModeData": "{\r\n\t\"apiVersion\" : \"rbac.authorization.k8s.io/v1\",  \r\n\t\"kind\": \"ClusterRoleBinding\",  \r\n\t\"metadata\": {  \r\n\t\t\"name\": \"zcp-adminTest\"  \r\n\t},  \r\n\t\"roleRef\": {  \r\n\t\t\"apiGroup\": \"rbac.authorization.k8s.io\",  \r\n\t\t\"kind\": \"ClusterRole\",  \r\n\t\t\"name\": \"view\"  \r\n\t},  \r\n\t\"subjects\":  [  \r\n\t\t{  \r\n\t\t\t\"kind\": \"ServiceAccount\",  \r\n\t\t\t\"name\": \"zcp-cluster-admin-kilsoo75\",  \r\n\t\t\t\"namespace\": \"bk-service\"  \r\n\t\t}  \r\n\t]  \r\n}"
+		},
+		{
+			"id": "7fafdf38-0e9b-d7d5-369f-8a84d586a660",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://root:1111@localhost:8181/iam/member/deleteClusterRoleBinding",
+			"folder": null,
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1525412293670,
+			"name": "delete Role",
+			"description": "delete role",
+			"collectionId": "fdec681a-8a81-452f-c58c-590872a30f48",
+			"responses": [],
+			"rawModeData": "{\r\n  \"namespace\" : \"default\",\r\n  \"name\": \"pod-reader\",\r\n  \"apiVersion\" : \"rbac.authorization.k8s.io/v1\",  \r\n  \"kind\": \"DeleteOptions\",  \r\n  \"gracePeriodSeconds\" : 0,\r\n  \"preconditions\" : {\r\n    \"uid\": \"dc890bed-4f50-11e8-8e38-0699d760d333\"\r\n  },\r\n  \"propagationPolicy\" : \"Foreground\"\r\n}"
+		},
+		{
+			"id": "9069fac9-1ab9-1d28-d7af-0374f15498b1",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://root:1111@localhost:8181/iam/member/getUserInfoWithLogin",
+			"folder": null,
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1526027809196,
+			"name": "getUserInfoWithLogin",
+			"description": "create service account",
+			"collectionId": "fdec681a-8a81-452f-c58c-590872a30f48",
+			"responses": [],
+			"rawModeData": "{\r\n\t\"username\": \"kilsoo75\"\r\n}"
+		},
+		{
+			"id": "ae3b0d3f-825b-08f8-8631-20be326d6018",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://root:1111@localhost:8181/iam/member/createClusterRole",
+			"folder": null,
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1525398350310,
+			"name": "createClusterRole",
+			"description": "create cluster role",
+			"collectionId": "fdec681a-8a81-452f-c58c-590872a30f48",
+			"responses": [],
+			"rawModeData": "{\r\n  \"apiVersion\" : \"rbac.authorization.k8s.io/v1\",  \r\n  \"kind\": \"ClusterRole\",  \r\n  \r\n  \"metadata\": {  \r\n      \"name\": \"secret-readerTest4\"  \r\n  },\r\n  \"rules\" : [{\r\n  \t\"apiGroups\" : [\"\"],\r\n    \"resources\" : [\"secrets\"],\r\n    \"verbs\" : [\"get\", \"watch\", \"list\"]\r\n  }]\r\n}"
+		},
+		{
+			"id": "d19eb51c-d4cc-3060-f762-3ad075e9abc6",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://root:1111@localhost:8181/iam/member/deleteClusterRoleBinding",
+			"folder": null,
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1525412830373,
+			"name": "deleteClusterRoleBinding",
+			"description": "delete cluster role binding ",
+			"collectionId": "fdec681a-8a81-452f-c58c-590872a30f48",
+			"responses": [],
+			"rawModeData": "{\r\n  \"apiVersion\" : \"rbac.authorization.k8s.io/v1\",  \r\n  \"kind\": \"DeleteOptions\",  \r\n  \"name\": \"zcp-adminTest\" ,\r\n  \"gracePeriodSeconds\" : \"0\",\r\n  \"preconditions\" : {\r\n    \"uid\": \"787ee2fa-4f5e-11e8-8e38-0699d760d333\"\r\n  },\r\n  \"propagationPolicy\" : \"Foreground\"\r\n}"
+		},
+		{
+			"id": "e7ba9914-34d0-b243-4141-ef5b24b479fc",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://root:1111@localhost:8181/iam/member/createLimitRanges",
+			"folder": null,
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1526286944748,
+			"name": "create limitRange",
+			"description": "create limitRange",
+			"collectionId": "fdec681a-8a81-452f-c58c-590872a30f48",
+			"responses": [],
+			"rawModeData": "{\r\n  \"apiVersion\" : \"v1\",\r\n  \"kind\": \"LimitRange\",\r\n  \"namespace\" : \"test-nm\",\r\n  \"metadata\" : {\r\n    \"name\" : \"cpu-limit-range2\"\r\n  },\r\n  \"spec\": {\r\n    \"limits\" : [{\r\n      \"default\" :{\r\n        \"cpu\" : \"2\"\r\n      },\r\n      \"defaultRequest\" : {\r\n        \"cpu\" : \"1\"\r\n      },\r\n      \"type\": \"Container\"\r\n    }]\r\n  }\r\n}"
+		},
+		{
+			"id": "fc120b3a-12d4-f38a-b676-cbaf6366d054",
+			"headers": "Content-Type: application/json\n",
+			"headerData": [
+				{
+					"key": "Content-Type",
+					"value": "application/json",
+					"description": "",
+					"enabled": true
+				}
+			],
+			"url": "http://root:1111@localhost:8181/iam/member/getClusterRole",
+			"folder": null,
+			"queryParams": [],
+			"preRequestScript": null,
+			"pathVariables": {},
+			"pathVariableData": [],
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1526436472510,
+			"name": "getClusterRole",
+			"description": "create limitRange",
+			"collectionId": "fdec681a-8a81-452f-c58c-590872a30f48",
+			"responses": [],
+			"rawModeData": "{\r\n\t\r\n}"
+		}
+	]
+}
