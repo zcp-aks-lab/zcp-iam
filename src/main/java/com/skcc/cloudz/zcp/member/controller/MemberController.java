@@ -101,10 +101,9 @@ public class MemberController {
 	 * @return
 	 * @throws IOException
 	 * @throws ApiException
-	 * @throws ParseException 
 	 */
 	@RequestMapping("/getNamespace")
-	Object getNamespace(HttpServletRequest httpServletRequest, @RequestBody HashMap<String, String> map) throws IOException, ApiException, ParseException{
+	Object getNamespace(HttpServletRequest httpServletRequest, @RequestBody HashMap<String, String> map) throws  ApiException, ParseException{
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(map,  "namespace");
 		if(msg != null) {
@@ -119,23 +118,44 @@ public class MemberController {
 	}
 	
 	
-	@RequestMapping("/createNamespace")
-	Object createNamespace(HttpServletRequest httpServletRequest, @RequestBody NamespaceVO data) throws IOException, ApiException, ParseException{
+	/**
+	 * 네임스페이스 생성 및 조회
+	 * 
+	 * @param httpServletRequest
+	 * @param data
+	 * @return
+	 * @throws ApiException
+	 */
+	@RequestMapping("/createAndEditNamespace")
+	Object createAndEditNamespace(HttpServletRequest httpServletRequest, @RequestBody NamespaceVO data) throws ApiException {
 		RtnVO vo = new RtnVO();
-		String msg = ValidUtil.required(data,  "namespace");
+		//String msg = ValidUtil.required(data,  "namespace");
+		String msg=null;
 		if(msg != null) {
 			vo.setMsg(msg);
 			vo.setCode("500");
 		}
 		else {
-			memberSvc.createNamespace(data.getNamespace(), data.getResourceQuota(), data.getLimitRange());
+			memberSvc.createAndEditNamespace(data.getNamespace(), data.getResourceQuota(), data.getLimitRange());
 		}
 		
 		return vo;
 	}
 	
 	
-	
+	/**
+	 * 클러스터 조회
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws ApiException
+	 */
+	@RequestMapping("/clusterRoleList")
+	Object getClusterRole(HttpServletRequest httpServletRequest) throws  ApiException {
+		RtnVO vo = new RtnVO();
+		vo.setData(memberSvc.clusterRoleList());
+		return vo;
+	}
 	
 	
 	
@@ -152,9 +172,16 @@ public class MemberController {
 	}
 	
 	@RequestMapping("/createUser")
-	Object createUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO){
+	Object createUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException{
 		RtnVO vo = new RtnVO();
-		memberSvc.createUser(memberVO);
+		String msg = ValidUtil.required(memberVO,  "namespace");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			memberSvc.createUser(memberVO);	
+		}
 		return vo;
 	}
 	
@@ -198,12 +225,12 @@ public class MemberController {
 //	}
 	
 	
-	@RequestMapping("/createClusterRoleBinding")
-	Object createClusterRoleBinding(HttpServletRequest httpServletRequest, @RequestBody V1ClusterRoleBinding data) throws IOException, ApiException{
-		RtnVO vo = new RtnVO();
-		memberSvc.createClusterRoleBinding(data);
-		return vo;
-	}
+//	@RequestMapping("/createClusterRoleBinding")
+//	Object createClusterRoleBinding(HttpServletRequest httpServletRequest, @RequestBody V1ClusterRoleBinding data) throws IOException, ApiException{
+//		RtnVO vo = new RtnVO();
+//		memberSvc.createClusterRoleBinding(data);
+//		return vo;
+//	}
 	
 	@RequestMapping("/deleteClusterRoleBinding")
 	Object deleteClusterRoleBinding(HttpServletRequest httpServletRequest, @RequestBody KubeDeleteOptionsVO data) throws IOException, ApiException{

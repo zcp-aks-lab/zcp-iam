@@ -3,7 +3,7 @@ package com.skcc.cloudz.zcp.common.vo;
 import java.util.Map;
 
 public class RtnVO {
-	String msg;
+	String msg = "Success";
 	String code = "200";
 	Object data;
 	

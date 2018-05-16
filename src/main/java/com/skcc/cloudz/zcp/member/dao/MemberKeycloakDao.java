@@ -56,7 +56,9 @@ public class MemberKeycloakDao {
 		user.setEmail(vo.getEmail());
 		user.setAttributes(vo.getAttribute());
 		user.setUsername(vo.getUserName());
+		user.setEnabled(vo.getEnabled());
 		userRessource.create(user);
+		
 	}
 
 	

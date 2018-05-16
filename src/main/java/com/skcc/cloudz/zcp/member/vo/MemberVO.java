@@ -3,12 +3,19 @@ package com.skcc.cloudz.zcp.member.vo;
 import java.util.Map;
 
 public class MemberVO {
-	String userName;
+	String userName;//사용자 ID
 	String firstName;
 	String lastName;
 	String email;
 	Map attribute;
+	boolean enabled;
 	
+	public boolean getEnabled() {
+		return enabled;
+	}
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
 	public String getUserName() {
 		return userName;
 	}

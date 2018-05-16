@@ -34,6 +34,7 @@ public class ExceptionController {
 		RtnVO vo = new RtnVO();
 		LOG.debug("UnKnown Error...{}",e);
 		vo.setCode("500");//코드 수정 예정
+		vo.setMsg(e.getMessage());
 		return vo; 
 	}
     
@@ -41,12 +42,13 @@ public class ExceptionController {
 	@ResponseBody
 	public Object exceptionResolver(HttpServletRequest req, ApiException e) { 
 		RtnVO vo = new RtnVO();
-		LOG.debug(e.getResponseHeaders().toString());
+		LOG.debug(e.getResponseHeaders() == null ?  "" : e.getResponseHeaders().toString());
 		LOG.debug(e.getResponseBody());
 		LOG.debug(e.getMessage());
 		LOG.debug("",e);
 		vo.setData(e.getResponseBody());
 		vo.setCode("500");//코드 수정 예정
+		vo.setMsg(e.getMessage());
 		return vo; 
 	}
 	
