@@ -2,14 +2,29 @@ package com.skcc.cloudz.zcp.member.vo;
 
 import java.util.Map;
 
-public class MemberVO {
+public class MemberVO implements Ivo {
 	String userName;//사용자 ID
 	String firstName;
 	String lastName;
 	String email;
+	String password;
 	Map attribute;
 	boolean enabled;
+	boolean isChangedAfterLogin;
 	
+	
+	public boolean isChangedAfterLogin() {
+		return isChangedAfterLogin;
+	}
+	public void setChangedAfterLogin(boolean isChangedAfterLogin) {
+		this.isChangedAfterLogin = isChangedAfterLogin;
+	}
+	public String getPassword() {
+		return password;
+	}
+	public void setPassword(String password) {
+		this.password = password;
+	}
 	public boolean getEnabled() {
 		return enabled;
 	}

@@ -14,23 +14,26 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.internal.LinkedTreeMap;
+import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.member.dao.MemberKeycloakDao;
 import com.skcc.cloudz.zcp.member.dao.MemberKubeDao;
 import com.skcc.cloudz.zcp.member.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.member.vo.MemberVO;
-import com.skcc.cloudz.zcp.member.vo.RoleVO;
+import com.skcc.cloudz.zcp.member.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
 
 import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1Binding;
 import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
+import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1RoleRef;
-import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1Subject;
 
 @Service
@@ -60,11 +63,34 @@ public class MemberService {
 		return keycloakDao.getUserList();
 	}
 	
-	public void modifyUserAttribute(MemberVO vo){
-		keycloakDao.modifyUserAttribute(vo);
+	public void editUser(MemberVO vo) throws ZcpException{
+		keycloakDao.editUser(vo);
 	}
 	
-	public void deleteUser(MemberVO vo) {
+	public void editUserPassword(MemberVO vo) throws ZcpException{
+		keycloakDao.editUserPassword(vo);
+	}
+	
+	public void deleteUser(MemberVO vo) throws ZcpException, ApiException {
+		//1.service account 삭제
+		V1DeleteOptions deleteOption = new V1DeleteOptions();
+		try {
+			kubeDao.deleteServiceAccount(serviceAccountPrefix + vo.getUserName(), systemNamespace, deleteOption);
+		}catch(ApiException e) {
+			if(!e.getMessage().equals("Not Found")){
+				throw e;
+			}
+		}
+
+		//2.cluster role binding 삭제
+		try {
+			kubeDao.deleteClusterRoleBinding(serviceAccountPrefix + vo.getUserName(), deleteOption);
+		}catch(ApiException e) {
+			if(!e.getMessage().equals("Not Found")){
+				throw e;
+			}
+		}
+		
 		keycloakDao.deleteUser(vo);
 	}
 	
@@ -182,6 +208,26 @@ public class MemberService {
 		return (LinkedTreeMap) kubeDao.namespaceList(namespace);
 	}
 	
+	/**
+	 * 전체 네임스페이스
+	 * @param namespace
+	 * @return
+	 * @throws ApiException
+	 * @throws ParseException
+	 */
+	public List<Map> getAllOfNamespace() throws ApiException, ParseException{
+		List<Map> namespaceList = new ArrayList();
+		LinkedTreeMap map =  kubeDao.namespaceList("");
+		List<LinkedTreeMap> item = (List<LinkedTreeMap>) map.get("items");
+		item.stream().forEach((data) ->{
+			String name = ((LinkedTreeMap)data.get("metadata")).get("name").toString();
+			Map<String, String> mapNamespace = new HashMap();
+			mapNamespace.put("name", name);
+			namespaceList.add(mapNamespace);
+		});
+		return namespaceList;
+	}
+	
 	
 	/**
 	 * 네임스페이스 생성 또는 변경
@@ -242,6 +288,34 @@ public class MemberService {
 		return clusterRoleNameList;
 	}
 	
+	public void giveClusterRole(MemberVO vo) throws ApiException, ZcpException {
+		//keycloakDao.
+		
+		//1. clusterRolebindinding 생성
+		V1ClusterRoleBinding binding = new V1ClusterRoleBinding();
+		V1ObjectMeta cmetadata = new V1ObjectMeta();
+		List<V1Subject> subjects = new ArrayList();
+		V1RoleRef roleRef = new V1RoleRef();
+		V1Subject subject = new V1Subject();
+		subject.setKind("ServiceAccount");
+		subject.setName(serviceAccountPrefix + vo.getUserName());
+		subject.setNamespace(systemNamespace);
+		roleRef.setApiGroup("rbac.authorization.k8s.io");
+		roleRef.setKind("ClusterRole");
+		roleRef.setName(vo.getAttribute().get("clusterRole").toString());
+		cmetadata.setName(clusterRoleBindingPrefix + vo.getUserName());
+		binding.setApiVersion("rbac.authorization.k8s.io/v1");
+		binding.setKind("ClusterRoleBinding");
+		subjects.add(subject);
+		binding.setSubjects(subjects);
+		binding.setRoleRef(roleRef);
+		binding.setMetadata(cmetadata);
+		this.createAndEditClusterRoleBinding(vo.getUserName(), binding);
+		
+		keycloakDao.editAttribute(vo);
+		
+	}
+	
 	public LinkedTreeMap serviceAccountList(String namesapce, String username) throws IOException, ApiException{
 		LinkedTreeMap map = kubeDao.serviceAccountList(namesapce);
 		List<LinkedTreeMap> c = (List<LinkedTreeMap>)map.values().toArray()[3];
@@ -289,8 +363,37 @@ public class MemberService {
 		LinkedTreeMap c = kubeDao.createClusterRole(data);
 	}
 	
-	public void createRole(RoleVO data) throws IOException, ApiException{
-		LinkedTreeMap c = kubeDao.createRole(data.getNamespace(), data);
+	public void createRoleBinding(RoleBindingVO binding) throws IOException, ApiException{
+		Map<String, String> labels = new HashMap();
+		labels.put("zcp-system-user", "true");
+		labels.put("zcp-system-username", binding.getUserName());
+		
+		V1ObjectMeta metadata = new V1ObjectMeta();
+		metadata.setName(roleBindingPrefix + binding.getUserName());
+		metadata.setLabels(labels);
+		metadata.setNamespace(binding.getNamespace());
+		
+		V1Subject subject = new V1Subject();
+		subject.setKind("ServiceAccount");
+		subject.setName(clusterRoleBindingPrefix + binding.getUserName());
+		subject.setNamespace(systemNamespace);
+		
+		V1RoleRef roleRef = new V1RoleRef();
+		roleRef.setApiGroup("rbac.authorization.k8s.io");
+		roleRef.setKind("Role");
+		roleRef.setName(binding.getRole());
+		
+		List<V1Subject> subjects = new ArrayList();
+
+		binding.setApiVersion("rbac.authorization.k8s.io/v1");
+		binding.setKind("RoleBinding");
+		binding.setSubjects(subjects);
+		binding.setRoleRef(roleRef);
+		binding.setMetadata(metadata);
+		
+		subjects.add(subject);
+		
+		kubeDao.createRoleBinding(binding.getNamespace(), binding);
 	}
 	
 	public void deleteRole(KubeDeleteOptionsVO data) throws IOException, ApiException{

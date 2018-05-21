@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import com.skcc.cloudz.zcp.common.util.KubeClient;
+import com.skcc.cloudz.zcp.member.vo.RoleBindingVO;
 import com.squareup.okhttp.Call;
 
 import ch.qos.logback.classic.Logger;
@@ -26,10 +27,10 @@ import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1ResourceQuota;
-import io.kubernetes.client.models.V1RoleList;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1ServiceAccountList;
+import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.proto.Meta.Status;
 import io.kubernetes.client.util.Config;
 
@@ -116,10 +117,19 @@ public class MemberKubeDao {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public LinkedTreeMap createRole(String namespace, Object role) throws ApiException{
-		ApiResponse<V1RoleList> data = (ApiResponse<V1RoleList>) api.postApiCall(
-				"/apis/rbac.authorization.k8s.io/v1/namespaces/"+namespace+"/roles"
-				,role, null, null, null);
+	public LinkedTreeMap createRoleBinding(String namespace, RoleBindingVO rolebinding) throws ApiException{
+		ApiResponse<V1ClusterRoleList> data = (ApiResponse<V1ClusterRoleList>) api.postApiCall(
+				"/apis/rbac.authorization.k8s.io/v1/namespaces/{namespace}/rolebindings".replace("{namespace}", namespace)
+				,rolebinding, null, null, null);
+		Object map = (Object)data.getData();
+		return (LinkedTreeMap)map;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public LinkedTreeMap deleteRoleBinding(String namespace, String name, V1DeleteOptions deleteOptions) throws ApiException{
+		ApiResponse<V1ClusterRoleList> data = (ApiResponse<V1ClusterRoleList>) api.deleteApiCall( 
+				"/apis/rbac.authorization.k8s.io/v1/namespaces/{namespace}/rolebindings/{name}".replace("{namespace}", namespace).replace("{name}", name)
+				,(Object)deleteOptions, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
@@ -146,13 +156,8 @@ public class MemberKubeDao {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public LinkedTreeMap deleteServiceAccount(String namespace, String name, Object serviceAccount) throws ApiException{
-		ApiResponse<V1ServiceAccount> data = (ApiResponse<V1ServiceAccount>) api.deleteApiCall(
-				"/api/v1/namespaces/"+namespace+"/serviceaccounts"
-				, serviceAccount, null, null, null, null, null, null);
-		Object map = (Object)data.getData();
-		LinkedTreeMap mapData = (LinkedTreeMap)map;
-		return mapData;
+	public V1Status deleteServiceAccount(String accountName, String namespace, V1DeleteOptions deleteOption) throws ApiException{
+		return api.deleteNamespacedServiceAccount(accountName, namespace, deleteOption, "true", null, null, null);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -199,7 +204,7 @@ public class MemberKubeDao {
 	public LinkedTreeMap namespaceList(String namespace) throws ApiException{
 		ApiResponse<V1NamespaceList> data = (ApiResponse<V1NamespaceList>) api.getApiCall(
 				"/api/v1/namespaces/{name}".replace("{name}", namespace)
-				,null, null, null, null, null, null, null, null, null, null, null);
+				,null, null, null, "zcp-system-ns=true", null, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		LinkedTreeMap mapData = (LinkedTreeMap)map;
 		return mapData;

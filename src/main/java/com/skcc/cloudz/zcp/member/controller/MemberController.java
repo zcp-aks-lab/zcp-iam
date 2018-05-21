@@ -14,17 +14,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.RtnVO;
 import com.skcc.cloudz.zcp.member.service.MemberService;
 import com.skcc.cloudz.zcp.member.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.member.vo.MemberVO;
 import com.skcc.cloudz.zcp.member.vo.NamespaceVO;
-import com.skcc.cloudz.zcp.member.vo.RoleVO;
+import com.skcc.cloudz.zcp.member.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
 
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ClusterRoleBinding;
 
 @Configuration
 @RestController
@@ -117,9 +117,33 @@ public class MemberController {
 		return vo;
 	}
 	
+	/**
+	 * 전체 네임스페이스
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 */
+	@RequestMapping("/getAllOfNamespace")
+	Object getAllOfNamespace(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
+		RtnVO vo = new RtnVO();
+		//String msg = ValidUtil.required(map,  "namespace");
+		String msg=null;
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			vo.setData(memberSvc.getAllOfNamespace());	
+		}
+		
+		return vo;
+	}
+	
 	
 	/**
-	 * 네임스페이스 생성 및 조회
+	 * 네임스페이스 생성
 	 * 
 	 * @param httpServletRequest
 	 * @param data
@@ -157,25 +181,42 @@ public class MemberController {
 		return vo;
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	@RequestMapping("/modifyUser")
-	Object modifyUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO){
+	/**
+	 * 사용자 변경
+	 * @param httpServletRequest
+	 * @param memberVO
+	 * @return
+	 * @throws ZcpException 
+	 */
+	@RequestMapping("/editUser")
+	Object modifyUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ZcpException{
 		RtnVO vo = new RtnVO();
-		memberSvc.modifyUserAttribute(memberVO);
+		String msg = ValidUtil.required(memberVO,  "userName");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			memberSvc.editUser(memberVO);	
+		}
 		return vo;
 	}
 	
+	/**
+	 * 사용자 생성
+	 * 
+	 * @param httpServletRequest
+	 * @param memberVO
+	 * @return
+	 * @throws ApiException
+	 */
 	@RequestMapping("/createUser")
 	Object createUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException{
 		RtnVO vo = new RtnVO();
-		String msg = ValidUtil.required(memberVO,  "namespace");
-		if(msg != null) {
+		String msg = ValidUtil.required(memberVO,  "userName", "firstName", "lastName");
+		String msg2 = ValidUtil.required(memberVO.getAttribute(),  "clusterRole");
+		if(msg != null || msg2 !=null) {
+			String m = msg != null ? msg : msg2;
 			vo.setMsg(msg);
 			vo.setCode("500");
 		}
@@ -185,11 +226,90 @@ public class MemberController {
 		return vo;
 	}
 	
-	@RequestMapping("/CreateUser")
-	Object deleteUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO){
+	
+	
+	@RequestMapping("/editClusterRole")
+	Object editClusterRole(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException{
 		RtnVO vo = new RtnVO();
-		memberSvc.deleteUser(memberVO);
+		String msg = ValidUtil.required(memberVO,  "userName");
+		String msg2 = ValidUtil.required(memberVO.getAttribute(),  "clusterRole");
+		if(msg != null || msg2 !=null) {
+			String m = msg != null ? msg : msg2;
+			vo.setMsg(m);
+			vo.setCode("500");
+		}
+		else {
+			memberSvc.createUser(memberVO);	
+		}
 		return vo;
+	}
+	
+	/**
+	 * 사용자 삭제
+	 * @param httpServletRequest
+	 * @param memberVO
+	 * @return
+	 * @throws ZcpException 
+	 * @throws ApiException 
+	 */
+	@RequestMapping("/deleteUser")
+	Object deleteUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ZcpException, ApiException{
+		RtnVO vo = new RtnVO();
+		String msg = ValidUtil.required(memberVO, "userName");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			memberSvc.deleteUser(memberVO);	
+		}
+		return vo;
+	}
+	
+	
+	/**
+	 * 비밀번호 변경
+	 * @param httpServletRequest
+	 * @param memberVO
+	 * @return
+	 * @throws ZcpException 
+	 */
+	@RequestMapping("/editUserPassword")
+	Object editUserPassword(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ZcpException{
+		RtnVO vo = new RtnVO();
+		String msg = ValidUtil.required(memberVO,  "username", "password");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			memberSvc.editUserPassword(memberVO);	
+		}
+		return vo;
+	}
+	
+	
+	/**
+	 * 네임스페이스 권한 - 사용자별 네임스페이와 로바인딩
+	 * @param httpServletRequest
+	 * @param data
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 */
+	@RequestMapping("/createRoleBinding")
+	Object createRole(HttpServletRequest httpServletRequest, @RequestBody RoleBindingVO data) throws IOException, ApiException{
+		RtnVO vo = new RtnVO();
+		String msg = ValidUtil.required(data,  "userName", "namespace", "role");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			memberSvc.createRoleBinding(data);	
+		}
+		return vo;
+		
 	}
 	
 //	@RequestMapping("/serviceAccount")
@@ -239,12 +359,7 @@ public class MemberController {
 		return vo;
 	}
 	
-	@RequestMapping("/createRole")
-	Object createRole(HttpServletRequest httpServletRequest, @RequestBody RoleVO data) throws IOException, ApiException{
-		RtnVO vo = new RtnVO();
-		memberSvc.createRole(data);
-		return vo;
-	}
+	
 	
 	@RequestMapping("/deleteRole")
 	Object deleteRole(HttpServletRequest httpServletRequest, @RequestBody KubeDeleteOptionsVO data) throws IOException, ApiException{

@@ -2,6 +2,8 @@ package com.skcc.cloudz.zcp.common.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.keycloak.admin.client.Keycloak;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,5 +39,11 @@ public class Util {
 		TypeReference<T> typeReference = new TypeReference<T>(){};
 		InputStream inputStream = TypeReference.class.getResourceAsStream(filename);
 		return mapper.readValue(inputStream,typeReference);
+	}
+	
+	public static <T> List<T> asList(T t){
+		List<T> list = new ArrayList();
+		list.add(t);
+		return list;
 	}
 }
