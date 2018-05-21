@@ -36,8 +36,13 @@ public class MemberController {
 	@Autowired
 	MemberService memberSvc;
 	
+	/**
+	 * @param httpServletRequest
+	 * @return
+	 * @throws ApiException 
+	 */
 	@RequestMapping("/userList")
-	Object userList(HttpServletRequest httpServletRequest){
+	Object userList(HttpServletRequest httpServletRequest) throws ApiException{
 		RtnVO vo = new RtnVO();
 		vo.setData(memberSvc.getUserList());
 		return vo;

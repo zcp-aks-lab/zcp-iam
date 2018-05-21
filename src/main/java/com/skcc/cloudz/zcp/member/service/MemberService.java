@@ -1,6 +1,7 @@
 package com.skcc.cloudz.zcp.member.service;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.json.simple.parser.ParseException;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,17 +23,16 @@ import com.skcc.cloudz.zcp.member.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.member.vo.MemberVO;
 import com.skcc.cloudz.zcp.member.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
+import com.skcc.cloudz.zcp.member.vo.UserVO;
 
 import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Binding;
 import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1Subject;
@@ -59,8 +60,30 @@ public class MemberService {
 	@Value("${kube.system.namespace}")
 	String systemNamespace;
 	
-	public Object getUserList() {
-		return keycloakDao.getUserList();
+	public Object getUserList() throws ApiException {
+		List<UserRepresentation> keyCloakUser = keycloakDao.getUserList();
+		
+		List<UserVO> userList = new ArrayList();
+		for(UserRepresentation cloakUser : keyCloakUser) {
+			UserVO user = new UserVO();
+			user.setUserId(cloakUser.getUsername());
+			user.setEmail(cloakUser.getEmail());
+			user.setName(cloakUser.getLastName() + cloakUser.getFirstName());
+			user.setDate(new Timestamp(cloakUser.getCreatedTimestamp()).toString());
+			user.setClusterRole(cloakUser.getAttributes().get("clusterRole").toString());
+			user.setStatus(cloakUser.isEnabled());
+			userList.add(user);
+		}
+		
+		for(UserVO user : userList) {
+			LinkedTreeMap rolebinding =null;
+			rolebinding = kubeDao.RoleBindingList("zcp-system", user.getUserId());
+			int count = ((List<LinkedTreeMap>)rolebinding.get("items")).size();
+			user.setUsedNamespace(count);
+		}
+		
+		return userList;
+		
 	}
 	
 	public void editUser(MemberVO vo) throws ZcpException{
