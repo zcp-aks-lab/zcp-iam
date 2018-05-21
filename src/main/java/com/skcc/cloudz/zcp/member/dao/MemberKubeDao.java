@@ -108,6 +108,7 @@ public class MemberKubeDao {
 	}
 	
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public LinkedTreeMap createClusterRole(Object role) throws ApiException{
 		ApiResponse<V1ClusterRoleList> data = (ApiResponse<V1ClusterRoleList>) api.postApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/clusterroles"
@@ -161,6 +162,7 @@ public class MemberKubeDao {
 	}
 	
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public LinkedTreeMap serviceAccountList(String namespace) throws ApiException{
 		ApiResponse<V1ServiceAccountList> data = (ApiResponse<V1ServiceAccountList>) api.getApiCall(
 				"/api/v1/namespaces/"+namespace+"/serviceaccounts"
@@ -182,6 +184,7 @@ public class MemberKubeDao {
 	
 	
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public LinkedTreeMap deleteRole(String namespace, String name, Object deleteOptions) throws ApiException{
 		ApiResponse<Status> data = (ApiResponse<Status>) api.deleteApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/namespaces/"+ namespace + "/roles/" +name

@@ -6,7 +6,16 @@ public class KubeDeleteOptionsVO extends V1DeleteOptions implements Ivo{
 
 	String name;
 	String namespace;
+	String userName;
 	
+	public String getUserName() {
+		return userName;
+	}
+
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
+
 	public String getName() {
 		return name;
 	}

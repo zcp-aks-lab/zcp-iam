@@ -375,7 +375,7 @@ public class MemberService {
 		
 		V1Subject subject = new V1Subject();
 		subject.setKind("ServiceAccount");
-		subject.setName(clusterRoleBindingPrefix + binding.getUserName());
+		subject.setName(serviceAccountPrefix + binding.getUserName());
 		subject.setNamespace(systemNamespace);
 		
 		V1RoleRef roleRef = new V1RoleRef();
@@ -393,11 +393,27 @@ public class MemberService {
 		
 		subjects.add(subject);
 		
-		kubeDao.createRoleBinding(binding.getNamespace(), binding);
+		try {
+			kubeDao.createRoleBinding(binding.getNamespace(), binding);
+		} catch (ApiException e) {
+			if(e.getMessage().equals("Conflict")) {
+				
+			}else {
+				throw e;	
+			}
+		}
+		
 	}
 	
-	public void deleteRole(KubeDeleteOptionsVO data) throws IOException, ApiException{
-		LinkedTreeMap status = kubeDao.deleteRole(data.getNamespace(), data.getName(), data);
+	public void deleteRoleBinding(KubeDeleteOptionsVO data) throws IOException, ApiException{
+		try {
+			LinkedTreeMap status = kubeDao.deleteRoleBinding(data.getNamespace(), roleBindingPrefix + data.getUserName() , data);
+		}catch(ApiException e) {
+			if(!e.getMessage().equals("Not Found")){
+				throw e;
+			}
+		}
+		
 	}
 	
 

@@ -312,6 +312,33 @@ public class MemberController {
 		
 	}
 	
+
+
+	/**
+	 * 네임스페이스 롤 바인딩 삭제
+	 * 
+	 * @param httpServletRequest
+	 * @param data
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 */
+	@RequestMapping("/deleteRoleBinding")
+	Object deleteRoleBinding(HttpServletRequest httpServletRequest, @RequestBody KubeDeleteOptionsVO data) throws IOException, ApiException{
+		RtnVO vo = new RtnVO();
+		String msg = ValidUtil.required(data,  "userName", "namespace");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			memberSvc.deleteRoleBinding(data);	
+		}
+		return vo;
+		
+	}
+	
+	
 //	@RequestMapping("/serviceAccount")
 //	Object serviceAccount(HttpServletRequest httpServletRequest) throws IOException, ApiException{
 //		RtnVO vo = new RtnVO();
@@ -324,6 +351,7 @@ public class MemberController {
 //	}
 	
 	@RequestMapping("/createServiceAccount")
+	@Deprecated
 	Object createServiceAccount(HttpServletRequest httpServletRequest, @RequestBody ServiceAccountVO data) throws IOException, ApiException, ParseException{
 		RtnVO vo = new RtnVO();
 		memberSvc.createServiceAccount(data);
@@ -331,28 +359,16 @@ public class MemberController {
 	}
 	
 	@RequestMapping("/deleteServiceAccount")
+	@Deprecated
 	Object deleteServiceAccount(HttpServletRequest httpServletRequest, @RequestBody ServiceAccountVO data) throws IOException, ApiException, ParseException{
 		RtnVO vo = new RtnVO();
 		memberSvc.createServiceAccount(data);
 		return vo;
 	}
 	
-//	@RequestMapping("/clusterRoleList")
-//	Object clusterRoleList(HttpServletRequest httpServletRequest) throws IOException, ApiException, ParseException{
-//		RtnVO vo = new RtnVO();
-//		vo.setData(memberSvc.clusterRoleList());
-//		return vo;
-//	}
-	
-	
-//	@RequestMapping("/createClusterRoleBinding")
-//	Object createClusterRoleBinding(HttpServletRequest httpServletRequest, @RequestBody V1ClusterRoleBinding data) throws IOException, ApiException{
-//		RtnVO vo = new RtnVO();
-//		memberSvc.createClusterRoleBinding(data);
-//		return vo;
-//	}
 	
 	@RequestMapping("/deleteClusterRoleBinding")
+	@Deprecated
 	Object deleteClusterRoleBinding(HttpServletRequest httpServletRequest, @RequestBody KubeDeleteOptionsVO data) throws IOException, ApiException{
 		RtnVO vo = new RtnVO();
 		memberSvc.deleteClusterRoleBinding(data);
@@ -361,11 +377,7 @@ public class MemberController {
 	
 	
 	
-	@RequestMapping("/deleteRole")
-	Object deleteRole(HttpServletRequest httpServletRequest, @RequestBody KubeDeleteOptionsVO data) throws IOException, ApiException{
-		RtnVO vo = new RtnVO();
-		memberSvc.deleteRole(data);
-		return vo;
-	}
+	
+	
 	
 }
