@@ -248,6 +248,15 @@ public class MemberKubeDao {
 		return api.replaceNamespacedLimitRange(name, namespace,  limitRange, "true");
 	}
 	
+	@SuppressWarnings("unchecked")
+	public LinkedTreeMap getLimitRanges(String namespace) throws ApiException{
+		ApiResponse<V1ResourceQuota> data = (ApiResponse<V1ResourceQuota>) api.getApiCall(
+				"/api/v1/namespaces/{namespace}/limitranges".replace("{namespace}", namespace)
+				,null, null, null, null, null, null, null, null, null, null, null);
+		Object map = (Object)data.getData();
+		return (LinkedTreeMap)map;
+	}
+	
 	
 	@SuppressWarnings("unchecked")
 	public LinkedTreeMap createQuota(String namespace, Object quota) throws ApiException{
@@ -261,6 +270,15 @@ public class MemberKubeDao {
 	@SuppressWarnings("unchecked")
 	public V1ResourceQuota editQuota(String namespace, String name, V1ResourceQuota quota) throws ApiException{
 		return api.replaceNamespacedResourceQuota(name, namespace, quota, "true");
+	}
+	
+	@SuppressWarnings("unchecked")
+	public LinkedTreeMap getQuota(String namespace) throws ApiException{
+		ApiResponse<V1ResourceQuota> data = (ApiResponse<V1ResourceQuota>) api.getApiCall(
+				"/api/v1/namespaces/{namespace}/resourcequotas".replace("{namespace}", namespace)
+				,null, null, null, null, null, null, null, null, null, null, null);
+		Object map = (Object)data.getData();
+		return (LinkedTreeMap)map;
 	}
 	
 	@SuppressWarnings("unchecked")

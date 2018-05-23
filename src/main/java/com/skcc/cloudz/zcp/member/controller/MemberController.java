@@ -147,7 +147,30 @@ public class MemberController {
 	}
 	
 	/**
-	 * 전체 네임스페이스
+	 * 네임 스페이스 리소스 정보
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 */
+	@RequestMapping("/getNamespaceResource")
+	Object getNamespaceResource(HttpServletRequest httpServletRequest, @RequestBody HashMap<String, String> map) throws  ApiException, ParseException{
+		RtnVO vo = new RtnVO();
+		String msg = ValidUtil.required(map,  "namespace");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			vo.setData(memberSvc.getNamespaceResource(map.get("namespace")));	
+		}
+		
+		return vo;
+	}
+	
+	/**
+	 * 전체 네임스페이스 이름만
 	 * @param httpServletRequest
 	 * @param map
 	 * @return

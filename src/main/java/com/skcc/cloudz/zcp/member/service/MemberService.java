@@ -264,6 +264,25 @@ public class MemberService {
 	}
 	
 	/**
+	 * @return
+	 * @throws ApiException
+	 * @throws ParseException
+	 * 
+	 * 네임 스페이스 정보
+	 * 
+	 */
+	public Map getNamespaceResource(String namespace) throws ApiException, ParseException{
+		Map resource = new HashMap(); 
+		Map quota =  (LinkedTreeMap) kubeDao.getQuota(namespace);
+		Map limitRanges =  (LinkedTreeMap) kubeDao.getLimitRanges(namespace);
+		resource.put("resourceQuota", quota);
+		resource.put("limitRanges", limitRanges);
+		
+		return resource;
+		
+	}
+	
+	/**
 	 * 전체 네임스페이스
 	 * @param namespace
 	 * @return
