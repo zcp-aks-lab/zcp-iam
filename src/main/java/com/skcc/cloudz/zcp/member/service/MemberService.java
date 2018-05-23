@@ -403,8 +403,8 @@ public class MemberService {
 		
 		V1RoleRef roleRef = new V1RoleRef();
 		roleRef.setApiGroup("rbac.authorization.k8s.io");
-		roleRef.setKind("Role");
-		roleRef.setName(binding.getRole());
+		roleRef.setKind("ClusterRole");
+		roleRef.setName(binding.getClusterRole());
 		
 		List<V1Subject> subjects = new ArrayList();
 

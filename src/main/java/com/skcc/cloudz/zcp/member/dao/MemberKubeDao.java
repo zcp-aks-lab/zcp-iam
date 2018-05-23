@@ -27,6 +27,7 @@ import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1ResourceQuota;
+import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1ServiceAccount;
@@ -121,7 +122,7 @@ public class MemberKubeDao {
 	@SuppressWarnings("unchecked")
 	public LinkedTreeMap RoleBindingList(String namespace, String username) throws ApiException{
 		ApiResponse<V1RoleBindingList> data = (ApiResponse<V1RoleBindingList>) api.getApiCall(
-				"/apis/rbac.authorization.k8s.io/v1/namespaces/{namespace}/rolebindings".replace("{namespace}", namespace) 
+				"/apis/rbac.authorization.k8s.io/v1/rolebindings" 
 				,null, null, null, "zcp-system-username="+username, null, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
@@ -129,7 +130,7 @@ public class MemberKubeDao {
 	
 	@SuppressWarnings("unchecked")
 	public LinkedTreeMap createRoleBinding(String namespace, RoleBindingVO rolebinding) throws ApiException{
-		ApiResponse<V1ClusterRoleList> data = (ApiResponse<V1ClusterRoleList>) api.postApiCall(
+		ApiResponse<V1RoleBinding> data = (ApiResponse<V1RoleBinding>) api.postApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/namespaces/{namespace}/rolebindings".replace("{namespace}", namespace)
 				,rolebinding, null, null, null);
 		Object map = (Object)data.getData();

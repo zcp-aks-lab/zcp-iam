@@ -2,12 +2,17 @@ package com.skcc.cloudz.zcp.common.util;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.skcc.cloudz.zcp.member.vo.Ivo;
 
 public class ValidUtil {
+	
+	public static String EMAIL = "([\\w-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([\\w-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)$";
+	
+	
 	public static String required(Object requestParam, String... keys) {
 		if(requestParam instanceof Map) {
 			for(String key : keys) {
@@ -43,5 +48,9 @@ public class ValidUtil {
 		}
 		
 		return null;
+	}
+	
+	public static boolean check(String regex, String value) {
+		return Pattern.matches(regex, value.trim());
 	}
 }

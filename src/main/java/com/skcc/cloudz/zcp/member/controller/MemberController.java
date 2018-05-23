@@ -25,7 +25,7 @@ import com.skcc.cloudz.zcp.member.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
 
 import io.kubernetes.client.ApiException;
-
+import static com.skcc.cloudz.zcp.common.util.ValidUtil.EMAIL;
 @Configuration
 @RestController
 @RequestMapping("/iam/member")
@@ -220,6 +220,8 @@ public class MemberController {
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(memberVO,  "userName", "firstName", "lastName");
 		String msg2 = ValidUtil.required(memberVO.getAttribute(),  "clusterRole");
+		if(ValidUtil.check(EMAIL, memberVO.getEmail())) msg="email invalid";
+		
 		if(msg != null || msg2 !=null) {
 			String m = msg != null ? msg : msg2;
 			vo.setMsg(msg);
@@ -303,9 +305,9 @@ public class MemberController {
 	 * @throws ApiException
 	 */
 	@RequestMapping("/createRoleBinding")
-	Object createRole(HttpServletRequest httpServletRequest, @RequestBody RoleBindingVO data) throws IOException, ApiException{
+	Object createRoleBinding(HttpServletRequest httpServletRequest, @RequestBody RoleBindingVO data) throws IOException, ApiException{
 		RtnVO vo = new RtnVO();
-		String msg = ValidUtil.required(data,  "userName", "namespace", "role");
+		String msg = ValidUtil.required(data,  "userName", "namespace", "clusterRole");
 		if(msg != null) {
 			vo.setMsg(msg);
 			vo.setCode("500");
