@@ -77,8 +77,40 @@ public class MemberService {
 		
 		for(UserVO user : userList) {
 			LinkedTreeMap rolebinding =null;
-			rolebinding = kubeDao.RoleBindingList("zcp-system", user.getUserId());
+			rolebinding = kubeDao.RoleBindingListOfUser(user.getUserId());
 			int count = ((List<LinkedTreeMap>)rolebinding.get("items")).size();
+			user.setUsedNamespace(count);
+		}
+		
+		return userList;
+		
+	}
+	
+	public Object getUserList(String namespace) throws ApiException {
+		List<UserRepresentation> keyCloakUser = keycloakDao.getUserList();
+		
+		List<UserVO> userList = new ArrayList();
+		LinkedTreeMap rolebinding = kubeDao.RoleBindingListOfNamespace(namespace);
+		List<LinkedTreeMap> bindingUsers = (List<LinkedTreeMap>)rolebinding.get("items");
+		for(LinkedTreeMap binding : bindingUsers) {
+			String name = (String)((LinkedTreeMap)binding.get("metadata")).get("name") ;
+			for(UserRepresentation cloakUser : keyCloakUser) {
+				if(name.equals(this.roleBindingPrefix + cloakUser.getUsername())) {
+					UserVO user = new UserVO();
+					user.setUserId(cloakUser.getUsername());
+					user.setEmail(cloakUser.getEmail());
+					user.setName(cloakUser.getLastName() + cloakUser.getFirstName());
+					user.setDate(new Timestamp(cloakUser.getCreatedTimestamp()).toString());
+					user.setClusterRole(cloakUser.getAttributes().get("clusterRole").toString());
+					user.setStatus(cloakUser.isEnabled());
+					userList.add(user);	
+				}
+			}	
+		}
+		
+		for(UserVO user : userList) {
+			LinkedTreeMap mapUser = kubeDao.RoleBindingListOfUser(user.getUserId());
+			int count = ((List<LinkedTreeMap>)mapUser.get("items")).size();
 			user.setUsedNamespace(count);
 		}
 		

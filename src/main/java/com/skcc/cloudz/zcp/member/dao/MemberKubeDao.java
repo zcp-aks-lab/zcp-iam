@@ -120,10 +120,19 @@ public class MemberKubeDao {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public LinkedTreeMap RoleBindingList(String namespace, String username) throws ApiException{
+	public LinkedTreeMap RoleBindingListOfUser(String username) throws ApiException{
 		ApiResponse<V1RoleBindingList> data = (ApiResponse<V1RoleBindingList>) api.getApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/rolebindings" 
 				,null, null, null, "zcp-system-username="+username, null, null, null, null, null, null, null);
+		Object map = (Object)data.getData();
+		return (LinkedTreeMap)map;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public LinkedTreeMap RoleBindingListOfNamespace(String namespace) throws ApiException{
+		ApiResponse<V1RoleBindingList> data = (ApiResponse<V1RoleBindingList>) api.getApiCall(
+				"/apis/rbac.authorization.k8s.io/v1/namespaces/{namespace}/rolebindings".replace("{namespace}", namespace)
+				,null, null, null, "zcp-system-user=true", null, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}

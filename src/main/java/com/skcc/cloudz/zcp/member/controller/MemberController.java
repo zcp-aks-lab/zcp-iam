@@ -37,6 +37,8 @@ public class MemberController {
 	MemberService memberSvc;
 	
 	/**
+	 * 전체 사용자 리스트
+	 * 
 	 * @param httpServletRequest
 	 * @return
 	 * @throws ApiException 
@@ -45,6 +47,28 @@ public class MemberController {
 	Object userList(HttpServletRequest httpServletRequest) throws ApiException{
 		RtnVO vo = new RtnVO();
 		vo.setData(memberSvc.getUserList());
+		return vo;
+	}
+	
+	
+	/**
+	 * 네임스페이스에 해당하는 사용자 리스트
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws ApiException
+	 */
+	@RequestMapping("/userListOfNamespace")
+	Object userList(HttpServletRequest httpServletRequest, @RequestBody HashMap<String, String> map) throws ApiException{
+		RtnVO vo = new RtnVO();
+		String msg = ValidUtil.required(map,  "namespace");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			vo.setData(memberSvc.getUserList(map.get("namespace")));
+		}
 		return vo;
 	}
 	
