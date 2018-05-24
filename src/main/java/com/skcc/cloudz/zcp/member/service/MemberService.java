@@ -21,6 +21,7 @@ import com.skcc.cloudz.zcp.member.dao.MemberKeycloakDao;
 import com.skcc.cloudz.zcp.member.dao.MemberKubeDao;
 import com.skcc.cloudz.zcp.member.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.member.vo.MemberVO;
+import com.skcc.cloudz.zcp.member.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.member.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
 import com.skcc.cloudz.zcp.member.vo.UserVO;
@@ -32,8 +33,10 @@ import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1NamespaceSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ResourceQuota;
+import io.kubernetes.client.models.V1ResourceQuotaSpec;
 import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1Subject;
 
@@ -310,8 +313,30 @@ public class MemberService {
 	 * @param limitvo
 	 * @throws ApiException
 	 */
-	public void createAndEditNamespace(V1Namespace namespacevo, V1ResourceQuota quotavo, V1LimitRange limitvo) throws ApiException {
-		String namespace = namespacevo.getMetadata().getName();
+	public void createAndEditNamespace(NamespaceVO data) throws ApiException {
+		V1ObjectMeta namespace_meta = new V1ObjectMeta();
+		V1ObjectMeta quota_meta = new V1ObjectMeta();
+		V1ObjectMeta limit_meta = new V1ObjectMeta();
+		
+		namespace_meta.setName(data.getNamespace());
+		quota_meta.setName(data.getNamespace());
+		limit_meta.setName(data.getNamespace());
+		
+		V1Namespace namespacevo = new V1Namespace();
+		V1ResourceQuota quotavo = data.getResourceQuota();
+		V1LimitRange limitvo = data.getLimitRange();
+		namespacevo.setApiVersion("v1");
+		namespacevo.setKind("Namespace");
+		namespacevo.setSpec(new V1NamespaceSpec().addFinalizersItem("kubernetes"));
+		namespacevo.setMetadata(namespace_meta);
+		quotavo.setApiVersion("v1");
+		quotavo.setKind("ResourceQuota");
+		quotavo.setMetadata(quota_meta);
+		limitvo.setApiVersion("v1");
+		limitvo.setKind("LimitRange");
+		limitvo.setMetadata(quota_meta);
+		
+		String namespace = data.getNamespace();
 		try {
 			kubeDao.createNamespace(namespace, namespacevo);
 		} catch (ApiException e) {
@@ -515,4 +540,11 @@ public class MemberService {
 		}
 	}
 	
+	public void initUserPassword(Map<String, Object> password) throws ZcpException {
+		keycloakDao.initUserPassword(password);
+	}
+	
+	public void removeOtpPassword(MemberVO vo) {
+		keycloakDao.removeOtpPassword(vo);
+	}
 }

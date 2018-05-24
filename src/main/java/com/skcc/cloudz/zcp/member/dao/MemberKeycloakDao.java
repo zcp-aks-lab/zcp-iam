@@ -1,9 +1,13 @@
 package com.skcc.cloudz.zcp.member.dao;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -28,6 +32,9 @@ public class MemberKeycloakDao {
 	
 	@Value("${zcp.realm}")
 	String realm;
+	
+	@Value("${keycloak.clientId}")
+	String clientId;
 	
 	public List<UserRepresentation> getUserList(){
 		RealmResource realmResource = keycloak.realm(realm);
@@ -108,14 +115,21 @@ public class MemberKeycloakDao {
 		}
 	}
 	
-//	public void initUserPassword(MemberVO vo) throws ZcpException{
-//		UsersResource userRessource = keycloak.realm(realm).users();
-//		List<UserRepresentation> users = userRessource.search(vo.getUserName());
-//		if(users != null && users.size() > 0) {
-//			userRessource.get(users.get(0).getId()).se
-//		}else {
-//			throw new ZcpException("E00003"); 
-//		}
-//	}
+	public void initUserPassword(Map<String, Object> vo) throws ZcpException{
+		UsersResource usersResource = keycloak.realm(realm).users();
+		List<UserRepresentation> users = usersResource.search(vo.get("userName").toString());
+		UserResource user = usersResource.get(users.get(0).getId());
+		if(vo.get("actionType") != null) {
+			user.executeActionsEmail(clientId, null, (List<String>)vo.get("actionType"));
+		}
+		
+	}
+	
+	public void removeOtpPassword(MemberVO vo) {
+		UsersResource usersResource = keycloak.realm(realm).users();
+		List<UserRepresentation> users = usersResource.search(vo.getUserName());
+		UserResource user = usersResource.get(users.get(0).getId());
+		user.removeTotp();
+	}
 	
 }

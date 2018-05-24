@@ -5,32 +5,57 @@ import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1ResourceQuota;
 
 public class NamespaceVO  implements Ivo{
-	V1Namespace namespace;
-	V1ResourceQuota resourceQuota;
-	V1LimitRange limitRange;
+	String namespace;
+	ResourceQuotaVO resourceQuota;
+	LimitRangeVO limitRange;
 	
-	public V1Namespace getNamespace() {
+	public String getNamespace() {
 		return namespace;
 	}
 
-	public void setNamespace(V1Namespace namespace) {
+	public void setNamespace(String namespace) {
 		this.namespace = namespace;
 	}
 
-	public V1ResourceQuota getResourceQuota() {
+	public ResourceQuotaVO getResourceQuota() {
 		return resourceQuota;
 	}
 
-	public void setResourceQuota(V1ResourceQuota resourceQuota) {
+	public void setResourceQuota(ResourceQuotaVO resourceQuota) {
 		this.resourceQuota = resourceQuota;
 	}
 
-	public V1LimitRange getLimitRange() {
+	public LimitRangeVO getLimitRange() {
 		return limitRange;
 	}
 
-	public void setLimitRange(V1LimitRange limitRange) {
+	public void setLimitRange(LimitRangeVO limitRange) {
 		this.limitRange = limitRange;
 	}
 	
+	public class ResourceQuotaVO extends V1ResourceQuota{
+		String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+		
+	}
+	
+	public class LimitRangeVO extends V1LimitRange{
+		String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+		
+	}
 }

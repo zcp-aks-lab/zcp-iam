@@ -170,6 +170,30 @@ public class MemberController {
 	}
 	
 	/**
+	 * 네임 스페이스 리소스 정보
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 */
+	@RequestMapping("/getAllOfNamespaceResource")
+	Object getAllOfNamespaceResource(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
+		RtnVO vo = new RtnVO();
+		//String msg = ValidUtil.required(map,  "namespace");
+		String msg= null;
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			vo.setData(memberSvc.getNamespaceResource(""));	
+		}
+		
+		return vo;
+	}
+	
+	/**
 	 * 전체 네임스페이스 이름만
 	 * @param httpServletRequest
 	 * @param map
@@ -212,7 +236,7 @@ public class MemberController {
 			vo.setCode("500");
 		}
 		else {
-			memberSvc.createAndEditNamespace(data.getNamespace(), data.getResourceQuota(), data.getLimitRange());
+			memberSvc.createAndEditNamespace(data);
 		}
 		
 		return vo;
@@ -280,6 +304,36 @@ public class MemberController {
 		return vo;
 	}
 	
+	
+	@RequestMapping("/initUserPassword")
+	Object initUserPassword(HttpServletRequest httpServletRequest, @RequestBody HashMap password) throws ZcpException{
+		RtnVO vo = new RtnVO();
+		String msg = ValidUtil.required(password,  "userName", "actionType");
+		
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			memberSvc.initUserPassword(password);	
+		}
+		return vo;
+	}
+	
+	@RequestMapping("/removeOtpPassword")
+	Object removeOtpPassword(HttpServletRequest httpServletRequest, @RequestBody MemberVO user) throws ZcpException{
+		RtnVO vo = new RtnVO();
+		String msg = ValidUtil.required(user,  "userName");
+		
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			memberSvc.removeOtpPassword(user);	
+		}
+		return vo;
+	}
 	
 	
 	@RequestMapping("/editClusterRole")
