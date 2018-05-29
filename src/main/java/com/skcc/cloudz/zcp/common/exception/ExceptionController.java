@@ -1,6 +1,6 @@
 package com.skcc.cloudz.zcp.common.exception;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+//import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import java.io.IOException;
 import java.util.Properties;

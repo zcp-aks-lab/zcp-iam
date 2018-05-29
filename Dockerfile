@@ -1,6 +1,6 @@
 FROM java:8
 ENV SPRING_ACTIVE_PROFILE default
-ADD target/zcp-iam-0.0.1-SNAPSHOT.jar app.jar
+ADD artifact/zcp-iam-0.0.1-SNAPSHOT.jar app.jar
 VOLUME /tmp
 VOLUME /target
 #RUN apt-get update && \
