@@ -401,25 +401,7 @@ public class NamespaceService {
 		return null;
 	}
 	
-	
-	public LinkedTreeMap getServiceAccount(String namespace, String username) throws IOException, ApiException{
-		return kubeDao.getServiceAccount(namespace, username);
-	}
-	
-	
-	public String getServiceAccountToken(String namespace, String username) throws IOException, ApiException{
-		List<LinkedTreeMap> secrets =(List<LinkedTreeMap>) kubeDao.getServiceAccount(namespace, username).get("secrets");
-		for(LinkedTreeMap secret : secrets) {
-			String secretName = secret.get("name").toString();
-			LinkedTreeMap secretList = (LinkedTreeMap) kubeDao.getSecret(namespace, secretName).get("data");
-			
-			return secretList.get("token").toString();
-		}
-		return null;
-	}
-
-	
-	
+		
 	
 	
 	public void createServiceAccount(ServiceAccountVO data) throws IOException, ApiException{

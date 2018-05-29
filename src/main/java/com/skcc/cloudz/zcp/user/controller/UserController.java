@@ -91,10 +91,10 @@ public class UserController {
 	 * @throws ApiException
 	 * 
 	 */
-	@RequestMapping(value="/user/{userName}/{namespace}/serviceAccountToken", method=RequestMethod.GET)
-	Object getServiceAccountToken(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @PathVariable("namespace") String namespace) throws IOException, ApiException{
+	@RequestMapping(value="/user/{userName}/serviceAccountToken", method=RequestMethod.GET)
+	Object getServiceAccountToken(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException{
 		RtnVO vo = new RtnVO();
-		vo.setData(userSvc.getServiceAccountToken(namespace, userName));	
+		vo.setData(userSvc.getServiceAccountToken("zcp-system", userName));	
 		return vo;
 	}
 	
@@ -128,7 +128,7 @@ public class UserController {
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(memberVO,  "userName", "firstName", "lastName");
 		String msg2 = ValidUtil.required(memberVO.getAttribute(),  "clusterRole");
-		if(ValidUtil.check(EMAIL, memberVO.getEmail())) msg="email invalid";
+		if(!ValidUtil.check(EMAIL, memberVO.getEmail())) msg="email invalid";
 		
 		if(msg != null || msg2 !=null) {
 			String m = msg != null ? msg : msg2;

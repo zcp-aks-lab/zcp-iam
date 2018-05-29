@@ -193,13 +193,14 @@ public class UserKubeDao {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public LinkedTreeMap getServiceAccount(String namespace, String name) throws ApiException{
-		ApiResponse<V1ServiceAccountList> data = (ApiResponse<V1ServiceAccountList>) api.getApiCall(
-				"/api/v1/namespaces/"+namespace+"/serviceaccounts/" + name
-				,null, null, null, null, null, null, null, null, null, null, null);
-		Object map = (Object)data.getData();
-		LinkedTreeMap mapData = (LinkedTreeMap)map;
-		return mapData;
+	public V1ServiceAccountList getServiceAccount(String namespace, String name) throws ApiException{
+//		ApiResponse<V1ServiceAccountList> data = (ApiResponse<V1ServiceAccountList>) api.getApiCall(
+//				"/api/v1/namespaces/"+namespace+"/serviceaccounts/" + name
+//				,null, null, null, null, null, null, null, null, null, null, null);
+//		Object map = (Object)data.getData();
+//		LinkedTreeMap mapData = (LinkedTreeMap)map;
+//		return mapData;
+		return api.listNamespacedServiceAccount(namespace, "true", null, null, null, "zcp-system-user=true", null, null, null, null);
 	}
 	
 	

@@ -29,6 +29,7 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1Subject;
 
@@ -231,7 +232,7 @@ public class UserService {
 				Stream s = subjects.stream().filter((subject) -> {
 					LOG.debug("kind={} , name={}", subject.get("kind"), subject.get("name"));
 					return subject.get("kind").toString().equals("ServiceAccount") 
-							&& subject.get("name").toString().equals(clusterRoleBindingPrefix+ username);
+							&& subject.get("name").toString().equals(serviceAccountPrefix+ username);
 				});
 				if(s != null)
 					return s.count()>0;
@@ -243,17 +244,16 @@ public class UserService {
 			return serviceAccount.findAny().get();
 		}catch(NoSuchElementException e) {
 			return null;
-		}finally {
-			return null;		
 		}
+
 	
 	}
 	
 	
 	public String getServiceAccountToken(String namespace, String username) throws IOException, ApiException{
-		List<LinkedTreeMap> secrets =(List<LinkedTreeMap>) kubeDao.getServiceAccount(namespace, username).get("secrets");
-		for(LinkedTreeMap secret : secrets) {
-			String secretName = secret.get("name").toString();
+		List<V1ObjectReference> secrets = kubeDao.getServiceAccount(namespace, username).getItems().get(0).getSecrets();
+		for(V1ObjectReference secret : secrets) {
+			String secretName = secret.getName();
 			LinkedTreeMap secretList = (LinkedTreeMap) kubeDao.getSecret(namespace, secretName).get("data");
 			
 			return secretList.get("token").toString();
