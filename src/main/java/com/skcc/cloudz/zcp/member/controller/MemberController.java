@@ -33,7 +33,7 @@ import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
 import io.kubernetes.client.ApiException;
 @Configuration
 @RestController
-@RequestMapping("/iam")
+@RequestMapping("/iamTest")
 public class MemberController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(MemberController.class);    
@@ -48,7 +48,7 @@ public class MemberController {
 	 * @return
 	 * @throws ApiException 
 	 */
-	@RequestMapping(value="/user/allOfList", method=RequestMethod.GET)
+	@RequestMapping(value="/user", method=RequestMethod.GET)
 	Object allOfList(HttpServletRequest httpServletRequest) throws ApiException{
 		RtnVO vo = new RtnVO();
 		vo.setData(memberSvc.getUserList());
@@ -63,7 +63,7 @@ public class MemberController {
 	 * @return
 	 * @throws ApiException
 	 */
-	@RequestMapping(value="/user/list/{namespace}", method=RequestMethod.GET)
+	@RequestMapping(value="/user/{namespace}", method=RequestMethod.GET)
 	Object listOfNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws ApiException{
 		RtnVO vo = new RtnVO();
 //		String msg = ValidUtil.required(map,  "namespace");
