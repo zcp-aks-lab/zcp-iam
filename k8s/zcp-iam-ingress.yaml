@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: zcp-iam-ingress
+  namespace: zcp-system
+spec:
+  tls:
+  - hosts:
+    - zcp-iam.cloudzcp.io
+    secretName: cloudzcp-io-cert
+  rules:
+  - host: zcp-iam.cloudzcp.io
+    http:
+      paths:
+      - backend:
+          serviceName: zcp-iam
+          servicePort: 80
+

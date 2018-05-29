@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    cloudzcp.io/zcp-system-admin: "yes"
+  name: zcp-system-admin
+  namespace: zcp-system
+  
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    cloudzcp.io/zcp-system-admin: "yes"
+  name: zcp-system-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: zcp-system-admin
+  namespace: zcp-system
