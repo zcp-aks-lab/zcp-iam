@@ -3,7 +3,18 @@ package com.skcc.cloudz.zcp.member.vo;
 public class CommonVO {
 	String name;
 	String namespace;
+	String userName;
 	
+	
+
+	public String getUserName() {
+		return userName;
+	}
+
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
+
 	public String getName() {
 		return name;
 	}

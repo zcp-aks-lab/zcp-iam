@@ -1,7 +1,5 @@
 package com.skcc.cloudz.zcp.member.dao;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -42,9 +40,9 @@ public class MemberKeycloakDao {
 	}
 
 	
-	public void deleteUser(MemberVO vo) throws ZcpException{
+	public void deleteUser(String userName) throws ZcpException{
 		UsersResource userRessource = keycloak.realm(realm).users();
-		List<UserRepresentation> users = userRessource.search(vo.getUserName());
+		List<UserRepresentation> users = userRessource.search(userName);
 		if(users != null && users.size() > 0) {
 			userRessource.get(users.get(0).getId()).remove();
 		}else {
@@ -120,9 +118,12 @@ public class MemberKeycloakDao {
 		List<UserRepresentation> users = usersResource.search(vo.get("userName").toString());
 		UserResource user = usersResource.get(users.get(0).getId());
 		if(vo.get("actionType") != null) {
-			user.executeActionsEmail(clientId, null, (List<String>)vo.get("actionType"));
+//			CredentialRepresentation credentialRepresentation = new CredentialRepresentation();
+//			credentialRepresentation.setDigits(1);
+//			credentialRepresentation.setPeriod(Hours);
+//			user.resetPassword(credentialRepresentation);
+			user.executeActionsEmail("test1", null, (List<String>)vo.get("actionType"));
 		}
-		
 	}
 	
 	public void removeOtpPassword(MemberVO vo) {

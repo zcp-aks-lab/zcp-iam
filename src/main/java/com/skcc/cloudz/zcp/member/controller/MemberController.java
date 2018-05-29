@@ -1,5 +1,7 @@
 package com.skcc.cloudz.zcp.member.controller;
 
+import static com.skcc.cloudz.zcp.common.util.ValidUtil.EMAIL;
+
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -10,14 +12,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.RtnVO;
 import com.skcc.cloudz.zcp.member.service.MemberService;
+import com.skcc.cloudz.zcp.member.vo.CommonVO;
 import com.skcc.cloudz.zcp.member.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.member.vo.MemberVO;
 import com.skcc.cloudz.zcp.member.vo.NamespaceVO;
@@ -25,10 +31,9 @@ import com.skcc.cloudz.zcp.member.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
 
 import io.kubernetes.client.ApiException;
-import static com.skcc.cloudz.zcp.common.util.ValidUtil.EMAIL;
 @Configuration
 @RestController
-@RequestMapping("/iam/member")
+@RequestMapping("/iam")
 public class MemberController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(MemberController.class);    
@@ -43,8 +48,8 @@ public class MemberController {
 	 * @return
 	 * @throws ApiException 
 	 */
-	@RequestMapping("/userList")
-	Object userList(HttpServletRequest httpServletRequest) throws ApiException{
+	@RequestMapping(value="/user/allOfList", method=RequestMethod.GET)
+	Object allOfList(HttpServletRequest httpServletRequest) throws ApiException{
 		RtnVO vo = new RtnVO();
 		vo.setData(memberSvc.getUserList());
 		return vo;
@@ -58,17 +63,17 @@ public class MemberController {
 	 * @return
 	 * @throws ApiException
 	 */
-	@RequestMapping("/userListOfNamespace")
-	Object userList(HttpServletRequest httpServletRequest, @RequestBody HashMap<String, String> map) throws ApiException{
+	@RequestMapping(value="/user/list/{namespace}", method=RequestMethod.GET)
+	Object listOfNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws ApiException{
 		RtnVO vo = new RtnVO();
-		String msg = ValidUtil.required(map,  "namespace");
-		if(msg != null) {
-			vo.setMsg(msg);
-			vo.setCode("500");
-		}
-		else {
-			vo.setData(memberSvc.getUserList(map.get("namespace")));
-		}
+//		String msg = ValidUtil.required(map,  "namespace");
+//		if(msg != null) {
+//			vo.setMsg(msg);
+//			vo.setCode("500");
+//		}
+//		else {
+			vo.setData(memberSvc.getUserList(namespace));
+//		}
 		return vo;
 	}
 	
@@ -82,18 +87,18 @@ public class MemberController {
 	 * 사용자 로그인시에 인증시 필요
 	 * @throws ParseException 
 	 */
-	@RequestMapping("/getUserInfoWithLogin")
-	Object getUserInfoWithLogin(HttpServletRequest httpServletRequest, @RequestBody HashMap<String, String> map) throws IOException, ApiException, ParseException{
+	@RequestMapping(value="/user/login/{userName}", method=RequestMethod.GET)
+	Object getUserInfoWithLogin(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException, ParseException{
 		RtnVO vo = new RtnVO();
 		//vo.setData(memberSvc.getClusterRoleBinding("admin"));// test code//admin
-		String msg = ValidUtil.required(map,  "username");
-		if(msg != null) {
-			vo.setMsg(msg);
-			vo.setCode("500");
-		}
-		else {
-			vo.setData(memberSvc.getUserInfo(map.get("username")));
-		}
+//		String msg = ValidUtil.required(map,  "username");
+//		if(msg != null) {
+//			vo.setMsg(msg);
+//			vo.setCode("500");
+//		}
+//		else {
+			vo.setData(memberSvc.getUserInfo(userName));
+//		}
 		return vo;
 	}
 	
@@ -106,18 +111,18 @@ public class MemberController {
 	 * @throws ApiException
 	 * 최초 사용자 등록후 kubernetes 접근 토큰
 	 */
-	@RequestMapping("/getServiceAccountToken")
-	Object getServiceAccountToken(HttpServletRequest httpServletRequest, @RequestBody HashMap<String, String> map) throws IOException, ApiException{
+	@RequestMapping(value="/user/{userName}/{namespace}/serviceAccountToken", method=RequestMethod.GET)
+	Object getServiceAccountToken(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @PathVariable("namespace") String namespace) throws IOException, ApiException{
 		RtnVO vo = new RtnVO();
 		//vo.setData(memberSvc.getServiceAccountToken("kube-system", "tiller"));// test code
-		String msg = ValidUtil.required(map,  "username", "namespace");
-		if(msg != null) {
-			vo.setMsg(msg);
-			vo.setCode("500");
-		}
-		else {
-			vo.setData(memberSvc.getServiceAccountToken(map.get("namespace"), map.get("username")));	
-		}
+//		String msg = ValidUtil.required(map,  "userName", "namespace");
+//		if(msg != null) {
+//			vo.setMsg(msg);
+//			vo.setCode("500");
+//		}
+//		else {
+			vo.setData(memberSvc.getServiceAccountToken(namespace, userName));	
+//		}
 		
 		return vo;
 	}
@@ -131,17 +136,17 @@ public class MemberController {
 	 * @throws IOException
 	 * @throws ApiException
 	 */
-	@RequestMapping("/getNamespace")
-	Object getNamespace(HttpServletRequest httpServletRequest, @RequestBody HashMap<String, String> map) throws  ApiException, ParseException{
+	@RequestMapping(value="/namespace/{namespace}", method=RequestMethod.GET)
+	Object getNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws  ApiException, ParseException{
 		RtnVO vo = new RtnVO();
-		String msg = ValidUtil.required(map,  "namespace");
-		if(msg != null) {
-			vo.setMsg(msg);
-			vo.setCode("500");
-		}
-		else {
-			vo.setData(memberSvc.getNamespace(map.get("namespace")));	
-		}
+//		String msg = ValidUtil.required(map,  "namespace");
+//		if(msg != null) {
+//			vo.setMsg(msg);
+//			vo.setCode("500");
+//		}
+//		else {
+			vo.setData(memberSvc.getNamespace(namespace));	
+//		}
 		
 		return vo;
 	}
@@ -154,17 +159,17 @@ public class MemberController {
 	 * @throws IOException
 	 * @throws ApiException
 	 */
-	@RequestMapping("/getNamespaceResource")
-	Object getNamespaceResource(HttpServletRequest httpServletRequest, @RequestBody HashMap<String, String> map) throws  ApiException, ParseException{
+	@RequestMapping(value="/namespace/{namespace}/resource", method=RequestMethod.GET)
+	Object getNamespaceResource(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws  ApiException, ParseException{
 		RtnVO vo = new RtnVO();
-		String msg = ValidUtil.required(map,  "namespace");
-		if(msg != null) {
-			vo.setMsg(msg);
-			vo.setCode("500");
-		}
-		else {
-			vo.setData(memberSvc.getNamespaceResource(map.get("namespace")));	
-		}
+//		String msg = ValidUtil.required(map,  "namespace");
+//		if(msg != null) {
+//			vo.setMsg(msg);
+//			vo.setCode("500");
+//		}
+//		else {
+			vo.setData(memberSvc.getNamespaceResource(namespace));	
+//		}
 		
 		return vo;
 	}
@@ -177,18 +182,18 @@ public class MemberController {
 	 * @throws IOException
 	 * @throws ApiException
 	 */
-	@RequestMapping("/getAllOfNamespaceResource")
+	@RequestMapping(value="/namespace/allOfResource", method=RequestMethod.GET)
 	Object getAllOfNamespaceResource(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
 		RtnVO vo = new RtnVO();
 		//String msg = ValidUtil.required(map,  "namespace");
-		String msg= null;
-		if(msg != null) {
-			vo.setMsg(msg);
-			vo.setCode("500");
-		}
-		else {
+//		String msg= null;
+//		if(msg != null) {
+//			vo.setMsg(msg);
+//			vo.setCode("500");
+//		}
+//		else {
 			vo.setData(memberSvc.getNamespaceResource(""));	
-		}
+//		}
 		
 		return vo;
 	}
@@ -201,18 +206,18 @@ public class MemberController {
 	 * @throws IOException
 	 * @throws ApiException
 	 */
-	@RequestMapping("/getAllOfNamespace")
+	@RequestMapping(value="/namespace/onlyNames", method=RequestMethod.GET)
 	Object getAllOfNamespace(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
 		RtnVO vo = new RtnVO();
-		//String msg = ValidUtil.required(map,  "namespace");
-		String msg=null;
-		if(msg != null) {
-			vo.setMsg(msg);
-			vo.setCode("500");
-		}
-		else {
+//		//String msg = ValidUtil.required(map,  "namespace");
+//		String msg=null;
+//		if(msg != null) {
+//			vo.setMsg(msg);
+//			vo.setCode("500");
+//		}
+//		else {
 			vo.setData(memberSvc.getAllOfNamespace());	
-		}
+//		}
 		
 		return vo;
 	}
@@ -226,7 +231,7 @@ public class MemberController {
 	 * @return
 	 * @throws ApiException
 	 */
-	@RequestMapping("/createAndEditNamespace")
+	@RequestMapping(value="/namespace/createAndEditNamespace", method=RequestMethod.PUT)
 	Object createAndEditNamespace(HttpServletRequest httpServletRequest, @RequestBody NamespaceVO data) throws ApiException {
 		RtnVO vo = new RtnVO();
 		//String msg = ValidUtil.required(data,  "namespace");
@@ -250,7 +255,7 @@ public class MemberController {
 	 * @return
 	 * @throws ApiException
 	 */
-	@RequestMapping("/clusterRoleList")
+	@RequestMapping(value="/clusterRole/list", method=RequestMethod.GET)
 	Object getClusterRole(HttpServletRequest httpServletRequest) throws  ApiException {
 		RtnVO vo = new RtnVO();
 		vo.setData(memberSvc.clusterRoleList());
@@ -264,7 +269,7 @@ public class MemberController {
 	 * @return
 	 * @throws ZcpException 
 	 */
-	@RequestMapping("/editUser")
+	@RequestMapping(value="/user/edit", method=RequestMethod.PUT)
 	Object modifyUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ZcpException{
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(memberVO,  "userName");
@@ -286,7 +291,7 @@ public class MemberController {
 	 * @return
 	 * @throws ApiException
 	 */
-	@RequestMapping("/createUser")
+	@RequestMapping(value="/user/createUser", method=RequestMethod.PUT)
 	Object createUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException{
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(memberVO,  "userName", "firstName", "lastName");
@@ -305,7 +310,7 @@ public class MemberController {
 	}
 	
 	
-	@RequestMapping("/initUserPassword")
+	@RequestMapping(value="/user/initUserPassword", method=RequestMethod.PUT)
 	Object initUserPassword(HttpServletRequest httpServletRequest, @RequestBody HashMap password) throws ZcpException{
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(password,  "userName", "actionType");
@@ -320,7 +325,14 @@ public class MemberController {
 		return vo;
 	}
 	
-	@RequestMapping("/removeOtpPassword")
+	/**
+	 * 사용자 OTP 삭제
+	 * @param httpServletRequest
+	 * @param user
+	 * @return
+	 * @throws ZcpException
+	 */
+	@RequestMapping(value="/user/removeOtpPassword", method=RequestMethod.DELETE)
 	Object removeOtpPassword(HttpServletRequest httpServletRequest, @RequestBody MemberVO user) throws ZcpException{
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(user,  "userName");
@@ -336,7 +348,7 @@ public class MemberController {
 	}
 	
 	
-	@RequestMapping("/editClusterRole")
+	@RequestMapping(value="/clusterRole/edit", method=RequestMethod.PUT)
 	Object editClusterRole(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException{
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(memberVO,  "userName");
@@ -360,17 +372,17 @@ public class MemberController {
 	 * @throws ZcpException 
 	 * @throws ApiException 
 	 */
-	@RequestMapping("/deleteUser")
-	Object deleteUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ZcpException, ApiException{
+	@RequestMapping(value="/user/{userName}", method=RequestMethod.DELETE)
+	Object deleteUser(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws ZcpException, ApiException{
 		RtnVO vo = new RtnVO();
-		String msg = ValidUtil.required(memberVO, "userName");
-		if(msg != null) {
-			vo.setMsg(msg);
-			vo.setCode("500");
-		}
-		else {
-			memberSvc.deleteUser(memberVO);	
-		}
+//		String msg = ValidUtil.required(memberVO, "userName");
+//		if(msg != null) {
+//			vo.setMsg(msg);
+//			vo.setCode("500");
+//		}
+//		else {
+			memberSvc.deleteUser(userName);	
+//		}
 		return vo;
 	}
 	
@@ -382,10 +394,10 @@ public class MemberController {
 	 * @return
 	 * @throws ZcpException 
 	 */
-	@RequestMapping("/editUserPassword")
+	@RequestMapping(value="/user/{userName}/editPassword", method=RequestMethod.PUT)
 	Object editUserPassword(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ZcpException{
 		RtnVO vo = new RtnVO();
-		String msg = ValidUtil.required(memberVO,  "username", "password");
+		String msg = ValidUtil.required(memberVO, "password");
 		if(msg != null) {
 			vo.setMsg(msg);
 			vo.setCode("500");
@@ -405,7 +417,7 @@ public class MemberController {
 	 * @throws IOException
 	 * @throws ApiException
 	 */
-	@RequestMapping("/createRoleBinding")
+	@RequestMapping(value="/roleBinding", method=RequestMethod.PUT)
 	Object createRoleBinding(HttpServletRequest httpServletRequest, @RequestBody RoleBindingVO data) throws IOException, ApiException{
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(data,  "userName", "namespace", "clusterRole");
@@ -431,7 +443,7 @@ public class MemberController {
 	 * @throws IOException
 	 * @throws ApiException
 	 */
-	@RequestMapping("/deleteRoleBinding")
+	@RequestMapping(value="/roleBinding", method=RequestMethod.DELETE)
 	Object deleteRoleBinding(HttpServletRequest httpServletRequest, @RequestBody KubeDeleteOptionsVO data) throws IOException, ApiException{
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(data,  "userName", "namespace");

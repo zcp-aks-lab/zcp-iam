@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
 import org.json.simple.parser.ParseException;
@@ -36,7 +37,6 @@ import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ResourceQuota;
-import io.kubernetes.client.models.V1ResourceQuotaSpec;
 import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1Subject;
 
@@ -129,11 +129,11 @@ public class MemberService {
 		keycloakDao.editUserPassword(vo);
 	}
 	
-	public void deleteUser(MemberVO vo) throws ZcpException, ApiException {
+	public void deleteUser(String  userName) throws ZcpException, ApiException {
 		//1.service account 삭제
 		V1DeleteOptions deleteOption = new V1DeleteOptions();
 		try {
-			kubeDao.deleteServiceAccount(serviceAccountPrefix + vo.getUserName(), systemNamespace, deleteOption);
+			kubeDao.deleteServiceAccount(serviceAccountPrefix + userName, systemNamespace, deleteOption);
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;
@@ -142,14 +142,14 @@ public class MemberService {
 
 		//2.cluster role binding 삭제
 		try {
-			kubeDao.deleteClusterRoleBinding(serviceAccountPrefix + vo.getUserName(), deleteOption);
+			kubeDao.deleteClusterRoleBinding(serviceAccountPrefix + userName, deleteOption);
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;
 			}
 		}
 		
-		keycloakDao.deleteUser(vo);
+		keycloakDao.deleteUser(userName);
 	}
 	
 	public void createUser(MemberVO vo) throws ApiException {
@@ -208,11 +208,13 @@ public class MemberService {
 	 * 
 	 */
 	public Map getUserInfo(String username) throws ApiException, ParseException{
+		HashMap data = new HashMap();
 		LinkedTreeMap clusterrolebinding =  getClusterRoleBinding(username);
+		if(clusterrolebinding == null) return data;
 		String namespace = ((List<LinkedTreeMap>)clusterrolebinding.get("subjects")).get(0).get("namespace").toString();
 		LinkedTreeMap mapNamespace = (LinkedTreeMap) kubeDao.namespaceList(namespace);
 		
-		HashMap data = new HashMap();
+		
 		data.put("clusterrolebinding", clusterrolebinding);
 		data.put("namespace", mapNamespace);
         
@@ -248,9 +250,14 @@ public class MemberService {
 			}
 			return false;
 		});
-		
-		return serviceAccount.findAny().get();
-		
+		try {
+			return serviceAccount.findAny().get();
+		}catch(NoSuchElementException e) {
+			return null;
+		}finally {
+			return null;		
+		}
+	
 	}
 	
 	
@@ -263,7 +270,15 @@ public class MemberService {
 	 * 
 	 */
 	public LinkedTreeMap getNamespace(String namespace) throws ApiException, ParseException{
-		return (LinkedTreeMap) kubeDao.namespaceList(namespace);
+		
+		try {
+			return (LinkedTreeMap) kubeDao.namespaceList(namespace);
+		}catch(ApiException e) {
+			if(!e.getMessage().equals("Not Found")){
+				throw e;
+			}
+		}
+		return null;
 	}
 	
 	/**
