@@ -1,9 +1,6 @@
 package com.skcc.cloudz.zcp.namespace.controller;
 
-import static com.skcc.cloudz.zcp.common.util.ValidUtil.EMAIL;
-
 import java.io.IOException;
-import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -18,15 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
+import com.skcc.cloudz.zcp.common.vo.KubeDeleteOptionsVO;
+import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.common.vo.RtnVO;
-import com.skcc.cloudz.zcp.member.vo.KubeDeleteOptionsVO;
-import com.skcc.cloudz.zcp.member.vo.MemberVO;
-import com.skcc.cloudz.zcp.member.vo.NamespaceVO;
-import com.skcc.cloudz.zcp.member.vo.RoleBindingVO;
-import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
 import com.skcc.cloudz.zcp.namespace.service.NamespaceService;
+import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 
 import io.kubernetes.client.ApiException;
 @Configuration

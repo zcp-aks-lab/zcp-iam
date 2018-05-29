@@ -18,14 +18,14 @@ import org.springframework.stereotype.Service;
 
 import com.google.gson.internal.LinkedTreeMap;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
-import com.skcc.cloudz.zcp.member.dao.MemberKeycloakDao;
-import com.skcc.cloudz.zcp.member.dao.MemberKubeDao;
-import com.skcc.cloudz.zcp.member.vo.KubeDeleteOptionsVO;
-import com.skcc.cloudz.zcp.member.vo.MemberVO;
-import com.skcc.cloudz.zcp.member.vo.NamespaceVO;
-import com.skcc.cloudz.zcp.member.vo.RoleBindingVO;
-import com.skcc.cloudz.zcp.member.vo.ServiceAccountVO;
-import com.skcc.cloudz.zcp.member.vo.UserVO;
+import com.skcc.cloudz.zcp.common.vo.KubeDeleteOptionsVO;
+import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
+import com.skcc.cloudz.zcp.common.vo.ServiceAccountVO;
+import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
+import com.skcc.cloudz.zcp.user.dao.UserKeycloakDao;
+import com.skcc.cloudz.zcp.user.dao.UserKubeDao;
+import com.skcc.cloudz.zcp.user.vo.MemberVO;
+import com.skcc.cloudz.zcp.user.vo.UserVO;
 
 import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
@@ -46,10 +46,10 @@ public class NamespaceService {
 	private final Logger LOG = (Logger) LoggerFactory.getLogger(NamespaceService.class);
 	
 	@Autowired
-	MemberKeycloakDao keycloakDao;
+	UserKeycloakDao keycloakDao;
 	
 	@Autowired
-	MemberKubeDao kubeDao;
+	UserKubeDao kubeDao;
 	
 	@Value("${kube.cluster.role.binding.prefix}")
 	String clusterRoleBindingPrefix;

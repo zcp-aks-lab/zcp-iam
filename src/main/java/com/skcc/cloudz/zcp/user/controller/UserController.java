@@ -21,8 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.RtnVO;
-import com.skcc.cloudz.zcp.member.vo.MemberVO;
 import com.skcc.cloudz.zcp.user.service.UserService;
+import com.skcc.cloudz.zcp.user.vo.MemberVO;
 
 import io.kubernetes.client.ApiException;
 @Configuration

@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.skcc.cloudz.zcp.member.vo.Ivo;
+import com.skcc.cloudz.zcp.common.vo.Ivo;
 
 public class ValidUtil {
 	

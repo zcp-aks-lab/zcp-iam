@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
-import com.skcc.cloudz.zcp.member.vo.MemberVO;
+import com.skcc.cloudz.zcp.user.vo.MemberVO;
 
 @Component
 public class UserKeycloakDao {

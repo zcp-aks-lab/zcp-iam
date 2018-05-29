@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import com.skcc.cloudz.zcp.common.util.KubeClient;
-import com.skcc.cloudz.zcp.member.vo.RoleBindingVO;
+import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
 import com.squareup.okhttp.Call;
 
 import ch.qos.logback.classic.Logger;
