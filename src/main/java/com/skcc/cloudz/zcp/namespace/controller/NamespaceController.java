@@ -37,7 +37,7 @@ public class NamespaceController {
 	
 	
 	/**
-	 * 네임 스페이스 정보
+	 * namespace info
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
@@ -53,7 +53,7 @@ public class NamespaceController {
 	}
 	
 	/**
-	 * 네임 스페이스 리소스 정보
+	 * resource info by namespace
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
@@ -68,14 +68,14 @@ public class NamespaceController {
 	}
 	
 	/**
-	 * 네임 스페이스 리소스 정보
+	 * all namespace resource info
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
 	 * @throws IOException
 	 * @throws ApiException
 	 */
-	@RequestMapping(value="/namespace/allOfResource", method=RequestMethod.GET)
+	@RequestMapping(value="/namespace/resource", method=RequestMethod.GET)
 	Object getAllOfNamespaceResource(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
 		RtnVO vo = new RtnVO();
 		vo.setData(namespaceSvc.getNamespaceResource(""));	
@@ -84,7 +84,7 @@ public class NamespaceController {
 	}
 	
 	/**
-	 * 전체 네임스페이스 이름만
+	 * namespace name only
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
@@ -100,7 +100,7 @@ public class NamespaceController {
 	
 	
 	/**
-	 * 네임스페이스 생성
+	 * create namespace
 	 * 
 	 * @param httpServletRequest
 	 * @param data
@@ -117,11 +117,8 @@ public class NamespaceController {
 	
 	
 	
-	
-	
-	
 	/**
-	 * 네임스페이스 권한 - 사용자별 네임스페이와 로바인딩
+	 * each user namespace and rolebinding
 	 * @param httpServletRequest
 	 * @param data
 	 * @return
@@ -149,7 +146,7 @@ public class NamespaceController {
 
 
 	/**
-	 * 네임스페이스 롤 바인딩 삭제
+	 * delete rolebinding by namespace
 	 * 
 	 * @param httpServletRequest
 	 * @param data

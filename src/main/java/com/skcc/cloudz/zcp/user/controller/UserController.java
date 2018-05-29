@@ -36,7 +36,7 @@ public class UserController {
 	UserService userSvc;
 	
 	/**
-	 * 전체 사용자 리스트
+	 * all user list
 	 * 
 	 * @param httpServletRequest
 	 * @return
@@ -51,7 +51,7 @@ public class UserController {
 	
 	
 	/**
-	 * 네임스페이스에 해당하는 사용자 리스트
+	 * all user list by namespace
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
@@ -66,12 +66,12 @@ public class UserController {
 	
 	
 	/**
+	 * need to login user
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
 	 * @throws IOException
 	 * @throws ApiException
-	 * 사용자 로그인시에 인증시 필요
 	 * @throws ParseException 
 	 */
 	@RequestMapping(value="/user/login/{userName}", method=RequestMethod.GET)
@@ -83,12 +83,13 @@ public class UserController {
 	
 	
 	/**
+	 * get serviceAccount  token 
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
 	 * @throws IOException
 	 * @throws ApiException
-	 * 최초 사용자 등록후 kubernetes 접근 토큰
+	 * 
 	 */
 	@RequestMapping(value="/user/{userName}/{namespace}/serviceAccountToken", method=RequestMethod.GET)
 	Object getServiceAccountToken(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @PathVariable("namespace") String namespace) throws IOException, ApiException{
@@ -100,7 +101,7 @@ public class UserController {
 	
 	
 	/**
-	 * 사용자 변경
+	 * edit user
 	 * @param httpServletRequest
 	 * @param memberVO
 	 * @return
@@ -115,7 +116,7 @@ public class UserController {
 	}
 	
 	/**
-	 * 사용자 생성
+	 * create user
 	 * 
 	 * @param httpServletRequest
 	 * @param memberVO
@@ -141,7 +142,17 @@ public class UserController {
 	}
 	
 	
+	
+	/**
+	 * not implement - initialize user password
+	 * @param httpServletRequest
+	 * @param userName
+	 * @param password
+	 * @return
+	 * @throws ZcpException
+	 */
 	@RequestMapping(value="/user/{userName}/initUserPassword", method=RequestMethod.PUT)
+	@Deprecated
 	Object initUserPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody HashMap password) throws ZcpException{
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(password, "actionType");
@@ -157,8 +168,9 @@ public class UserController {
 		return vo;
 	}
 	
+	
 	/**
-	 * 사용자 OTP 삭제
+	 * delete the user opt password 
 	 * @param httpServletRequest
 	 * @param user
 	 * @return
@@ -174,7 +186,7 @@ public class UserController {
 	
 	
 	/**
-	 * 사용자 삭제
+	 * delete user
 	 * @param httpServletRequest
 	 * @param memberVO
 	 * @return
@@ -190,7 +202,7 @@ public class UserController {
 	
 	
 	/**
-	 * 비밀번호 변경
+	 * chanage password
 	 * @param httpServletRequest
 	 * @param memberVO
 	 * @return
@@ -212,7 +224,7 @@ public class UserController {
 	}
 	
 	/**
-	 * 클러스터 조회
+	 * all cluster name only list
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
@@ -227,17 +239,24 @@ public class UserController {
 	
 	
 	
-	@RequestMapping(value="/user/clusterRole", method=RequestMethod.PUT)
-	Object editClusterRole(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException, ZcpException{
+	/**
+	 * 
+	 * @param httpServletRequest
+	 * @param memberVO
+	 * @return
+	 * @throws ApiException
+	 * @throws ZcpException
+	 */
+	@RequestMapping(value="/user/{userName}/clusterRole", method=RequestMethod.PUT)
+	Object editClusterRole(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ApiException, ZcpException{
 		RtnVO vo = new RtnVO();
-		String msg = ValidUtil.required(memberVO,  "userName");
-		String msg2 = ValidUtil.required(memberVO.getAttribute(),  "clusterRole");
-		if(msg != null || msg2 !=null) {
-			String m = msg != null ? msg : msg2;
-			vo.setMsg(m);
+		String msg = ValidUtil.required(memberVO.getAttribute(),  "clusterRole");
+		if(msg != null) {
+			vo.setMsg(msg);
 			vo.setCode("500");
 		}
 		else {
+			memberVO.setUserName(userName);
 			userSvc.giveClusterRole(memberVO);	
 		}
 		return vo;
