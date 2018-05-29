@@ -8,7 +8,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>zcp-potal</name>
+	<name>zcp-iam</name>
 	<description>Demo project for Spring Boot</description>
 
 	<parent>
@@ -104,8 +104,13 @@
 		    <scope>provided</scope>
 		</dependency>
 
-		
-				
+
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
