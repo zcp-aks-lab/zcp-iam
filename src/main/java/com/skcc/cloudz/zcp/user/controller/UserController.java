@@ -25,6 +25,7 @@ import com.skcc.cloudz.zcp.user.service.UserService;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
 
 import io.kubernetes.client.ApiException;
+
 @Configuration
 @RestController
 @RequestMapping("/iam")
@@ -74,7 +75,7 @@ public class UserController {
 	 * @throws ApiException
 	 * @throws ParseException 
 	 */
-	@RequestMapping(value="/user/login/{userName}", method=RequestMethod.GET)
+	@RequestMapping(value="/user/{userName}/login", method=RequestMethod.GET)
 	Object getUserInfoWithLogin(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException, ParseException{
 		RtnVO vo = new RtnVO();
 		vo.setData(userSvc.getUserInfo(userName));
