@@ -38,7 +38,6 @@ public class KubeClient<T> extends CoreV1Api{
 	}
 	
 		
-	@Deprecated
 	public ApiResponse<T> getApiCall(
 			String localVarPath
 			, String _continue

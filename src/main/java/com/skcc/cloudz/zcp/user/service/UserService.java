@@ -26,7 +26,9 @@ import com.skcc.cloudz.zcp.user.vo.UserVO;
 
 import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.ApiResponse;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
+import io.kubernetes.client.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
@@ -56,7 +58,7 @@ public class UserService {
 	@Value("${kube.system.namespace}")
 	String systemNamespace;
 	
-	public Object getUserList() throws ApiException {
+	public List<UserVO> getUserList() throws ApiException {
 		List<UserRepresentation> keyCloakUser = keycloakDao.getUserList();
 		
 		List<UserVO> userList = new ArrayList();
@@ -82,7 +84,7 @@ public class UserService {
 		
 	}
 	
-	public Object getUserList(String namespace) throws ApiException {
+	public List<UserVO> getUserList(String namespace) throws ApiException {
 		List<UserRepresentation> keyCloakUser = keycloakDao.getUserList();
 		
 		List<UserVO> userList = new ArrayList();
@@ -224,27 +226,27 @@ public class UserService {
 	 */
 	public LinkedTreeMap getClusterRoleBinding(String username) throws ApiException{
 		
-		LinkedTreeMap map = (LinkedTreeMap) kubeDao.clusterRoleBindingList();
-		List<LinkedTreeMap> items= (List<LinkedTreeMap>)map.get("items");
-		Stream<LinkedTreeMap> serviceAccount = items.stream().filter((srvAcc) -> { 
-			List<LinkedTreeMap> subjects = (List<LinkedTreeMap>) ((LinkedTreeMap)srvAcc).get("subjects");
-			if(subjects != null) {
-				Stream s = subjects.stream().filter((subject) -> {
-					LOG.debug("kind={} , name={}", subject.get("kind"), subject.get("name"));
-					return subject.get("kind").toString().equals("ServiceAccount") 
-							&& subject.get("name").toString().equals(serviceAccountPrefix+ username);
-				});
-				if(s != null)
-					return s.count()>0;
-				else return false;
-			}
-			return false;
-		});
-		try {
-			return serviceAccount.findAny().get();
-		}catch(NoSuchElementException e) {
+		V1ClusterRoleBindingList map = kubeDao.clusterRoleBindingList();
+//		List<LinkedTreeMap> items= (List<LinkedTreeMap>)map.getData();
+//		Stream<LinkedTreeMap> serviceAccount = items.stream().filter((srvAcc) -> { 
+//			List<LinkedTreeMap> subjects = (List<LinkedTreeMap>) ((LinkedTreeMap)srvAcc).get("subjects");
+//			if(subjects != null) {
+//				Stream s = subjects.stream().filter((subject) -> {
+//					LOG.debug("kind={} , name={}", subject.get("kind"), subject.get("name"));
+//					return subject.get("kind").toString().equals("ServiceAccount") 
+//							&& subject.get("name").toString().equals(serviceAccountPrefix+ username);
+//				});
+//				if(s != null)
+//					return s.count()>0;
+//				else return false;
+//			}
+//			return false;
+//		});
+//		try {
+//			return serviceAccount.findAny().get();
+//		}catch(NoSuchElementException e) {
 			return null;
-		}
+//		}
 
 	
 	}

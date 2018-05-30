@@ -4,6 +4,7 @@ import static com.skcc.cloudz.zcp.common.util.ValidUtil.EMAIL;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -20,9 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
+import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.common.vo.RtnVO;
 import com.skcc.cloudz.zcp.user.service.UserService;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
+import com.skcc.cloudz.zcp.user.vo.UserVO;
 
 import io.kubernetes.client.ApiException;
 
@@ -44,8 +47,8 @@ public class UserController {
 	 * @throws ApiException 
 	 */
 	@RequestMapping(value="/user", method=RequestMethod.GET)
-	Object allOfList(HttpServletRequest httpServletRequest) throws ApiException{
-		RtnVO vo = new RtnVO();
+	Response<List<UserVO>> allOfList(HttpServletRequest httpServletRequest) throws ApiException{
+		Response<List<UserVO>> vo = new Response();
 		vo.setData(userSvc.getUserList());
 		return vo;
 	}
@@ -59,8 +62,8 @@ public class UserController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/user/{namespace}", method=RequestMethod.GET)
-	Object listOfNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws ApiException{
-		RtnVO vo = new RtnVO();
+	Response<List<UserVO>> listOfNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws ApiException{
+		Response<List<UserVO>> vo = new Response();
 		vo.setData(userSvc.getUserList(namespace));
 		return vo;
 	}

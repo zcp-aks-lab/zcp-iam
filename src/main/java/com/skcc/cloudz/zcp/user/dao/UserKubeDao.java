@@ -62,13 +62,12 @@ public class UserKubeDao {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public LinkedTreeMap clusterRoleBindingList() throws ApiException{
+	public V1ClusterRoleBindingList clusterRoleBindingList() throws ApiException{
 			ApiResponse<V1ClusterRoleBindingList> data = (ApiResponse<V1ClusterRoleBindingList>) api.getApiCall(
 					"/apis/rbac.authorization.k8s.io/v1/clusterrolebindings" 
 					,null, null, null, null, null, null, null, null, null, null, null);
-			Object map = (Object)data.getData();
-			LinkedTreeMap mapData = (LinkedTreeMap)map;
-			return mapData;
+			V1ClusterRoleBindingList map = (V1ClusterRoleBindingList)data.getData();
+			return map;
 	}
 	
 
