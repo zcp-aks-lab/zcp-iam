@@ -7,21 +7,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.Call;
 
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.ApiResponse;
-import io.kubernetes.client.Configuration;
 import io.kubernetes.client.Pair;
 import io.kubernetes.client.ProgressRequestBody;
 import io.kubernetes.client.ProgressResponseBody;
 import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1Endpoints;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.util.Config;
 
 public class KubeClient extends CoreV1Api{
 	
@@ -161,7 +155,6 @@ public class KubeClient extends CoreV1Api{
     }
 	
 	
-	@SuppressWarnings("rawtypes")
     public <T> ApiResponse<T> postApiCall(
     		String localVarPath
     		, Class<T> type

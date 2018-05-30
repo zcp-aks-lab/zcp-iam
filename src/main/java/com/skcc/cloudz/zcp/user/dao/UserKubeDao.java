@@ -8,7 +8,6 @@ import java.util.Map;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import com.skcc.cloudz.zcp.common.util.KubeClient;
 import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
@@ -229,10 +228,10 @@ public class UserKubeDao {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public V1ResourceQuota getLimitRanges(String namespace) throws ApiException{
-		ApiResponse<V1ResourceQuota> data = (ApiResponse<V1ResourceQuota>) api.getApiCall(
+	public V1LimitRange getLimitRanges(String namespace) throws ApiException{
+		ApiResponse<V1LimitRange> data = (ApiResponse<V1LimitRange>) api.getApiCall(
 				"/api/v1/namespaces/{namespace}/limitranges".replace("{namespace}", namespace)
-				,V1ResourceQuota.class,null, null, null, null, null, null, null, null, null, null, null);
+				,V1LimitRange.class,null, null, null, null, null, null, null, null, null, null, null);
 		return data.getData();
 	}
 	

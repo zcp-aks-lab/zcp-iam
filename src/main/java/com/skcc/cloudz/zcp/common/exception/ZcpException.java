@@ -1,8 +1,9 @@
 package com.skcc.cloudz.zcp.common.exception;
 
-import org.springframework.web.bind.annotation.ResponseBody;
-
 public class ZcpException extends Exception {
+	
+	private static final long serialVersionUID = 4608131642086831206L;
+	
 	String msg;
 	String code;
 	

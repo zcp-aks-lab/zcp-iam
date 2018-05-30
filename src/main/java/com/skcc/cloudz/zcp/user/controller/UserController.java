@@ -5,6 +5,7 @@ import static com.skcc.cloudz.zcp.common.util.ValidUtil.EMAIL;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -158,8 +159,8 @@ public class UserController {
 	 */
 	@RequestMapping(value="/user/{userName}/initUserPassword", method=RequestMethod.PUT)
 	@Deprecated
-	Object initUserPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody HashMap password) throws ZcpException{
-		RtnVO vo = new RtnVO();
+	Response<?> initUserPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody HashMap password) throws ZcpException{
+		Response<?> vo = new Response();
 		String msg = ValidUtil.required(password, "actionType");
 		
 		if(msg != null) {
@@ -182,8 +183,8 @@ public class UserController {
 	 * @throws ZcpException
 	 */
 	@RequestMapping(value="/user/{userName}/removeOtpPassword", method=RequestMethod.DELETE)
-	Object removeOtpPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws ZcpException{
-		RtnVO vo = new RtnVO();
+	Response<?> removeOtpPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws ZcpException{
+		Response<?> vo = new Response();
 		userSvc.removeOtpPassword(userName);	
 		return vo;
 	}
@@ -198,8 +199,8 @@ public class UserController {
 	 * @throws ApiException 
 	 */
 	@RequestMapping(value="/user/{userName}", method=RequestMethod.DELETE)
-	Object deleteUser(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws ZcpException, ApiException{
-		RtnVO vo = new RtnVO();
+	Response<?> deleteUser(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws ZcpException, ApiException{
+		Response<?> vo = new Response();
 		userSvc.deleteUser(userName);	
 		return vo;
 	}
@@ -213,8 +214,8 @@ public class UserController {
 	 * @throws ZcpException 
 	 */
 	@RequestMapping(value="/user/{userName}/editPassword", method=RequestMethod.PUT)
-	Object editUserPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ZcpException{
-		RtnVO vo = new RtnVO();
+	Response<?> editUserPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ZcpException{
+		Response<?> vo = new Response();
 		String msg = ValidUtil.required(memberVO, "password");
 		if(msg != null) {
 			vo.setMsg(msg);
@@ -235,8 +236,8 @@ public class UserController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/user/clusterRole", method=RequestMethod.GET)
-	Object getClusterRole(HttpServletRequest httpServletRequest) throws  ApiException {
-		RtnVO vo = new RtnVO();
+	Response<List<Map>> getClusterRole(HttpServletRequest httpServletRequest) throws  ApiException {
+		Response<List<Map>> vo = new Response();
 		vo.setData(userSvc.clusterRoleList());
 		return vo;
 	}
@@ -252,8 +253,8 @@ public class UserController {
 	 * @throws ZcpException
 	 */
 	@RequestMapping(value="/user/{userName}/clusterRoleBinding", method=RequestMethod.PUT)
-	Object editClusterRole(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ApiException, ZcpException{
-		RtnVO vo = new RtnVO();
+	Response<?> editClusterRole(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ApiException, ZcpException{
+		Response<?> vo = new Response();
 		String msg = ValidUtil.required(memberVO.getAttribute(),  "clusterRole");
 		if(msg != null) {
 			vo.setMsg(msg);

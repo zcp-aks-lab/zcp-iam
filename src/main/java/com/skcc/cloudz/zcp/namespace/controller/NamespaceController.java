@@ -1,6 +1,8 @@
 package com.skcc.cloudz.zcp.namespace.controller;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -16,13 +18,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
+import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
-import com.skcc.cloudz.zcp.common.vo.RtnVO;
 import com.skcc.cloudz.zcp.namespace.service.NamespaceService;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1NamespaceList;
 @Configuration
 @RestController
 @RequestMapping("/iam")
@@ -34,8 +37,6 @@ public class NamespaceController {
 	NamespaceService namespaceSvc;
 	
 	
-	
-	
 	/**
 	 * namespace info
 	 * @param httpServletRequest
@@ -45,8 +46,8 @@ public class NamespaceController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/namespace/{namespace}", method=RequestMethod.GET)
-	Object getNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws  ApiException, ParseException{
-		RtnVO vo = new RtnVO();
+	Response<V1NamespaceList> getNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws  ApiException, ParseException{
+		Response<V1NamespaceList> vo = new Response();
 		vo.setData(namespaceSvc.getNamespace(namespace));	
 		
 		return vo;
@@ -61,8 +62,8 @@ public class NamespaceController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/namespace/{namespace}/resource", method=RequestMethod.GET)
-	Object getNamespaceResource(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws  ApiException, ParseException{
-		RtnVO vo = new RtnVO();
+	Response<NamespaceVO> getNamespaceResource(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws  ApiException, ParseException{
+		Response<NamespaceVO> vo = new Response();
 		vo.setData(namespaceSvc.getNamespaceResource(namespace));	
 		return vo;
 	}
@@ -76,10 +77,9 @@ public class NamespaceController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/namespace/resource", method=RequestMethod.GET)
-	Object getAllOfNamespaceResource(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
-		RtnVO vo = new RtnVO();
-		vo.setData(namespaceSvc.getNamespaceResource(""));	
-		
+	Response<NamespaceVO> getAllOfNamespaceResource(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
+		Response<NamespaceVO> vo = new Response();
+		vo.setData(namespaceSvc.getNamespaceResource(""));
 		return vo;
 	}
 	
@@ -92,8 +92,8 @@ public class NamespaceController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/namespace/onlyNames", method=RequestMethod.GET)
-	Object getAllOfNamespace(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
-		RtnVO vo = new RtnVO();
+	Response<List<Map>> getAllOfNamespace(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
+		Response<List<Map>> vo = new Response();
 		vo.setData(namespaceSvc.getAllOfNamespace());	
 		return vo;
 	}
@@ -108,8 +108,8 @@ public class NamespaceController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/namespace/createAndEditNamespace", method=RequestMethod.PUT)
-	Object createAndEditNamespace(HttpServletRequest httpServletRequest, @RequestBody NamespaceVO data) throws ApiException {
-		RtnVO vo = new RtnVO();
+	Response<?> createAndEditNamespace(HttpServletRequest httpServletRequest, @RequestBody NamespaceVO data) throws ApiException {
+		Response<?> vo = new Response();
 		namespaceSvc.createAndEditNamespace(data);
 		return vo;
 	}
@@ -126,10 +126,10 @@ public class NamespaceController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/namespace/{namespace}/roleBinding", method=RequestMethod.PUT)
-	Object createRoleBinding(HttpServletRequest httpServletRequest 
+	Response<?> createRoleBinding(HttpServletRequest httpServletRequest 
 			, @PathVariable("namespace") String namespace
 			, @RequestBody RoleBindingVO data) throws IOException, ApiException{
-		RtnVO vo = new RtnVO();
+		Response<?> vo = new Response();
 		String msg = ValidUtil.required(data,  "userName", "clusterRole");
 		if(msg != null) {
 			vo.setMsg(msg);
@@ -155,10 +155,10 @@ public class NamespaceController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/namespace/{namespace}/roleBinding", method=RequestMethod.DELETE)
-	Object deleteRoleBinding(HttpServletRequest httpServletRequest
+	Response<?> deleteRoleBinding(HttpServletRequest httpServletRequest
 			, @PathVariable("namespace") String namespace
 			, @RequestBody KubeDeleteOptionsVO data) throws IOException, ApiException{
-		RtnVO vo = new RtnVO();
+		Response<?> vo = new Response();
 		String msg = ValidUtil.required(data,  "userName");
 		if(msg != null) {
 			vo.setMsg(msg);
@@ -169,9 +169,6 @@ public class NamespaceController {
 			namespaceSvc.deleteRoleBinding(data);	
 		}
 		return vo;
-		
 	}
-	
-	
 	
 }

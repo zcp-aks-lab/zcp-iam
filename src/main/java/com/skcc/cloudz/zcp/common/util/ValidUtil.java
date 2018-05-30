@@ -18,7 +18,7 @@ public class ValidUtil {
 		if(requestParam instanceof Map) {
 			for(String key : keys) {
 				try {
-					String value = ((Map)requestParam).get(key).toString();
+					String value = ((Map<String, String>)requestParam).get(key).toString();
 					if(StringUtils.isEmpty(value)) {
 						return "필수 값 : " + key;
 					}

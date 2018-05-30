@@ -291,7 +291,7 @@ public class UserService {
 	 * @return
 	 * @throws ApiException
 	 */
-	public List clusterRoleList() throws ApiException{
+	public List<Map> clusterRoleList() throws ApiException{
 		List<Map> clusterRoleNameList = new ArrayList();
 		kubeDao.clusterRoleList().getItems().stream().forEach((data) -> {
 			Map<String, String> clusterRoleName = new HashMap();

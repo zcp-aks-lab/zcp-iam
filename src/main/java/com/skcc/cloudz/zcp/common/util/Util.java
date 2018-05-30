@@ -42,7 +42,7 @@ public class Util {
 	}
 	
 	public static <T> List<T> asList(T t){
-		List<T> list = new ArrayList();
+		List<T> list = new ArrayList<T>();
 		list.add(t);
 		return list;
 	}
