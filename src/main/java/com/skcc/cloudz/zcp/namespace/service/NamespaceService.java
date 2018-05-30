@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.google.gson.internal.LinkedTreeMap;
 import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
@@ -22,8 +21,8 @@ import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
 
 import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
+import io.kubernetes.client.models.V1ClusterRoleList;
 import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
@@ -32,6 +31,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1Subject;
+import io.kubernetes.client.proto.Meta.Status;
 
 @Service
 public class NamespaceService {
@@ -87,8 +87,8 @@ public class NamespaceService {
 	 */
 	public Map getNamespaceResource(String namespace) throws ApiException, ParseException{
 		Map resource = new HashMap(); 
-		Map quota =  (LinkedTreeMap) kubeDao.getQuota(namespace);
-		Map limitRanges =  (LinkedTreeMap) kubeDao.getLimitRanges(namespace);
+		V1ResourceQuota quota =  kubeDao.getQuota(namespace);
+		V1ResourceQuota limitRanges =  kubeDao.getLimitRanges(namespace);
 		resource.put("resourceQuota", quota);
 		resource.put("limitRanges", limitRanges);
 		
@@ -184,35 +184,10 @@ public class NamespaceService {
 	
 	
 	
-	
-	public LinkedTreeMap serviceAccountList(String namesapce, String username) throws IOException, ApiException{
-		LinkedTreeMap map = kubeDao.serviceAccountList(namesapce);
-		List<LinkedTreeMap> c = (List<LinkedTreeMap>)map.values().toArray()[3];
-		List<String> serviceAccountList = new ArrayList();
-		for(LinkedTreeMap data : c) {
-			LinkedTreeMap metadata =(LinkedTreeMap)data.get("metadata");
-			if(metadata.get("name").equals(clusterRoleBindingPrefix + username)){
-				return map;
-			}	
-		}
-		return null;
-	}
-	
-		
-	
-	
-	public void createServiceAccount(ServiceAccountVO data) throws IOException, ApiException{
-		LinkedTreeMap c = kubeDao.createServiceAccount(data.getNamespace(), data);
-	}
-	
-	
 	public void deleteClusterRoleBinding(KubeDeleteOptionsVO data) throws IOException, ApiException{
-		LinkedTreeMap status = kubeDao.deleteClusterRoleBinding(data.getName(), data);
+		Status status = kubeDao.deleteClusterRoleBinding(data.getName(), data);
 	}
 	
-	public void createClusterRole(V1ClusterRole data) throws IOException, ApiException{
-		LinkedTreeMap c = kubeDao.createClusterRole(data);
-	}
 	
 	public void createRoleBinding(RoleBindingVO binding) throws IOException, ApiException{
 		Map<String, String> labels = new HashMap();
@@ -258,7 +233,7 @@ public class NamespaceService {
 	
 	public void deleteRoleBinding(KubeDeleteOptionsVO data) throws IOException, ApiException{
 		try {
-			LinkedTreeMap status = kubeDao.deleteRoleBinding(data.getNamespace(), roleBindingPrefix + data.getUserName() , data);
+			V1ClusterRoleList status = kubeDao.deleteRoleBinding(data.getNamespace(), roleBindingPrefix + data.getUserName() , data);
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;

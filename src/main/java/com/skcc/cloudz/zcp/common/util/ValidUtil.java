@@ -1,6 +1,7 @@
 package com.skcc.cloudz.zcp.common.util;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -34,9 +35,15 @@ public class ValidUtil {
 						c++;
 						try {
 							field.setAccessible(true);
-							if(StringUtils.isEmpty((String)field.get(requestParam))) {
-								return "필수 값 : " + key;
-							}
+							if(field.get(requestParam) instanceof String) {
+								if(StringUtils.isEmpty((String)field.get(requestParam))) {
+									return "필수 값 : " + key;
+								}
+							}else if(field.get(requestParam) instanceof List) {
+								if(((List)field.get(requestParam)).size() == 0) {
+									return "필수 값 : " + key;
+								}
+							}	
 						} catch (IllegalArgumentException | IllegalAccessException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();

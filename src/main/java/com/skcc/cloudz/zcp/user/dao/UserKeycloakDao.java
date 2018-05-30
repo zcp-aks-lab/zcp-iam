@@ -55,7 +55,7 @@ public class UserKeycloakDao {
 		List<UserRepresentation> users = userRessource.search(vo.getUserName());
 		if(users != null && users.size() > 0) {
 			UserRepresentation user = users.get(0);
-			user.setAttributes(vo.getAttribute());
+			//user.setAttributes(vo.getAttribute());
 			userRessource.get(user.getId()).update(user);
 		}else {
 			throw new ZcpException("E00003");
@@ -69,7 +69,7 @@ public class UserKeycloakDao {
 		user.setFirstName(vo.getFirstName());
 		user.setLastName(vo.getLastName());
 		user.setEmail(vo.getEmail());
-		user.setAttributes(vo.getAttribute());
+		//user.setAttributes(vo.getAttribute());
 		user.setUsername(vo.getUserName());
 		user.setEnabled(vo.getEnabled());
 		userRessource.create(user);
@@ -126,9 +126,9 @@ public class UserKeycloakDao {
 		}
 	}
 	
-	public void removeOtpPassword(MemberVO vo) {
+	public void removeOtpPassword(String userName) {
 		UsersResource usersResource = keycloak.realm(realm).users();
-		List<UserRepresentation> users = usersResource.search(vo.getUserName());
+		List<UserRepresentation> users = usersResource.search(userName);
 		UserResource user = usersResource.get(users.get(0).getId());
 		user.removeTotp();
 	}

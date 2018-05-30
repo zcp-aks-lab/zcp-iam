@@ -32,6 +32,7 @@ import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
+import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1Subject;
@@ -89,10 +90,10 @@ public class UserService {
 		List<UserRepresentation> keyCloakUser = keycloakDao.getUserList();
 		
 		List<UserVO> userList = new ArrayList();
-		LinkedTreeMap rolebinding = kubeDao.RoleBindingListOfNamespace(namespace);
-		List<LinkedTreeMap> bindingUsers = (List<LinkedTreeMap>)rolebinding.get("items");
-		for(LinkedTreeMap binding : bindingUsers) {
-			String name = (String)((LinkedTreeMap)binding.get("metadata")).get("name") ;
+		V1RoleBindingList rolebinding = kubeDao.RoleBindingListOfNamespace(namespace);
+		List<V1RoleBinding> bindingUsers = rolebinding.getItems();
+		for(V1RoleBinding binding : bindingUsers) {
+			String name = binding.getMetadata().getName();
 			for(UserRepresentation cloakUser : keyCloakUser) {
 				if(name.equals(this.roleBindingPrefix + cloakUser.getUsername())) {
 					UserVO user = new UserVO();
@@ -170,7 +171,7 @@ public class UserService {
 		subject.setNamespace(systemNamespace);
 		roleRef.setApiGroup("rbac.authorization.k8s.io");
 		roleRef.setKind("ClusterRole");
-		roleRef.setName(vo.getAttribute().get("clusterRole").toString());
+		roleRef.setName(vo.getAttribute().getClusterRole().toString());
 		cmetadata.setName(clusterRoleBindingPrefix + vo.getUserName());
 		binding.setApiVersion("rbac.authorization.k8s.io/v1");
 		binding.setKind("ClusterRoleBinding");
@@ -182,18 +183,6 @@ public class UserService {
 		
 		keycloakDao.createUser(vo);
 	}
-	
-//	public ClusterRole getClusterRoles() throws IOException, ApiException{
-//	    return KubeDao.getClusterRoles();
-//	}
-//
-//	public ClusterRoleBinding clusterrolebindings() throws IOException, ApiException{
-//		return KubeDao.clusteRroleBindings();
-//	}
-	
-//	public ServiceAccount serviceAccount() throws IOException, ApiException{
-//		return KubeDao.serviceAccount();
-//	}
 	
 	/**
 	 * @return
@@ -256,9 +245,9 @@ public class UserService {
 		List<V1ObjectReference> secrets = kubeDao.getServiceAccount(namespace, username).getItems().get(0).getSecrets();
 		for(V1ObjectReference secret : secrets) {
 			String secretName = secret.getName();
-			LinkedTreeMap secretList = (LinkedTreeMap) kubeDao.getSecret(namespace, secretName).get("data");
+			Map<String, byte[]> secretList = kubeDao.getSecret(namespace, secretName).getData();
 			
-			return secretList.get("token").toString();
+			return new String(secretList.get("token"));
 		}
 		return null;
 	}
@@ -293,8 +282,8 @@ public class UserService {
 		keycloakDao.initUserPassword(password);
 	}
 	
-	public void removeOtpPassword(MemberVO vo) {
-		keycloakDao.removeOtpPassword(vo);
+	public void removeOtpPassword(String userName) {
+		keycloakDao.removeOtpPassword(userName);
 	}
 	
 	/**
@@ -314,9 +303,16 @@ public class UserService {
 	}
 	
 	public void giveClusterRole(MemberVO vo) throws ApiException, ZcpException {
-		//keycloakDao.
+		//2. clusterRolebindinding 식제
+		try {
+			kubeDao.deleteClusterRoleBinding(this.clusterRoleBindingPrefix + vo.getUserName(), new V1DeleteOptions());
+		}catch(ApiException e) {
+			if(!e.getMessage().equals("Not Found")){
+				throw e;
+			}
+		}
 		
-		//1. clusterRolebindinding 생성
+		//2. clusterRolebindinding 생성
 		V1ClusterRoleBinding binding = new V1ClusterRoleBinding();
 		V1ObjectMeta cmetadata = new V1ObjectMeta();
 		List<V1Subject> subjects = new ArrayList();
@@ -327,7 +323,7 @@ public class UserService {
 		subject.setNamespace(systemNamespace);
 		roleRef.setApiGroup("rbac.authorization.k8s.io");
 		roleRef.setKind("ClusterRole");
-		roleRef.setName(vo.getAttribute().get("clusterRole").toString());
+		roleRef.setName(vo.getAttribute().getClusterRole().toString());
 		cmetadata.setName(clusterRoleBindingPrefix + vo.getUserName());
 		binding.setApiVersion("rbac.authorization.k8s.io/v1");
 		binding.setKind("ClusterRoleBinding");

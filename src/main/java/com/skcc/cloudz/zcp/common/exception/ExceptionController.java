@@ -47,7 +47,7 @@ public class ExceptionController {
 		LOG.debug(e.getMessage());
 		LOG.debug("",e);
 		vo.setData(e.getResponseBody());
-		vo.setCode("500");//코드 수정 예정
+		vo.setCode("K500");//코드 수정 예정
 		vo.setMsg(e.getMessage());
 		return vo; 
 	}

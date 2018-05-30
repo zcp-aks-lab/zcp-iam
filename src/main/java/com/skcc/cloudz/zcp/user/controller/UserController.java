@@ -182,10 +182,9 @@ public class UserController {
 	 * @throws ZcpException
 	 */
 	@RequestMapping(value="/user/{userName}/removeOtpPassword", method=RequestMethod.DELETE)
-	Object removeOtpPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO user) throws ZcpException{
+	Object removeOtpPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws ZcpException{
 		RtnVO vo = new RtnVO();
-		user.setUserName(userName);
-		userSvc.removeOtpPassword(user);	
+		userSvc.removeOtpPassword(userName);	
 		return vo;
 	}
 	
@@ -252,7 +251,7 @@ public class UserController {
 	 * @throws ApiException
 	 * @throws ZcpException
 	 */
-	@RequestMapping(value="/user/{userName}/clusterRole", method=RequestMethod.PUT)
+	@RequestMapping(value="/user/{userName}/clusterRoleBinding", method=RequestMethod.PUT)
 	Object editClusterRole(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ApiException, ZcpException{
 		RtnVO vo = new RtnVO();
 		String msg = ValidUtil.required(memberVO.getAttribute(),  "clusterRole");
