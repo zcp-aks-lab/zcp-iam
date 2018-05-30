@@ -18,13 +18,13 @@ import org.springframework.stereotype.Service;
 
 import com.google.gson.internal.LinkedTreeMap;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
-import com.skcc.cloudz.zcp.common.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
-import com.skcc.cloudz.zcp.common.vo.ServiceAccountVO;
+import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.user.dao.UserKeycloakDao;
 import com.skcc.cloudz.zcp.user.dao.UserKubeDao;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
+import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
 import com.skcc.cloudz.zcp.user.vo.UserVO;
 
 import ch.qos.logback.classic.Logger;
@@ -307,6 +307,7 @@ public class NamespaceService {
 	 * @throws ApiException
 	 * @throws ParseException
 	 */
+	@SuppressWarnings(value= {"unchecked", "rawtypes"})
 	public List<Map> getAllOfNamespace() throws ApiException, ParseException{
 		List<Map> namespaceList = new ArrayList();
 		LinkedTreeMap map =  kubeDao.namespaceList("");

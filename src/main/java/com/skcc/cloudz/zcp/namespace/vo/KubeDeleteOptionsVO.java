@@ -1,4 +1,6 @@
-package com.skcc.cloudz.zcp.common.vo;
+package com.skcc.cloudz.zcp.namespace.vo;
+
+import com.skcc.cloudz.zcp.common.vo.Ivo;
 
 import io.kubernetes.client.models.V1DeleteOptions;
 
