@@ -85,7 +85,7 @@ public class UserKeycloakDao {
 			user.setFirstName(vo.getFirstName());
 			user.setLastName(vo.getLastName());
 			user.setEmail(vo.getEmail());
-			user.setAttributes(vo.getAttribute());
+			//user.setAttributes(vo.getAttribute());
 			user.setUsername(vo.getUserName());
 			user.setEnabled(vo.getEnabled());
 			userRessource.get(user.getId()).update(user);

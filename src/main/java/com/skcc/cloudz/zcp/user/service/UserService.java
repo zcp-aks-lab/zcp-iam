@@ -20,18 +20,19 @@ import com.google.gson.internal.LinkedTreeMap;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.user.dao.UserKeycloakDao;
 import com.skcc.cloudz.zcp.user.dao.UserKubeDao;
+import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
 import com.skcc.cloudz.zcp.user.vo.UserVO;
 
 import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.ApiResponse;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
-import io.kubernetes.client.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
+import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1Subject;
 
@@ -68,15 +69,15 @@ public class UserService {
 			user.setEmail(cloakUser.getEmail());
 			user.setName(cloakUser.getLastName() + cloakUser.getFirstName());
 			user.setDate(new Timestamp(cloakUser.getCreatedTimestamp()).toString());
-			user.setClusterRole(cloakUser.getAttributes().get("clusterRole").toString());
+			//user.setClusterRole(cloakUser.getAttributes().get("clusterRole").toString());
 			user.setStatus(cloakUser.isEnabled());
 			userList.add(user);
 		}
 		
 		for(UserVO user : userList) {
-			LinkedTreeMap rolebinding =null;
+			V1RoleBindingList  rolebinding =null;
 			rolebinding = kubeDao.RoleBindingListOfUser(user.getUserId());
-			int count = ((List<LinkedTreeMap>)rolebinding.get("items")).size();
+			int count = rolebinding.getItems().size();
 			user.setUsedNamespace(count);
 		}
 		
@@ -99,7 +100,7 @@ public class UserService {
 					user.setEmail(cloakUser.getEmail());
 					user.setName(cloakUser.getLastName() + cloakUser.getFirstName());
 					user.setDate(new Timestamp(cloakUser.getCreatedTimestamp()).toString());
-					user.setClusterRole(cloakUser.getAttributes().get("clusterRole").toString());
+					//user.setClusterRole(cloakUser.getAttributes().get("clusterRole").toString());
 					user.setStatus(cloakUser.isEnabled());
 					userList.add(user);	
 				}
@@ -107,8 +108,8 @@ public class UserService {
 		}
 		
 		for(UserVO user : userList) {
-			LinkedTreeMap mapUser = kubeDao.RoleBindingListOfUser(user.getUserId());
-			int count = ((List<LinkedTreeMap>)mapUser.get("items")).size();
+			V1RoleBindingList mapUser = kubeDao.RoleBindingListOfUser(user.getUserId());
+			int count = mapUser.getItems().size();
 			user.setUsedNamespace(count);
 		}
 		
@@ -202,18 +203,17 @@ public class UserService {
 	 * 사용자 로그인시 namespace 정보와 clusterbinding 정보를 가져옴
 	 * 
 	 */
-	public Map getUserInfo(String username) throws ApiException, ParseException{
-		HashMap data = new HashMap();
-		LinkedTreeMap clusterrolebinding =  getClusterRoleBinding(username);
-		if(clusterrolebinding == null) return data;
-		String namespace = ((List<LinkedTreeMap>)clusterrolebinding.get("subjects")).get(0).get("namespace").toString();
-		LinkedTreeMap mapNamespace = (LinkedTreeMap) kubeDao.namespaceList(namespace);
+	public LoginInfoVO getUserInfo(String username) throws ApiException, ParseException{
+		V1ClusterRoleBinding clusterrolebinding =  getClusterRoleBinding(username);
+		if(clusterrolebinding == null) return null;
+		String namespace = clusterrolebinding.getSubjects().get(0).getNamespace();
+		V1NamespaceList mapNamespace =kubeDao.namespaceList(namespace);
 		
+		LoginInfoVO info = new LoginInfoVO();
+		info.setClusterrolebinding(clusterrolebinding);
+		info.setNamespace(mapNamespace);
 		
-		data.put("clusterrolebinding", clusterrolebinding);
-		data.put("namespace", mapNamespace);
-        
-        return data;
+        return info;
 		
 	}
 	
@@ -224,29 +224,29 @@ public class UserService {
 	 * @return
 	 * @throws ApiException
 	 */
-	public LinkedTreeMap getClusterRoleBinding(String username) throws ApiException{
+	public V1ClusterRoleBinding getClusterRoleBinding(String username) throws ApiException{
 		
-		V1ClusterRoleBindingList map = kubeDao.clusterRoleBindingList();
-//		List<LinkedTreeMap> items= (List<LinkedTreeMap>)map.getData();
-//		Stream<LinkedTreeMap> serviceAccount = items.stream().filter((srvAcc) -> { 
-//			List<LinkedTreeMap> subjects = (List<LinkedTreeMap>) ((LinkedTreeMap)srvAcc).get("subjects");
-//			if(subjects != null) {
-//				Stream s = subjects.stream().filter((subject) -> {
-//					LOG.debug("kind={} , name={}", subject.get("kind"), subject.get("name"));
-//					return subject.get("kind").toString().equals("ServiceAccount") 
-//							&& subject.get("name").toString().equals(serviceAccountPrefix+ username);
-//				});
-//				if(s != null)
-//					return s.count()>0;
-//				else return false;
-//			}
-//			return false;
-//		});
-//		try {
-//			return serviceAccount.findAny().get();
-//		}catch(NoSuchElementException e) {
+		List<V1ClusterRoleBinding> items = kubeDao.clusterRoleBindingList().getItems();
+		
+		Stream<V1ClusterRoleBinding> serviceAccount = items.stream().filter((srvAcc) -> { 
+			List<V1Subject> subjects = srvAcc.getSubjects();
+			if(subjects != null) {
+				Stream s = subjects.stream().filter((subject) -> {
+					LOG.debug("kind={} , name={}", subject.getKind(), subject.getName());
+					return subject.getKind().equals("ServiceAccount") 
+							&& subject.getName().equals(serviceAccountPrefix+ username);
+				});
+				if(s != null)
+					return s.count()>0;
+				else return false;
+			}
+			return false;
+		});
+		try {
+			return serviceAccount.findAny().get();
+		}catch(NoSuchElementException e) {
 			return null;
-//		}
+		}
 
 	
 	}

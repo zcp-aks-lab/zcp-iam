@@ -23,7 +23,7 @@ import io.kubernetes.client.models.V1Endpoints;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.util.Config;
 
-public class KubeClient<T> extends CoreV1Api{
+public class KubeClient extends CoreV1Api{
 	
 	KubeApi api;
 	private ApiClient apiClient;
@@ -38,8 +38,9 @@ public class KubeClient<T> extends CoreV1Api{
 	}
 	
 		
-	public ApiResponse<T> getApiCall(
+	public <T> ApiResponse<T> getApiCall(
 			String localVarPath
+			, Class<T> type
 			, String _continue
 			, String fieldSelector
 			, Boolean includeUninitialized
@@ -95,7 +96,7 @@ public class KubeClient<T> extends CoreV1Api{
         String[] localVarAuthNames = new String[] { "BearerToken" };
         Call call = apiClient.buildCall(localVarPath, "GET", localVarQueryParams, localVarCollectionQueryParams, localVarPostBody, localVarHeaderParams, localVarFormParams, localVarAuthNames, null);
         
-        Type localVarReturnType = new TypeToken<T>(){}.getType();
+        Type localVarReturnType = type;
         return apiClient.execute(call, localVarReturnType);
     }
 	
@@ -161,8 +162,9 @@ public class KubeClient<T> extends CoreV1Api{
 	
 	
 	@SuppressWarnings("rawtypes")
-    public ApiResponse<T> postApiCall(
+    public <T> ApiResponse<T> postApiCall(
     		String localVarPath
+    		, Class<T> type
     		, Object body
     		, String pretty
     		, final ProgressResponseBody.ProgressListener progressListener
@@ -202,13 +204,14 @@ public class KubeClient<T> extends CoreV1Api{
         String[] localVarAuthNames = new String[] { "BearerToken" };
         Call call = apiClient.buildCall(localVarPath, "POST", localVarQueryParams, localVarCollectionQueryParams, localVarPostBody, localVarHeaderParams, localVarFormParams, localVarAuthNames, null);
         
-        Type localVarReturnType = new TypeToken<T>(){}.getType();
+        Type localVarReturnType = type;
         return apiClient.execute(call, localVarReturnType);
         
     }
 	
-	public ApiResponse<T> deleteApiCall(
+	public <T> ApiResponse<T> deleteApiCall(
 			String localVarPath
+			, Class<T> type
 			, Object deleteOptions
 			, String pretty
 			, Integer gracePeriodSeconds
@@ -260,13 +263,15 @@ public class KubeClient<T> extends CoreV1Api{
         String[] localVarAuthNames = new String[] { "BearerToken" };
         Call call =  apiClient.buildCall(localVarPath, "DELETE", localVarQueryParams, localVarCollectionQueryParams, localVarPostBody, localVarHeaderParams, localVarFormParams, localVarAuthNames, progressRequestListener);
         
-        Type localVarReturnType = new TypeToken<T>(){}.getType();
+        Type localVarReturnType = type;
         return apiClient.execute(call, localVarReturnType);
 
     }
 
-	public ApiResponse<T> patchApiCall(
+	@Deprecated
+	public <T> ApiResponse<T> patchApiCall(
     			String localVarPath
+    			, Class<T> type
     			, String name
     			, Object body
     			, String pretty
@@ -312,13 +317,14 @@ public class KubeClient<T> extends CoreV1Api{
         String[] localVarAuthNames = new String[] { "BearerToken" };
         Call call = apiClient.buildCall(localVarPath, "PATCH", localVarQueryParams, localVarCollectionQueryParams, localVarPostBody, localVarHeaderParams, localVarFormParams, localVarAuthNames, progressRequestListener);
        
-        Type localVarReturnType = new TypeToken<T>(){}.getType();
+        Type localVarReturnType = type;
         return apiClient.execute(call, localVarReturnType);
     }
 	
 
-	public ApiResponse<T> replaceApiCall(
+	public <T> ApiResponse<T> replaceApiCall(
 			String localVarPath
+			, Class<T> type
 			, Object body
 			, String pretty
 			, final ProgressResponseBody.ProgressListener progressListener
@@ -361,7 +367,7 @@ public class KubeClient<T> extends CoreV1Api{
         String[] localVarAuthNames = new String[] { "BearerToken" };
         Call call =  apiClient.buildCall(localVarPath, "PUT", localVarQueryParams, localVarCollectionQueryParams, localVarPostBody, localVarHeaderParams, localVarFormParams, localVarAuthNames, progressRequestListener);
     
-        Type localVarReturnType = new TypeToken<T>(){}.getType();
+        Type localVarReturnType = type;
         return apiClient.execute(call, localVarReturnType);
     }
 

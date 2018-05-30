@@ -24,6 +24,7 @@ import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.common.vo.RtnVO;
 import com.skcc.cloudz.zcp.user.service.UserService;
+import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.user.vo.UserVO;
 
@@ -79,8 +80,8 @@ public class UserController {
 	 * @throws ParseException 
 	 */
 	@RequestMapping(value="/user/{userName}/login", method=RequestMethod.GET)
-	Object getUserInfoWithLogin(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException, ParseException{
-		RtnVO vo = new RtnVO();
+	Response<LoginInfoVO> getUserInfoWithLogin(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException, ParseException{
+		Response<LoginInfoVO> vo = new Response();
 		vo.setData(userSvc.getUserInfo(userName));
 		return vo;
 	}
@@ -96,8 +97,8 @@ public class UserController {
 	 * 
 	 */
 	@RequestMapping(value="/user/{userName}/serviceAccountToken", method=RequestMethod.GET)
-	Object getServiceAccountToken(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException{
-		RtnVO vo = new RtnVO();
+	Response<String> getServiceAccountToken(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException{
+		Response<String> vo = new Response();
 		vo.setData(userSvc.getServiceAccountToken("zcp-system", userName));	
 		return vo;
 	}
@@ -112,8 +113,8 @@ public class UserController {
 	 * @throws ZcpException 
 	 */
 	@RequestMapping(value="/user/{userName}", method=RequestMethod.PUT)
-	Object modifyUser(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ZcpException{
-		RtnVO vo = new RtnVO();
+	Response<?> modifyUser(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ZcpException{
+		Response<?> vo = new Response();
 		memberVO.setUserName(userName);
 		userSvc.editUser(memberVO);	
 		return vo;
@@ -128,8 +129,8 @@ public class UserController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/user", method=RequestMethod.POST)
-	Object createUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException{
-		RtnVO vo = new RtnVO();
+	Response<?> createUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException{
+		Response<?> vo = new Response();
 		String msg = ValidUtil.required(memberVO,  "userName", "firstName", "lastName");
 		String msg2 = ValidUtil.required(memberVO.getAttribute(),  "clusterRole");
 		if(!ValidUtil.check(EMAIL, memberVO.getEmail())) msg="email invalid";
@@ -148,7 +149,7 @@ public class UserController {
 	
 	
 	/**
-	 * not implement - initialize user password
+	 * not yet implement - initialize user password
 	 * @param httpServletRequest
 	 * @param userName
 	 * @param password
@@ -180,7 +181,7 @@ public class UserController {
 	 * @return
 	 * @throws ZcpException
 	 */
-	@RequestMapping(value="/user/removeOtpPassword", method=RequestMethod.DELETE)
+	@RequestMapping(value="/user/{userName}/removeOtpPassword", method=RequestMethod.DELETE)
 	Object removeOtpPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO user) throws ZcpException{
 		RtnVO vo = new RtnVO();
 		user.setUserName(userName);

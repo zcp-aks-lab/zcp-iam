@@ -26,6 +26,7 @@ import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1NamespaceSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ResourceQuota;
@@ -64,10 +65,10 @@ public class NamespaceService {
 	 * 네임 스페이스 정보
 	 * 
 	 */
-	public LinkedTreeMap getNamespace(String namespace) throws ApiException, ParseException{
+	public V1NamespaceList getNamespace(String namespace) throws ApiException, ParseException{
 		
 		try {
-			return (LinkedTreeMap) kubeDao.namespaceList(namespace);
+			return kubeDao.namespaceList(namespace);
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;
@@ -96,7 +97,7 @@ public class NamespaceService {
 	}
 	
 	/**
-	 * 전체 네임스페이스
+	 * only name of namespaces
 	 * @param namespace
 	 * @return
 	 * @throws ApiException
@@ -105,10 +106,10 @@ public class NamespaceService {
 	@SuppressWarnings(value= {"unchecked", "rawtypes"})
 	public List<Map> getAllOfNamespace() throws ApiException, ParseException{
 		List<Map> namespaceList = new ArrayList();
-		LinkedTreeMap map =  kubeDao.namespaceList("");
-		List<LinkedTreeMap> item = (List<LinkedTreeMap>) map.get("items");
+		V1NamespaceList map =  kubeDao.namespaceList("");
+		List<V1Namespace> item = (List<V1Namespace>) map.getItems();
 		item.stream().forEach((data) ->{
-			String name = ((LinkedTreeMap)data.get("metadata")).get("name").toString();
+			String name = data.getMetadata().getName();
 			Map<String, String> mapNamespace = new HashMap();
 			mapNamespace.put("name", name);
 			namespaceList.add(mapNamespace);

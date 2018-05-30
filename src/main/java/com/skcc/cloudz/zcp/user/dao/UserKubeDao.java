@@ -63,11 +63,11 @@ public class UserKubeDao {
 	
 	@SuppressWarnings("unchecked")
 	public V1ClusterRoleBindingList clusterRoleBindingList() throws ApiException{
-			ApiResponse<V1ClusterRoleBindingList> data = (ApiResponse<V1ClusterRoleBindingList>) api.getApiCall(
+			ApiResponse<V1ClusterRoleBindingList> data = ((ApiResponse<V1ClusterRoleBindingList>) api.getApiCall(
 					"/apis/rbac.authorization.k8s.io/v1/clusterrolebindings" 
-					,null, null, null, null, null, null, null, null, null, null, null);
-			V1ClusterRoleBindingList map = (V1ClusterRoleBindingList)data.getData();
-			return map;
+					,V1ClusterRoleBindingList.class, null, null, null, null, null, null, null, null, null, null, null));
+			
+			return data.getData();
 	}
 	
 
@@ -79,7 +79,7 @@ public class UserKubeDao {
 		clusterrolebinding.getMetadata().setLabels(labels);
 		ApiResponse<V1ClusterRoleBinding> data = (ApiResponse<V1ClusterRoleBinding>) api.postApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/clusterrolebindings"
-				,clusterrolebinding, null, null, null);
+				,V1ClusterRoleBinding.class,clusterrolebinding, null, null, null);
 		Object map = (Object)data.getData();
 		LinkedTreeMap mapData = (LinkedTreeMap)map;
 		
@@ -90,7 +90,7 @@ public class UserKubeDao {
 	public LinkedTreeMap deleteClusterRoleBinding(String name, Object deleteOptions) throws ApiException{
 		ApiResponse<Status> data = (ApiResponse<Status>) api.deleteApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/clusterrolebindings/"+name
-				, (V1DeleteOptions)deleteOptions, null, null, null, null, null, null);
+				,Status.class, (V1DeleteOptions)deleteOptions, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
@@ -103,7 +103,7 @@ public class UserKubeDao {
 		clusterrolebinding.getMetadata().setLabels(labels);
 		ApiResponse<Status> data = (ApiResponse<Status>) api.replaceApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/clusterrolebindings/"+name
-				, clusterrolebinding, null, null, null);
+				,Status.class, clusterrolebinding, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
@@ -113,25 +113,24 @@ public class UserKubeDao {
 	public LinkedTreeMap createClusterRole(Object role) throws ApiException{
 		ApiResponse<V1ClusterRoleList> data = (ApiResponse<V1ClusterRoleList>) api.postApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/clusterroles"
-				,role, null, null, null);
+				,V1ClusterRoleList.class,role, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
 	
 	@SuppressWarnings("unchecked")
-	public LinkedTreeMap RoleBindingListOfUser(String username) throws ApiException{
+	public V1RoleBindingList RoleBindingListOfUser(String username) throws ApiException{
 		ApiResponse<V1RoleBindingList> data = (ApiResponse<V1RoleBindingList>) api.getApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/rolebindings" 
-				,null, null, null, "zcp-system-username="+username, null, null, null, null, null, null, null);
-		Object map = (Object)data.getData();
-		return (LinkedTreeMap)map;
+				,V1RoleBindingList.class,null, null, null, "zcp-system-username="+username, null, null, null, null, null, null, null);
+		return data.getData();
 	}
 	
 	@SuppressWarnings("unchecked")
 	public LinkedTreeMap RoleBindingListOfNamespace(String namespace) throws ApiException{
 		ApiResponse<V1RoleBindingList> data = (ApiResponse<V1RoleBindingList>) api.getApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/namespaces/{namespace}/rolebindings".replace("{namespace}", namespace)
-				,null, null, null, "zcp-system-user=true", null, null, null, null, null, null, null);
+				,V1RoleBindingList.class,null, null, null, "zcp-system-user=true", null, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
@@ -140,7 +139,7 @@ public class UserKubeDao {
 	public LinkedTreeMap createRoleBinding(String namespace, RoleBindingVO rolebinding) throws ApiException{
 		ApiResponse<V1RoleBinding> data = (ApiResponse<V1RoleBinding>) api.postApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/namespaces/{namespace}/rolebindings".replace("{namespace}", namespace)
-				,rolebinding, null, null, null);
+				,V1RoleBinding.class,rolebinding, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
@@ -149,7 +148,7 @@ public class UserKubeDao {
 	public LinkedTreeMap deleteRoleBinding(String namespace, String name, V1DeleteOptions deleteOptions) throws ApiException{
 		ApiResponse<V1ClusterRoleList> data = (ApiResponse<V1ClusterRoleList>) api.deleteApiCall( 
 				"/apis/rbac.authorization.k8s.io/v1/namespaces/{namespace}/rolebindings/{name}".replace("{namespace}", namespace).replace("{name}", name)
-				,(Object)deleteOptions, null, null, null, null, null, null);
+				,V1ClusterRoleList.class,(Object)deleteOptions, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
@@ -161,7 +160,7 @@ public class UserKubeDao {
 		serviceAccount.getMetadata().setLabels(labels);
 		ApiResponse<V1ServiceAccount> data = (ApiResponse<V1ServiceAccount>) api.postApiCall(
 				"/api/v1/namespaces/"+namespace+"/serviceaccounts"
-				,serviceAccount, null, null, null);
+				,V1ServiceAccount.class,serviceAccount, null, null, null);
 		Object map = (Object)data.getData();
 		LinkedTreeMap mapData = (LinkedTreeMap)map;
 		return mapData;
@@ -185,7 +184,7 @@ public class UserKubeDao {
 	public LinkedTreeMap serviceAccountList(String namespace) throws ApiException{
 		ApiResponse<V1ServiceAccountList> data = (ApiResponse<V1ServiceAccountList>) api.getApiCall(
 				"/api/v1/namespaces/"+namespace+"/serviceaccounts"
-				,null, null, null, null, null, null, null, null, null, null, null);
+				,V1ServiceAccountList.class,null, null, null, null, null, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		LinkedTreeMap mapData = (LinkedTreeMap)map;
 		return mapData;
@@ -208,7 +207,7 @@ public class UserKubeDao {
 	public LinkedTreeMap deleteRole(String namespace, String name, Object deleteOptions) throws ApiException{
 		ApiResponse<Status> data = (ApiResponse<Status>) api.deleteApiCall(
 				"/apis/rbac.authorization.k8s.io/v1/namespaces/"+ namespace + "/roles/" +name
-				, (V1DeleteOptions)deleteOptions, null, null, null, null, null, null);
+				,Status.class, (V1DeleteOptions)deleteOptions, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
@@ -217,27 +216,25 @@ public class UserKubeDao {
 	public LinkedTreeMap getSecret(String namespace, String secretName ) throws ApiException{
 		ApiResponse<V1Secret> data = (ApiResponse<V1Secret>) api.getApiCall(
 				"/api/v1/namespaces/"+namespace+"/secrets/" + secretName
-				,null, null, null, null, null, null, null, null, null, null, null);
+				,V1Secret.class,null, null, null, null, null, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		LinkedTreeMap mapData = (LinkedTreeMap)map;
 		return mapData;
 }
 	
 	@SuppressWarnings("unchecked")
-	public LinkedTreeMap namespaceList(String namespace) throws ApiException{
+	public V1NamespaceList namespaceList(String namespace) throws ApiException{
 		ApiResponse<V1NamespaceList> data = (ApiResponse<V1NamespaceList>) api.getApiCall(
 				"/api/v1/namespaces/{name}".replace("{name}", namespace)
-				,null, null, null, "zcp-system-ns=true", null, null, null, null, null, null, null);
-		Object map = (Object)data.getData();
-		LinkedTreeMap mapData = (LinkedTreeMap)map;
-		return mapData;
+				,V1NamespaceList.class,null, null, null, "zcp-system-ns=true", null, null, null, null, null, null, null);
+		return data.getData();
 	}
 
 	@SuppressWarnings("unchecked")
 	public LinkedTreeMap createLimitRanges(String namespace, Object limitRange) throws ApiException{
 		ApiResponse<V1LimitRange> data = (ApiResponse<V1LimitRange>) api.postApiCall(
 				"/api/v1/namespaces/{namespace}/limitranges".replace("{namespace}", namespace)
-				,limitRange, null, null, null);
+				,V1LimitRange.class,limitRange, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
@@ -252,7 +249,7 @@ public class UserKubeDao {
 	public LinkedTreeMap getLimitRanges(String namespace) throws ApiException{
 		ApiResponse<V1ResourceQuota> data = (ApiResponse<V1ResourceQuota>) api.getApiCall(
 				"/api/v1/namespaces/{namespace}/limitranges".replace("{namespace}", namespace)
-				,null, null, null, null, null, null, null, null, null, null, null);
+				,V1ResourceQuota.class,null, null, null, null, null, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
@@ -262,7 +259,7 @@ public class UserKubeDao {
 	public LinkedTreeMap createQuota(String namespace, Object quota) throws ApiException{
 		ApiResponse<V1ResourceQuota> data = (ApiResponse<V1ResourceQuota>) api.postApiCall(
 				"/api/v1/namespaces/{namespace}/resourcequotas".replace("{namespace}", namespace)
-				,quota, null, null, null);
+				,V1ResourceQuota.class,quota, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
@@ -276,7 +273,7 @@ public class UserKubeDao {
 	public LinkedTreeMap getQuota(String namespace) throws ApiException{
 		ApiResponse<V1ResourceQuota> data = (ApiResponse<V1ResourceQuota>) api.getApiCall(
 				"/api/v1/namespaces/{namespace}/resourcequotas".replace("{namespace}", namespace)
-				,null, null, null, null, null, null, null, null, null, null, null);
+				,V1ResourceQuota.class,null, null, null, null, null, null, null, null, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
@@ -285,7 +282,7 @@ public class UserKubeDao {
 	public LinkedTreeMap createNamespace(String namespaceName, Object namespace) throws ApiException{
 		ApiResponse<V1Namespace> data = (ApiResponse<V1Namespace>) api.postApiCall(
 				"/api/v1/namespaces"
-				,namespace, null, null, null);
+				,V1Namespace.class,namespace, null, null, null);
 		Object map = (Object)data.getData();
 		return (LinkedTreeMap)map;
 	}
