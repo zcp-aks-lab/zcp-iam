@@ -31,7 +31,7 @@ spec:
                 - "management"
       containers:
       - name: zcp-iam
-        image: kilsoo75/zcp-iam
+        image: cloudzcp/zcp-iam
         imagePullPolicy: Always
         ports:
         - name: cont-port
@@ -50,8 +50,6 @@ spec:
 #              secretKeyRef:
 #                name: cloud-movie-bk-secret
 #                key: MARIADB_PASSWORD
-      nodeSelector:
-        beta.kubernetes.io/os: linux
       serviceAccount: zcp-system-admin
       serviceAccountName: zcp-system-admin
 ---

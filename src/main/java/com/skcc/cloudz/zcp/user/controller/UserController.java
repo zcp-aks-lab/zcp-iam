@@ -79,7 +79,7 @@ public class UserController {
 	 * @return
 	 * @throws ApiException
 	 */
-	@RequestMapping(value="/user/{userName}/namespace", method=RequestMethod.GET)
+	@RequestMapping(value="/user/{userName}/namespaces", method=RequestMethod.GET)
 	Response<List<NamespaceVO>> getUserNamespaces(HttpServletRequest httpServletRequest
 			, @PathVariable("userName") String userName
 			, @RequestParam("mode") String mode) throws ApiException{
