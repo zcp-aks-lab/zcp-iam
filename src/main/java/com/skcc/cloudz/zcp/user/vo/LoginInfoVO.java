@@ -4,6 +4,7 @@ import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1NamespaceList;
 
 public class LoginInfoVO {
+	MemberVO user;
 	V1NamespaceList namespace;
 	V1ClusterRoleBinding clusterrolebinding;
 	
@@ -18,6 +19,12 @@ public class LoginInfoVO {
 	}
 	public void setClusterrolebinding(V1ClusterRoleBinding clusterrolebinding) {
 		this.clusterrolebinding = clusterrolebinding;
+	}
+	public MemberVO getUser() {
+		return user;
+	}
+	public void setUser(MemberVO user) {
+		this.user = user;
 	}
 	
 	

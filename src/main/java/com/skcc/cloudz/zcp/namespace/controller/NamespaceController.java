@@ -107,8 +107,8 @@ public class NamespaceController {
 	 * @return
 	 * @throws ApiException
 	 */
-	@RequestMapping(value="/namespace/createAndEditNamespace", method=RequestMethod.PUT)
-	Response<?> createAndEditNamespace(HttpServletRequest httpServletRequest, @RequestBody NamespaceVO data) throws ApiException {
+	@RequestMapping(value="/namespace", method=RequestMethod.POST)
+	Response<?> addNamespace(HttpServletRequest httpServletRequest, @RequestBody NamespaceVO data) throws ApiException {
 		Response<?> vo = new Response();
 		namespaceSvc.createAndEditNamespace(data);
 		return vo;

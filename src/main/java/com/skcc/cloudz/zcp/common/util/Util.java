@@ -46,4 +46,15 @@ public class Util {
 		list.add(t);
 		return list;
 	}
+	
+	public static String asCommaData(List<String> datas) {
+		String commaData = "";
+		int i=0;
+		for(String data: datas) {
+			if(i!=0) commaData = ",";
+			commaData+=data;
+			i++;
+		}
+		return commaData;
+	}
 }

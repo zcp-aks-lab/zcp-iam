@@ -85,13 +85,32 @@ public class UserKeycloakDao {
 			user.setFirstName(vo.getFirstName());
 			user.setLastName(vo.getLastName());
 			user.setEmail(vo.getEmail());
-			//user.setAttributes(vo.getAttribute());
+			user.setAttributes(vo.getAttributeMap());
 			user.setUsername(vo.getUserName());
 			user.setEnabled(vo.getEnabled());
 			userRessource.get(user.getId()).update(user);
 		}else {
 			throw new ZcpException("E00003");
 		}
+	}
+	
+	public MemberVO getUser(MemberVO vo) throws ZcpException{
+		UsersResource userRessource = keycloak.realm(realm).users();
+		List<UserRepresentation> users = userRessource.search(vo.getUserName());
+		boolean isFindOut = false;
+		for(UserRepresentation userp : users) {
+			if(users != null && users.size() > 0 && userp.getUsername().equals(vo.getUserName())) {
+				isFindOut = true;
+				vo.setFirstName(userp.getFirstName());
+				vo.setAttributeMap(userp.getAttributes());
+				vo.setEmail(userp.getEmail());
+				vo.setEnabled(userp.isEnabled());
+				vo.getAttribute().asListEmailVerified(userp.isEmailVerified());
+			}
+		}
+		
+		if(!isFindOut) throw new ZcpException("E00003");
+		return vo;
 	}
 	
 	

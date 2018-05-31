@@ -16,8 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.google.gson.internal.LinkedTreeMap;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
+import com.skcc.cloudz.zcp.common.util.Util;
+import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.user.dao.UserKeycloakDao;
 import com.skcc.cloudz.zcp.user.dao.UserKubeDao;
 import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
@@ -29,9 +30,11 @@ import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
+import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1RoleRef;
@@ -47,6 +50,10 @@ public class UserService {
 	
 	@Autowired
 	UserKubeDao kubeDao;
+	
+//	@Autowired
+//	NamespaceService nmSrv;
+	
 	
 	@Value("${kube.cluster.role.binding.prefix}")
 	String clusterRoleBindingPrefix;
@@ -161,24 +168,7 @@ public class UserService {
 		this.createAndEditServiceAccount(serviceAccountPrefix + vo.getUserName(), systemNamespace, data);
 		
 		//2. clusterRolebindinding 생성
-		V1ClusterRoleBinding binding = new V1ClusterRoleBinding();
-		V1ObjectMeta cmetadata = new V1ObjectMeta();
-		List<V1Subject> subjects = new ArrayList();
-		V1RoleRef roleRef = new V1RoleRef();
-		V1Subject subject = new V1Subject();
-		subject.setKind("ServiceAccount");
-		subject.setName(serviceAccountPrefix + vo.getUserName());
-		subject.setNamespace(systemNamespace);
-		roleRef.setApiGroup("rbac.authorization.k8s.io");
-		roleRef.setKind("ClusterRole");
-		roleRef.setName(vo.getAttribute().getClusterRole().toString());
-		cmetadata.setName(clusterRoleBindingPrefix + vo.getUserName());
-		binding.setApiVersion("rbac.authorization.k8s.io/v1");
-		binding.setKind("ClusterRoleBinding");
-		subjects.add(subject);
-		binding.setSubjects(subjects);
-		binding.setRoleRef(roleRef);
-		binding.setMetadata(cmetadata);
+		V1ClusterRoleBinding binding = createClusterRoleBinding(vo);
 		this.createAndEditClusterRoleBinding(vo.getUserName(), binding);
 		
 		keycloakDao.createUser(vo);
@@ -190,19 +180,68 @@ public class UserService {
 	 * @throws ParseException
 	 * 
 	 * 사용자 로그인시 namespace 정보와 clusterbinding 정보를 가져옴
+	 * @throws ZcpException 
 	 * 
 	 */
-	public LoginInfoVO getUserInfo(String username) throws ApiException, ParseException{
+	public LoginInfoVO getUserInfo(String username) throws ApiException, ParseException, ZcpException{
+		LoginInfoVO info = new LoginInfoVO();
+		MemberVO user = new MemberVO();
+		user.setUserName(username);
+		user = keycloakDao.getUser(user);
+		info.setUser(user);
+		
 		V1ClusterRoleBinding clusterrolebinding =  getClusterRoleBinding(username);
-		if(clusterrolebinding == null) return null;
+		if(clusterrolebinding == null) {
+			LOG.debug("cluster role binding is nothing..");
+			return info;
+		}
 		String namespace = clusterrolebinding.getSubjects().get(0).getNamespace();
 		V1NamespaceList mapNamespace =kubeDao.namespaceList(namespace);
 		
-		LoginInfoVO info = new LoginInfoVO();
 		info.setClusterrolebinding(clusterrolebinding);
 		info.setNamespace(mapNamespace);
 		
         return info;
+		
+	}
+	
+	/**
+	 * @return
+	 * @throws ApiException
+	 * @throws ParseException
+	 * 
+	 * 네임 스페이스 정보
+	 * 
+	 */
+	public List<NamespaceVO> getNamespaces(String mode, String userName) throws ApiException{
+		List<NamespaceVO> namespaceList = new ArrayList();
+		
+		if("simple".equals(mode)) {
+			V1RoleBindingList rolebinding = kubeDao.RoleBindingListOfUser(userName);
+			
+			List<String> name = new ArrayList();
+			String namespaceNames ="";
+			for(V1RoleBinding nm : rolebinding.getItems()) {
+				name.add( nm.getMetadata().getName());
+			}
+			NamespaceVO vo = new NamespaceVO();
+			vo.setNamespace(Util.asCommaData(name));
+			namespaceList.add(vo);
+		}else if("full".equals(mode)) {
+			V1RoleBindingList rolebinding = kubeDao.RoleBindingListOfUser(userName);
+			for(V1RoleBinding nm : rolebinding.getItems()) {
+				String namespaceName = nm.getMetadata().getName();
+				NamespaceVO vo = new NamespaceVO();
+				vo.setNamespace(namespaceName);
+				V1ResourceQuota quota =  kubeDao.getQuota(namespaceName);
+				V1LimitRange limitRanges =  kubeDao.getLimitRanges(namespaceName);
+				vo.setLimitRange(limitRanges);
+				vo.setResourceQuota(quota);
+				namespaceList.add(vo);
+			}
+		}
+		
+		return namespaceList;
 		
 	}
 	
@@ -271,7 +310,8 @@ public class UserService {
 			kubeDao.createClusterRoleBinding( clusterRoleBinding, username);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
-				kubeDao.editClusterRoleBinding(clusterRoleBinding.getMetadata().getName(), clusterRoleBinding, username);
+				//kubeDao.editClusterRoleBinding(clusterRoleBinding.getMetadata().getName(), clusterRoleBinding, username);
+				LOG.debug(e.getMessage());
 			}else {
 				throw e;	
 			}
@@ -313,6 +353,14 @@ public class UserService {
 		}
 		
 		//2. clusterRolebindinding 생성
+		V1ClusterRoleBinding binding = createClusterRoleBinding(vo);
+		this.createAndEditClusterRoleBinding(vo.getUserName(), binding);
+		
+		keycloakDao.editAttribute(vo);
+		
+	}
+	
+	private V1ClusterRoleBinding createClusterRoleBinding(MemberVO vo) {
 		V1ClusterRoleBinding binding = new V1ClusterRoleBinding();
 		V1ObjectMeta cmetadata = new V1ObjectMeta();
 		List<V1Subject> subjects = new ArrayList();
@@ -323,7 +371,7 @@ public class UserService {
 		subject.setNamespace(systemNamespace);
 		roleRef.setApiGroup("rbac.authorization.k8s.io");
 		roleRef.setKind("ClusterRole");
-		roleRef.setName(vo.getAttribute().getClusterRole().toString());
+		roleRef.setName(vo.getClusterRole().name());
 		cmetadata.setName(clusterRoleBindingPrefix + vo.getUserName());
 		binding.setApiVersion("rbac.authorization.k8s.io/v1");
 		binding.setKind("ClusterRoleBinding");
@@ -331,9 +379,7 @@ public class UserService {
 		binding.setSubjects(subjects);
 		binding.setRoleRef(roleRef);
 		binding.setMetadata(cmetadata);
-		this.createAndEditClusterRoleBinding(vo.getUserName(), binding);
-		
-		keycloakDao.editAttribute(vo);
-		
+		return binding;
 	}
+	
 }

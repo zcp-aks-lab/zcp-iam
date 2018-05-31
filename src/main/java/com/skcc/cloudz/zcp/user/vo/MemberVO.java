@@ -1,5 +1,7 @@
 package com.skcc.cloudz.zcp.user.vo;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,11 +13,17 @@ public class MemberVO implements Ivo {
 	String lastName;
 	String email;
 	String password;
-	Attribute attribute;
+	ClusterRole clusterRole;
+	Attribute attribute = new Attribute();
 	boolean enabled;
 	boolean isChangedAfterLogin;
 	
-	
+	public ClusterRole getClusterRole() {
+		return clusterRole;
+	}
+	public void setClusterRole(ClusterRole clusterRole) {
+		this.clusterRole = clusterRole;
+	}
 	public boolean isChangedAfterLogin() {
 		return isChangedAfterLogin;
 	}
@@ -65,21 +73,45 @@ public class MemberVO implements Ivo {
 	public void setAttribute(Attribute attribute) {
 		this.attribute = attribute;
 	}
+	
+	public void setAttributeMap(Map<String, List<String>> attr) {
+		if(attr != null) {
+			this.attribute.setDefaultNamespace(attr.get("defaultNamespace"));
+			this.attribute.setEmailVerified(attr.get("emailVerified"));
+		}
+	}
+	
+	public Map<String, List<String>> getAttributeMap() {
+		Map<String, List<String>> attr = new HashMap ();
+		
+		attr.put("defaultNamespace", this.attribute.getDefaultNamespace());
+		attr.put("emailVerified", this.attribute.getEmailVerified());
+		
+		return attr;
+		
+	}
 
 	public class Attribute implements Ivo {
-		String clusterRole;
-
-		public String getClusterRole() {
-			return clusterRole;
-		}
-
-		public void setClusterRole(String clusterRole) {
-			this.clusterRole = clusterRole;
-		}
+		List<String> defaultNamespace;
+		List<String> emailVerified;
 		
-		public String toString() {
-			return clusterRole;
+		public List<String> getDefaultNamespace() {
+			return defaultNamespace;
+		}
+		public void setDefaultNamespace(List<String> defaultNamespace) {
+			this.defaultNamespace = defaultNamespace;
+		}
+		public List<String> getEmailVerified() {
+			return emailVerified;
+		}
+		public void setEmailVerified(List<String> emailVerified) {
+			this.emailVerified = emailVerified;
+		}
+		public void asListEmailVerified(Boolean emailVerified2) {
+			String[] bool = {emailVerified2 ? "true" : "false"};
+			this.emailVerified = Arrays.asList(bool);
 		}
 	}
 }
+
 

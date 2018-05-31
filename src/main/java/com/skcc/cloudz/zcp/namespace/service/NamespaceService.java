@@ -15,8 +15,6 @@ import org.springframework.stereotype.Service;
 import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
-import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO.LimitRangeVO;
-import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO.ResourceQuotaVO;
 import com.skcc.cloudz.zcp.user.dao.UserKeycloakDao;
 import com.skcc.cloudz.zcp.user.dao.UserKubeDao;
 import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
@@ -91,8 +89,8 @@ public class NamespaceService {
 		NamespaceVO vo = new NamespaceVO();
 		V1ResourceQuota quota =  kubeDao.getQuota(namespace);
 		V1LimitRange limitRanges =  kubeDao.getLimitRanges(namespace);
-		vo.setLimitRange((LimitRangeVO) limitRanges);
-		vo.setResourceQuota((ResourceQuotaVO) quota);
+		vo.setLimitRange(limitRanges);
+		vo.setResourceQuota(quota);
 		
 		return vo;
 		

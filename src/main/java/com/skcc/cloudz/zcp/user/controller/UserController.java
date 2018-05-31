@@ -18,12 +18,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.Response;
-import com.skcc.cloudz.zcp.common.vo.RtnVO;
+import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.user.service.UserService;
 import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
@@ -48,8 +49,8 @@ public class UserController {
 	 * @return
 	 * @throws ApiException 
 	 */
-	@RequestMapping(value="/user", method=RequestMethod.GET)
-	Response<List<UserVO>> allOfList(HttpServletRequest httpServletRequest) throws ApiException{
+	@RequestMapping(value="/users", method=RequestMethod.GET)
+	Response<List<UserVO>> getUsers(HttpServletRequest httpServletRequest) throws ApiException{
 		Response<List<UserVO>> vo = new Response();
 		vo.setData(userSvc.getUserList());
 		return vo;
@@ -63,8 +64,8 @@ public class UserController {
 	 * @return
 	 * @throws ApiException
 	 */
-	@RequestMapping(value="/user/{namespace}", method=RequestMethod.GET)
-	Response<List<UserVO>> listOfNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws ApiException{
+	@RequestMapping(value="/user/namespace/{namespace}", method=RequestMethod.GET)
+	Response<List<UserVO>> userListOfNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws ApiException{
 		Response<List<UserVO>> vo = new Response();
 		vo.setData(userSvc.getUserList(namespace));
 		return vo;
@@ -72,16 +73,34 @@ public class UserController {
 	
 	
 	/**
-	 * need to login user
+	 * all namespace list by user id
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws ApiException
+	 */
+	@RequestMapping(value="/user/{userName}/namespace", method=RequestMethod.GET)
+	Response<List<NamespaceVO>> getUserNamespaces(HttpServletRequest httpServletRequest
+			, @PathVariable("userName") String userName
+			, @RequestParam("mode") String mode) throws ApiException{
+		Response<List<NamespaceVO>> vo = new Response();
+		vo.setData(userSvc.getNamespaces(mode, userName));
+		return vo;
+	}
+	
+	
+	/**
+	 * user info - need to login user
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
 	 * @throws IOException
 	 * @throws ApiException
 	 * @throws ParseException 
+	 * @throws ZcpException 
 	 */
-	@RequestMapping(value="/user/{userName}/login", method=RequestMethod.GET)
-	Response<LoginInfoVO> getUserInfoWithLogin(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException, ParseException{
+	@RequestMapping(value="/user/{userName}", method=RequestMethod.GET)
+	Response<LoginInfoVO> getUser(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException, ParseException, ZcpException{
 		Response<LoginInfoVO> vo = new Response();
 		vo.setData(userSvc.getUserInfo(userName));
 		return vo;
@@ -130,14 +149,12 @@ public class UserController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/user", method=RequestMethod.POST)
-	Response<?> createUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException{
+	Response<?> addUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException{
 		Response<?> vo = new Response();
-		String msg = ValidUtil.required(memberVO,  "userName", "firstName", "lastName");
-		String msg2 = ValidUtil.required(memberVO.getAttribute(),  "clusterRole");
+		String msg = ValidUtil.required(memberVO,  "userName", "firstName", "lastName", "clusterRole");
 		if(!ValidUtil.check(EMAIL, memberVO.getEmail())) msg="email invalid";
 		
-		if(msg != null || msg2 !=null) {
-			String m = msg != null ? msg : msg2;
+		if(msg != null) {
 			vo.setMsg(msg);
 			vo.setCode("500");
 		}
@@ -213,8 +230,8 @@ public class UserController {
 	 * @return
 	 * @throws ZcpException 
 	 */
-	@RequestMapping(value="/user/{userName}/editPassword", method=RequestMethod.PUT)
-	Response<?> editUserPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ZcpException{
+	@RequestMapping(value="/user/{userName}/resetPassword", method=RequestMethod.PUT)
+	Response<?> resetPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ZcpException{
 		Response<?> vo = new Response();
 		String msg = ValidUtil.required(memberVO, "password");
 		if(msg != null) {
@@ -229,7 +246,7 @@ public class UserController {
 	}
 	
 	/**
-	 * all cluster name only list
+	 * all only cluster name  list
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
