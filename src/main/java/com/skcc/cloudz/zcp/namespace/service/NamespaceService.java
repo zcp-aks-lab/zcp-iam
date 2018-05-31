@@ -223,7 +223,7 @@ public class NamespaceService {
 			kubeDao.createRoleBinding(binding.getNamespace(), binding);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
-				
+				LOG.debug("Conflict...");
 			}else {
 				throw e;	
 			}
