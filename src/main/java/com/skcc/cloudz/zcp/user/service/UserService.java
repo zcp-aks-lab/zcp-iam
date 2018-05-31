@@ -38,6 +38,8 @@ import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1RoleRef;
+import io.kubernetes.client.models.V1ServiceAccount;
+import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Subject;
 
 @Service
@@ -158,6 +160,16 @@ public class UserService {
 	
 	public void createUser(MemberVO vo) throws ApiException {
 		//1. service account 생성
+		createServiceAccount(vo);
+		
+		//2. clusterRolebindinding 생성
+		V1ClusterRoleBinding binding = createClusterRoleBinding(vo);
+		this.createAndEditClusterRoleBinding(vo.getUserName(), binding);
+		
+		keycloakDao.createUser(vo);
+	}
+	
+	private V1ServiceAccount createServiceAccount(MemberVO vo) throws ApiException {
 		ServiceAccountVO data = new ServiceAccountVO();
 		data.setNamespace(systemNamespace);
 		data.setApiVersion("v1");
@@ -165,13 +177,9 @@ public class UserService {
 		V1ObjectMeta smetadata = new V1ObjectMeta();
 		smetadata.setName(serviceAccountPrefix + vo.getUserName());
 		data.setMetadata(smetadata);
-		this.createAndEditServiceAccount(serviceAccountPrefix + vo.getUserName(), systemNamespace, data);
 		
-		//2. clusterRolebindinding 생성
-		V1ClusterRoleBinding binding = createClusterRoleBinding(vo);
-		this.createAndEditClusterRoleBinding(vo.getUserName(), binding);
+		return createAndEditServiceAccount(serviceAccountPrefix + vo.getUserName(), systemNamespace, data);
 		
-		keycloakDao.createUser(vo);
 	}
 	
 	/**
@@ -255,7 +263,6 @@ public class UserService {
 	public V1ClusterRoleBinding getClusterRoleBinding(String username) throws ApiException{
 		
 		List<V1ClusterRoleBinding> items = kubeDao.clusterRoleBindingList().getItems();
-		
 		Stream<V1ClusterRoleBinding> serviceAccount = items.stream().filter((srvAcc) -> { 
 			List<V1Subject> subjects = srvAcc.getSubjects();
 			if(subjects != null) {
@@ -280,25 +287,37 @@ public class UserService {
 	}
 	
 	
-	public String getServiceAccountToken(String namespace, String username) throws IOException, ApiException{
+	public String getServiceAccountToken(String namespace, String username) throws IOException, ApiException, InterruptedException{
+		//1. delete service account
+		kubeDao.deleteServiceAccount(serviceAccountPrefix + username, namespace, new V1DeleteOptions());
+		
+		//2. create service account
+		MemberVO vo = new MemberVO();
+		vo.setUserName(username);
+		createServiceAccount(vo);
+		
+		//3. get secretes though serviceAccount 
+		Thread.sleep(100);//sync problem raise
 		List<V1ObjectReference> secrets = kubeDao.getServiceAccount(namespace, username).getItems().get(0).getSecrets();
-		for(V1ObjectReference secret : secrets) {
-			String secretName = secret.getName();
-			Map<String, byte[]> secretList = kubeDao.getSecret(namespace, secretName).getData();
-			
-			return new String(secretList.get("token"));
-		}
+		if(secrets != null)
+			for(V1ObjectReference secret : secrets) {
+				String secretName = secret.getName();
+				Map<String, byte[]> secretList = kubeDao.getSecret(namespace, secretName).getData();
+				
+				return new String(secretList.get("token"));
+			}
+		
 		return null;
 	}
 
 	
 
-	private void  createAndEditServiceAccount(String name, String namespace, ServiceAccountVO vo) throws ApiException {
+	private V1ServiceAccount  createAndEditServiceAccount(String name, String namespace, ServiceAccountVO vo) throws ApiException {
 		try {
-			kubeDao.createServiceAccount(vo.getNamespace(), vo);
+			return kubeDao.createServiceAccount(vo.getNamespace(), vo);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
-				kubeDao.editServiceAccount(name, vo.getNamespace(), vo);
+				return kubeDao.editServiceAccount(name, vo.getNamespace(), vo);
 			}else {
 				throw e;	
 			}

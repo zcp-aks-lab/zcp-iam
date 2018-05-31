@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
@@ -114,10 +115,11 @@ public class UserController {
 	 * @return
 	 * @throws IOException
 	 * @throws ApiException
+	 * @throws InterruptedException 
 	 * 
 	 */
 	@RequestMapping(value="/user/{userName}/serviceAccountToken", method=RequestMethod.GET)
-	Response<String> getServiceAccountToken(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException{
+	Response<String> regenerateServiceAccount(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException, InterruptedException{
 		Response<String> vo = new Response();
 		vo.setData(userSvc.getServiceAccountToken("zcp-system", userName));	
 		return vo;
@@ -281,6 +283,14 @@ public class UserController {
 			memberVO.setUserName(userName);
 			userSvc.giveClusterRole(memberVO);	
 		}
+		return vo;
+	}
+	
+	
+	@RequestMapping(value="/user/{userName}/logout", method=RequestMethod.PUT)
+	Response<?> logout(HttpSession session) throws ApiException, ZcpException{
+		Response<?> vo = new Response();
+		session.invalidate();
 		return vo;
 	}
 	
