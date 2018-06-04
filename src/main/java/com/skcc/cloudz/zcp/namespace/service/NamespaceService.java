@@ -129,6 +129,8 @@ public class NamespaceService {
 		V1ObjectMeta namespace_meta = new V1ObjectMeta();
 		V1ObjectMeta quota_meta = new V1ObjectMeta();
 		V1ObjectMeta limit_meta = new V1ObjectMeta();
+		Map<String, String> labels = new HashMap();
+		labels.put("zcp-system-ns", "true");
 		
 		namespace_meta.setName(data.getNamespace());
 		quota_meta.setName(data.getNamespace());
@@ -141,6 +143,7 @@ public class NamespaceService {
 		namespacevo.setKind("Namespace");
 		namespacevo.setSpec(new V1NamespaceSpec().addFinalizersItem("kubernetes"));
 		namespacevo.setMetadata(namespace_meta);
+		namespacevo.getMetadata().setLabels(labels);
 		quotavo.setApiVersion("v1");
 		quotavo.setKind("ResourceQuota");
 		quotavo.setMetadata(quota_meta);

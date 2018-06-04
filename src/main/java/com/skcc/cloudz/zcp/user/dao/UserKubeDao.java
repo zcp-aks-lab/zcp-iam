@@ -208,7 +208,7 @@ public class UserKubeDao {
 	@SuppressWarnings("unchecked")
 	public V1NamespaceList namespaceList(String namespace) throws ApiException{
 		ApiResponse<V1NamespaceList> data = (ApiResponse<V1NamespaceList>) api.getApiCall(
-				"/api/v1/namespaces/{name}".replace("{name}", namespace)
+				"/api/v1/namespaces{name}".replace("{name}", namespace)
 				,V1NamespaceList.class,null, null, null, "zcp-system-ns=true", null, null, null, null, null, null, null);
 		return data.getData();
 	}

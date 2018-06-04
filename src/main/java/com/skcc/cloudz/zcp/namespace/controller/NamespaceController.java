@@ -23,6 +23,8 @@ import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.namespace.service.NamespaceService;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
+import com.skcc.cloudz.zcp.user.service.UserService;
+import com.skcc.cloudz.zcp.user.vo.UserVO;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1NamespaceList;
@@ -35,6 +37,18 @@ public class NamespaceController {
 	
 	@Autowired
 	NamespaceService namespaceSvc;
+	
+	@Autowired
+	UserService userSvc;
+	
+	
+	@RequestMapping(value="/namespaces", method=RequestMethod.GET)
+	Response<V1NamespaceList> getNamespaces(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
+		Response<V1NamespaceList> vo = new Response();
+		vo.setData(namespaceSvc.getNamespace(""));	
+		
+		return vo;
+	}
 	
 	
 	/**
@@ -50,6 +64,20 @@ public class NamespaceController {
 		Response<V1NamespaceList> vo = new Response();
 		vo.setData(namespaceSvc.getNamespace(namespace));	
 		
+		return vo;
+	}
+	
+	/**
+	 * all user list by namespace
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws ApiException
+	 */
+	@RequestMapping(value="/namespace/{namespace}/users", method=RequestMethod.GET)
+	Response<List<UserVO>> userListOfNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws ApiException{
+		Response<List<UserVO>> vo = new Response();
+		vo.setData(userSvc.getUserList(namespace));
 		return vo;
 	}
 	
@@ -92,6 +120,7 @@ public class NamespaceController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/namespace/onlyNames", method=RequestMethod.GET)
+	@Deprecated
 	Response<List<Map>> getAllOfNamespace(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
 		Response<List<Map>> vo = new Response();
 		vo.setData(namespaceSvc.getAllOfNamespace());	

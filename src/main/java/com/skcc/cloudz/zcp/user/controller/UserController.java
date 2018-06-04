@@ -66,6 +66,7 @@ public class UserController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/user/namespace/{namespace}", method=RequestMethod.GET)
+	@Deprecated
 	Response<List<UserVO>> userListOfNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws ApiException{
 		Response<List<UserVO>> vo = new Response();
 		vo.setData(userSvc.getUserList(namespace));
@@ -89,6 +90,19 @@ public class UserController {
 		return vo;
 	}
 	
+	/**
+	 * User Logout
+	 * @param session
+	 * @return
+	 * @throws ApiException
+	 * @throws ZcpException
+	 */
+	@RequestMapping(value="/user/logout", method=RequestMethod.POST)
+	Response<?> logout(HttpSession session) throws ApiException, ZcpException{
+		Response<?> vo = new Response();
+		session.invalidate();
+		return vo;
+	}
 	
 	/**
 	 * user info - need to login user
@@ -264,6 +278,7 @@ public class UserController {
 	
 	
 	/**
+	 * only clusterRoleBinding
 	 * 
 	 * @param httpServletRequest
 	 * @param memberVO
@@ -274,7 +289,7 @@ public class UserController {
 	@RequestMapping(value="/user/{userName}/clusterRoleBinding", method=RequestMethod.PUT)
 	Response<?> editClusterRole(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ApiException, ZcpException{
 		Response<?> vo = new Response();
-		String msg = ValidUtil.required(memberVO.getAttribute(),  "clusterRole");
+		String msg = ValidUtil.required(memberVO,  "clusterRole");
 		if(msg != null) {
 			vo.setMsg(msg);
 			vo.setCode("500");
@@ -287,11 +302,6 @@ public class UserController {
 	}
 	
 	
-	@RequestMapping(value="/user/{userName}/logout", method=RequestMethod.PUT)
-	Response<?> logout(HttpSession session) throws ApiException, ZcpException{
-		Response<?> vo = new Response();
-		session.invalidate();
-		return vo;
-	}
+	
 	
 }
