@@ -1,13 +1,14 @@
 package com.skcc.cloudz.zcp.user.vo;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PassResetVO {
 	String userName;
 	TimeType type;
 	int period;
-	String redirect_uri;
-	List<String> actions;
+	String redirectUri;
+	List<ActionType> actions;
 	
 	
 	public String getUserName() {
@@ -34,19 +35,26 @@ public class PassResetVO {
 			default : period = 0;
 		}
 	}
-	public String getRedirect_uri() {
-		return redirect_uri;
+	
+	
+	public String getRedirectUri() {
+		return redirectUri;
 	}
-	public void setRedirect_uri(String redirect_uri) {
-		this.redirect_uri = redirect_uri;
+	public void setRedirectUri(String redirectUri) {
+		this.redirectUri = redirectUri;
 	}
 	public List<String> getActions() {
-		return actions;
+		List<String> action = new ArrayList();
+		for(ActionType type : actions) {
+			action.add(type.name());	
+		}
+		return action;
 	}
-	public void setActions(List<String> actions) {
+	public void setActions(List<ActionType> actions) {
 		this.actions = actions;
 	}
-	
+
+
 	public enum TimeType {
 		MIN("MIN"),
 		HOUR("HOUR"),
@@ -57,7 +65,19 @@ public class PassResetVO {
 		private TimeType(String type) {
 			this.type = type;
 		}
+	}
+	
+	public enum ActionType {
+		UPDATE_PASSWORD("UPDATE_PASSWORD"),
+		UPDATE_PROFILE("HOUR"),
+		VERIFY_EMAIL("DAY"),
+		CONFIGURE_OTP("CONFIGURE_OTP");
 		
+		String type;
+		
+		private ActionType(String type) {
+			this.type = type;
+		}
 	}
 	
 }

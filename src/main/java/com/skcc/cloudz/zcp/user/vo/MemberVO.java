@@ -74,14 +74,14 @@ public class MemberVO implements Ivo {
 		this.attribute = attribute;
 	}
 	
-	public void setAttributeMap(Map<String, List<String>> attr) {
+	public void putAttributeMap(Map<String, List<String>> attr) {
 		if(attr != null) {
 			this.attribute.setDefaultNamespace(attr.get("defaultNamespace"));
 			this.attribute.setEmailVerified(attr.get("emailVerified"));
 		}
 	}
 	
-	public Map<String, List<String>> getAttributeMap() {
+	public Map<String, List<String>> rcvAttributeMap() {
 		Map<String, List<String>> attr = new HashMap ();
 		
 		attr.put("defaultNamespace", this.attribute.getDefaultNamespace());

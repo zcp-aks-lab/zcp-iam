@@ -193,7 +193,7 @@ public class UserController {
 	@RequestMapping(value="/user/{userName}/initUserPassword", method=RequestMethod.PUT)
 	Response<?> initUserPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody PassResetVO password) throws ZcpException{
 		Response<?> vo = new Response();
-		String msg = ValidUtil.required(password, "actionType");
+		String msg = ValidUtil.required(password, "actions");
 		
 		if(msg != null) {
 			vo.setMsg(msg);

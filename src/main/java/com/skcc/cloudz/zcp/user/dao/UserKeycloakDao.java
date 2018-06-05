@@ -78,7 +78,7 @@ public class UserKeycloakDao {
 			user.setFirstName(vo.getFirstName());
 			user.setLastName(vo.getLastName());
 			user.setEmail(vo.getEmail());
-			user.setAttributes(vo.getAttributeMap());
+			user.setAttributes(vo.rcvAttributeMap());
 			user.setUsername(vo.getUserName());
 			user.setEnabled(vo.getEnabled());
 			userRessource.get(user.getId()).update(user);
@@ -89,7 +89,7 @@ public class UserKeycloakDao {
 		UserRepresentation userp = getUser(vo.getUserName());
 		if(userp != null) {
 				vo.setFirstName(userp.getFirstName());
-				vo.setAttributeMap(userp.getAttributes());
+				vo.putAttributeMap(userp.getAttributes());
 				vo.setEmail(userp.getEmail());
 				vo.setEnabled(userp.isEnabled());
 				vo.getAttribute().asListEmailVerified(userp.isEmailVerified());
@@ -135,11 +135,12 @@ public class UserKeycloakDao {
 		UserRepresentation userp = getUser(vo.getUserName());
 		if(userp != null) {
 			UserResource user = usersResource.get(userp.getId());
-			CredentialRepresentation credentialRepresentation = new CredentialRepresentation();
-			credentialRepresentation.setPeriod(vo.getPeriod());
-			//usersResource.get(userp.getId()).update(userp);
-			user.resetPassword(credentialRepresentation);
-			user.executeActionsEmail(null, vo.getRedirect_uri(), vo.getActions());
+//			CredentialRepresentation credentialRepresentation = new CredentialRepresentation();
+//			credentialRepresentation.setPeriod(vo.getPeriod());
+//			//usersResource.get(userp.getId()).update(userp);
+//			credentialRepresentation.setType(CredentialRepresentation.PASSWORD);
+//			user.resetPassword(credentialRepresentation);
+			user.executeActionsEmail(null, vo.getRedirectUri(), vo.getActions());
 		}
 	}
 	
