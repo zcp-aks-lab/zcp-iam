@@ -23,6 +23,7 @@ import com.skcc.cloudz.zcp.user.dao.UserKeycloakDao;
 import com.skcc.cloudz.zcp.user.dao.UserKubeDao;
 import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
+import com.skcc.cloudz.zcp.user.vo.PassResetVO;
 import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
 import com.skcc.cloudz.zcp.user.vo.UserVO;
 
@@ -39,7 +40,6 @@ import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1ServiceAccount;
-import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Subject;
 
 @Service
@@ -203,8 +203,15 @@ public class UserService {
 			LOG.debug("cluster role binding is nothing..");
 			return info;
 		}
+		V1NamespaceList mapNamespace = null;
 		String namespace = clusterrolebinding.getSubjects().get(0).getNamespace();
-		V1NamespaceList mapNamespace =kubeDao.namespaceList(namespace);
+		try {
+			mapNamespace =kubeDao.namespaceList(namespace);
+		}catch(ApiException e) {
+			if(!e.getMessage().equals("Not Found")){
+				throw e;
+			}
+		}
 		
 		info.setClusterrolebinding(clusterrolebinding);
 		info.setNamespace(mapNamespace);
@@ -337,11 +344,11 @@ public class UserService {
 		}
 	}
 	
-	public void initUserPassword(Map<String, Object> password) throws ZcpException {
+	public void initUserPassword(PassResetVO password) throws ZcpException {
 		keycloakDao.initUserPassword(password);
 	}
 	
-	public void removeOtpPassword(String userName) {
+	public void removeOtpPassword(String userName) throws ZcpException {
 		keycloakDao.removeOtpPassword(userName);
 	}
 	

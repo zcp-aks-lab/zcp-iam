@@ -3,7 +3,6 @@ package com.skcc.cloudz.zcp.user.controller;
 import static com.skcc.cloudz.zcp.common.util.ValidUtil.EMAIL;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +28,7 @@ import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.user.service.UserService;
 import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
+import com.skcc.cloudz.zcp.user.vo.PassResetVO;
 import com.skcc.cloudz.zcp.user.vo.UserVO;
 
 import io.kubernetes.client.ApiException;
@@ -191,8 +191,7 @@ public class UserController {
 	 * @throws ZcpException
 	 */
 	@RequestMapping(value="/user/{userName}/initUserPassword", method=RequestMethod.PUT)
-	@Deprecated
-	Response<?> initUserPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody HashMap password) throws ZcpException{
+	Response<?> initUserPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody PassResetVO password) throws ZcpException{
 		Response<?> vo = new Response();
 		String msg = ValidUtil.required(password, "actionType");
 		
@@ -201,7 +200,7 @@ public class UserController {
 			vo.setCode("500");
 		}
 		else {
-			password.put("userName", userName);
+			password.setUserName(userName);
 			userSvc.initUserPassword(password);	
 		}
 		return vo;
