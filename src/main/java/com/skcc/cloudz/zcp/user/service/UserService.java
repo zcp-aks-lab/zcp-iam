@@ -18,9 +18,9 @@ import org.springframework.stereotype.Service;
 
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.Util;
+import com.skcc.cloudz.zcp.manager.KeycloakManager;
+import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
-import com.skcc.cloudz.zcp.user.dao.UserKeycloakDao;
-import com.skcc.cloudz.zcp.user.dao.UserKubeDao;
 import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.user.vo.PassResetVO;
@@ -48,10 +48,10 @@ public class UserService {
 	private final Logger LOG = (Logger) LoggerFactory.getLogger(UserService.class);
 	
 	@Autowired
-	UserKeycloakDao keycloakDao;
+	KeycloakManager keycloakDao;
 	
 	@Autowired
-	UserKubeDao kubeDao;
+	KubeCoreManager kubeDao;
 	
 //	@Autowired
 //	NamespaceService nmSrv;

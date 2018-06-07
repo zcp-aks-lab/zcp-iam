@@ -1,4 +1,4 @@
-package com.skcc.cloudz.zcp.user.dao;
+package com.skcc.cloudz.zcp.manager;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -36,14 +36,14 @@ import io.kubernetes.client.proto.Meta.Status;
 import io.kubernetes.client.util.Config;
 
 @Component
-public class UserKubeDao {
+public class KubeCoreManager {
 
-	private final Logger LOG = (Logger) LoggerFactory.getLogger(UserKubeDao.class);    
+	private final Logger LOG = (Logger) LoggerFactory.getLogger(KubeCoreManager.class);    
 	   
 	ApiClient client;// = Configuration.getDefaultApiClient();
 	KubeClient api; // = new KubeClient(this.client);
 	
-	public UserKubeDao() throws IOException {
+	public KubeCoreManager() throws IOException {
 		client = Config.defaultClient();
 		Configuration.setDefaultApiClient(client);
 		api = new KubeClient(this.client);

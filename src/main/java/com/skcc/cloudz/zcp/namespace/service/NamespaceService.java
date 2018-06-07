@@ -13,10 +13,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
+import com.skcc.cloudz.zcp.manager.KeycloakManager;
+import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
-import com.skcc.cloudz.zcp.user.dao.UserKeycloakDao;
-import com.skcc.cloudz.zcp.user.dao.UserKubeDao;
 import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
 
 import ch.qos.logback.classic.Logger;
@@ -39,10 +39,10 @@ public class NamespaceService {
 	private final Logger LOG = (Logger) LoggerFactory.getLogger(NamespaceService.class);
 	
 	@Autowired
-	UserKeycloakDao keycloakDao;
+	KeycloakManager keycloakDao;
 	
 	@Autowired
-	UserKubeDao kubeDao;
+	KubeCoreManager kubeDao;
 	
 	@Value("${kube.cluster.role.binding.prefix}")
 	String clusterRoleBindingPrefix;

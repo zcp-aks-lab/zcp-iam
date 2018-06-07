@@ -1,4 +1,4 @@
-package com.skcc.cloudz.zcp.user.dao;
+package com.skcc.cloudz.zcp.manager;
 
 import java.util.List;
 
@@ -20,9 +20,9 @@ import com.skcc.cloudz.zcp.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.user.vo.PassResetVO;
 
 @Component
-public class UserKeycloakDao {
+public class KeycloakManager {
 
-	private static final Logger LOG =  LoggerFactory.getLogger(UserKeycloakDao.class);    
+	private static final Logger LOG =  LoggerFactory.getLogger(KeycloakManager.class);    
 	   
 	@Autowired
 	@Qualifier("keycloak")
@@ -42,7 +42,7 @@ public class UserKeycloakDao {
 	
 	public void deleteUser(String userName) throws ZcpException{
 		UsersResource userRessource = keycloak.realm(realm).users();
-		UserRepresentation user = getUser(userName);
+		UserRepresentation user = getUser(userRessource, userName);
 		if(user != null) {
 			userRessource.get(user.getId()).remove();
 		}
@@ -50,7 +50,7 @@ public class UserKeycloakDao {
 	
 	public void editAttribute(MemberVO vo) throws ZcpException{
 		UsersResource userRessource = keycloak.realm(realm).users();
-		UserRepresentation user = getUser(vo.getUserName());
+		UserRepresentation user = getUser(userRessource, vo.getUserName());
 		if(user != null) {
 			userRessource.get(user.getId()).update(user);
 		}
@@ -73,7 +73,7 @@ public class UserKeycloakDao {
 	
 	public void editUser(MemberVO vo) throws ZcpException{
 		UsersResource userRessource = keycloak.realm(realm).users();
-		UserRepresentation user = getUser(vo.getUserName());
+		UserRepresentation user = getUser(userRessource, vo.getUserName());
 		if(user != null) {
 			user.setFirstName(vo.getFirstName());
 			user.setLastName(vo.getLastName());
@@ -86,7 +86,8 @@ public class UserKeycloakDao {
 	}
 	
 	public MemberVO getUser(MemberVO vo) throws ZcpException{
-		UserRepresentation userp = getUser(vo.getUserName());
+		UsersResource userRessource = keycloak.realm(realm).users();
+		UserRepresentation userp = getUser(userRessource, vo.getUserName());
 		if(userp != null) {
 				vo.setFirstName(userp.getFirstName());
 				vo.putAttributeMap(userp.getAttributes());
@@ -101,9 +102,8 @@ public class UserKeycloakDao {
 	
 	
 	
-	private UserRepresentation getUser(String username) throws ZcpException {
-		UsersResource userRessource = keycloak.realm(realm).users();
-		List<UserRepresentation> users = userRessource.search(username);
+	private UserRepresentation getUser(UsersResource usersResource, String username) throws ZcpException {
+		List<UserRepresentation> users = usersResource.search(username);
 		UserRepresentation user=null;
 		for(UserRepresentation userp : users) {
 			if(users != null && users.size() > 0 && userp.getUsername().equals(username)) {
@@ -120,7 +120,7 @@ public class UserKeycloakDao {
 	
 	public void editUserPassword(MemberVO vo) throws ZcpException{
 		UsersResource userRessource = keycloak.realm(realm).users();
-		UserRepresentation userp = getUser(vo.getUserName());
+		UserRepresentation userp = getUser(userRessource, vo.getUserName());
 		if(userp != null) {
 			CredentialRepresentation credentail = new CredentialRepresentation();
 			credentail.setType(CredentialRepresentation.PASSWORD);
@@ -132,7 +132,7 @@ public class UserKeycloakDao {
 	
 	public void initUserPassword(PassResetVO vo) throws ZcpException{
 		UsersResource usersResource = keycloak.realm(realm).users();
-		UserRepresentation userp = getUser(vo.getUserName());
+		UserRepresentation userp = getUser(usersResource, vo.getUserName());
 		if(userp != null) {
 			UserResource user = usersResource.get(userp.getId());
 //			CredentialRepresentation credentialRepresentation = new CredentialRepresentation();
@@ -146,7 +146,7 @@ public class UserKeycloakDao {
 	
 	public void removeOtpPassword(String userName) throws ZcpException {
 		UsersResource usersResource = keycloak.realm(realm).users();
-		UserRepresentation userp = getUser(userName);
+		UserRepresentation userp = getUser(usersResource, userName);
 		if(userp != null) {
 			UserResource user = usersResource.get(userp.getId());
 			user.removeTotp();
