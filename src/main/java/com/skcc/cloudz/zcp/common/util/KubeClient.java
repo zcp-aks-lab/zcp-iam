@@ -17,6 +17,7 @@ import io.kubernetes.client.ProgressRequestBody;
 import io.kubernetes.client.ProgressResponseBody;
 import io.kubernetes.client.apis.CoreV1Api;
 
+@Deprecated
 public class KubeClient extends CoreV1Api{
 	
 	KubeApi api;

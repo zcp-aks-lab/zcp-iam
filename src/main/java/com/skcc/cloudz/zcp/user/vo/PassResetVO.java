@@ -44,7 +44,7 @@ public class PassResetVO {
 		this.redirectUri = redirectUri;
 	}
 	public List<String> getActions() {
-		List<String> action = new ArrayList();
+		List<String> action = new ArrayList<String>();
 		for(ActionType type : actions) {
 			action.add(type.name());	
 		}

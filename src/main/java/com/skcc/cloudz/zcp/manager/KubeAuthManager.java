@@ -1,38 +1,24 @@
 package com.skcc.cloudz.zcp.manager;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
-import com.squareup.okhttp.Call;
 
-import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.ApiResponse;
 import io.kubernetes.client.Configuration;
-import io.kubernetes.client.apis.AuthorizationV1Api;
 import io.kubernetes.client.apis.RbacAuthorizationV1Api;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.models.V1ClusterRoleList;
 import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1LimitRange;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1NamespaceList;
-import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1RoleBindingList;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1ServiceAccount;
-import io.kubernetes.client.models.V1ServiceAccountList;
 import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.proto.Meta.Status;
 import io.kubernetes.client.util.Config;
 
 @Component

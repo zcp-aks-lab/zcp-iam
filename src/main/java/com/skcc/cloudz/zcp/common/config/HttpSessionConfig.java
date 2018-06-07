@@ -1,6 +1,5 @@
 package com.skcc.cloudz.zcp.common.config;
 
-import javax.servlet.annotation.WebListener;
 import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionEvent;

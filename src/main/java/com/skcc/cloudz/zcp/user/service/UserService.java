@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.skcc.cloudz.zcp.common.exception.KeycloakException;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.Util;
 import com.skcc.cloudz.zcp.manager.KeycloakManager;
@@ -26,6 +27,7 @@ import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.user.vo.PassResetVO;
 import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
+import com.skcc.cloudz.zcp.user.vo.UserList;
 import com.skcc.cloudz.zcp.user.vo.UserVO;
 
 import ch.qos.logback.classic.Logger;
@@ -49,7 +51,7 @@ public class UserService {
 	private final Logger LOG = (Logger) LoggerFactory.getLogger(UserService.class);
 	
 	@Autowired
-	KeycloakManager keycloakDao;
+	KeycloakManager keycloakMng;
 	
 	@Autowired
 	KubeCoreManager CoreMng;
@@ -73,10 +75,11 @@ public class UserService {
 	@Value("${kube.system.namespace}")
 	String systemNamespace;
 	
-	public List<UserVO> getUserList() throws ApiException {
-		List<UserRepresentation> keyCloakUser = keycloakDao.getUserList();
+	public UserList getUserList() throws ApiException {
+		List<UserRepresentation> keyCloakUser = keycloakMng.getUserList();
 		
-		List<UserVO> userList = new ArrayList();
+		List<UserVO> userList = new ArrayList<UserVO>();
+		UserList userlistVo = new UserList();
 		for(UserRepresentation cloakUser : keyCloakUser) {
 			UserVO user = new UserVO();
 			user.setUserId(cloakUser.getUsername());
@@ -94,15 +97,17 @@ public class UserService {
 			int count = rolebinding.getItems().size();
 			user.setUsedNamespace(count);
 		}
+		userlistVo.setItems(userList);
 		
-		return userList;
+		return userlistVo;
 		
 	}
 	
-	public List<UserVO> getUserList(String namespace) throws ApiException {
-		List<UserRepresentation> keyCloakUser = keycloakDao.getUserList();
+	public UserList getUserList(String namespace) throws ApiException {
+		List<UserRepresentation> keyCloakUser = keycloakMng.getUserList();
 		
-		List<UserVO> userList = new ArrayList();
+		List<UserVO> userList = new ArrayList<UserVO>();
+		UserList userlistVo = new UserList();
 		V1RoleBindingList rolebinding = AuthMng.RoleBindingListOfNamespace(namespace);
 		List<V1RoleBinding> bindingUsers = rolebinding.getItems();
 		for(V1RoleBinding binding : bindingUsers) {
@@ -127,19 +132,21 @@ public class UserService {
 			user.setUsedNamespace(count);
 		}
 		
-		return userList;
+		userlistVo.setItems(userList);
+		
+		return userlistVo;
 		
 	}
 	
-	public void editUser(MemberVO vo) throws ZcpException{
-		keycloakDao.editUser(vo);
+	public void editUser(MemberVO vo) throws KeycloakException{
+		keycloakMng.editUser(vo);
 	}
 	
-	public void editUserPassword(MemberVO vo) throws ZcpException{
-		keycloakDao.editUserPassword(vo);
+	public void editUserPassword(MemberVO vo) throws KeycloakException{
+		keycloakMng.editUserPassword(vo);
 	}
 	
-	public void deleteUser(String  userName) throws ZcpException, ApiException {
+	public void deleteUser(String  userName) throws KeycloakException, ApiException {
 		//1.service account 삭제
 		V1DeleteOptions deleteOption = new V1DeleteOptions();
 		try {
@@ -159,7 +166,7 @@ public class UserService {
 			}
 		}
 		
-		keycloakDao.deleteUser(userName);
+		keycloakMng.deleteUser(userName);
 	}
 	
 	public void createUser(MemberVO vo) throws ApiException {
@@ -170,7 +177,7 @@ public class UserService {
 		V1ClusterRoleBinding binding = createClusterRoleBinding(vo);
 		this.createAndEditClusterRoleBinding(vo.getUserName(), binding);
 		
-		keycloakDao.createUser(vo);
+		keycloakMng.createUser(vo);
 	}
 	
 	private V1ServiceAccount createServiceAccount(MemberVO vo) throws ApiException {
@@ -195,11 +202,11 @@ public class UserService {
 	 * @throws ZcpException 
 	 * 
 	 */
-	public LoginInfoVO getUserInfo(String username) throws ApiException, ParseException, ZcpException{
+	public LoginInfoVO getUserInfo(String username) throws ApiException, ParseException, KeycloakException{
 		LoginInfoVO info = new LoginInfoVO();
 		MemberVO user = new MemberVO();
 		user.setUserName(username);
-		user = keycloakDao.getUser(user);
+		user = keycloakMng.getUser(user);
 		info.setUser(user);
 		
 		V1ClusterRoleBinding clusterrolebinding =  getClusterRoleBinding(username);
@@ -233,13 +240,12 @@ public class UserService {
 	 * 
 	 */
 	public List<NamespaceVO> getNamespaces(String mode, String userName) throws ApiException{
-		List<NamespaceVO> namespaceList = new ArrayList();
+		List<NamespaceVO> namespaceList = new ArrayList<NamespaceVO>();
 		
 		if("simple".equals(mode)) {
 			V1RoleBindingList rolebinding = AuthMng.RoleBindingListOfUser(userName);
 			
-			List<String> name = new ArrayList();
-			String namespaceNames ="";
+			List<String> name = new ArrayList<String>();
 			for(V1RoleBinding nm : rolebinding.getItems()) {
 				name.add( nm.getMetadata().getName());
 			}
@@ -277,7 +283,7 @@ public class UserService {
 		Stream<V1ClusterRoleBinding> serviceAccount = items.stream().filter((srvAcc) -> { 
 			List<V1Subject> subjects = srvAcc.getSubjects();
 			if(subjects != null) {
-				Stream s = subjects.stream().filter((subject) -> {
+				Stream<V1Subject> s = subjects.stream().filter((subject) -> {
 					LOG.debug("kind={} , name={}", subject.getKind(), subject.getName());
 					return subject.getKind().equals("ServiceAccount") 
 							&& subject.getName().equals(serviceAccountPrefix+ username);
@@ -348,12 +354,12 @@ public class UserService {
 		}
 	}
 	
-	public void initUserPassword(PassResetVO password) throws ZcpException {
-		keycloakDao.initUserPassword(password);
+	public void initUserPassword(PassResetVO password) throws KeycloakException {
+		keycloakMng.initUserPassword(password);
 	}
 	
-	public void removeOtpPassword(String userName) throws ZcpException {
-		keycloakDao.removeOtpPassword(userName);
+	public void removeOtpPassword(String userName) throws KeycloakException {
+		keycloakMng.removeOtpPassword(userName);
 	}
 	
 	/**
@@ -361,10 +367,10 @@ public class UserService {
 	 * @return
 	 * @throws ApiException
 	 */
-	public List<Map> clusterRoleList() throws ApiException{
-		List<Map> clusterRoleNameList = new ArrayList();
+	public List<Map<String, String>> clusterRoleList() throws ApiException{
+		List<Map<String, String>> clusterRoleNameList = new ArrayList<Map<String, String>>();
 		AuthMng.clusterRoleList().getItems().stream().forEach((data) -> {
-			Map<String, String> clusterRoleName = new HashMap();
+			Map<String, String> clusterRoleName = new HashMap<String, String>();
 			clusterRoleName.put("name", data.getMetadata().getName());
 			clusterRoleNameList.add(clusterRoleName);
 		});
@@ -372,7 +378,7 @@ public class UserService {
 		return clusterRoleNameList;
 	}
 	
-	public void giveClusterRole(MemberVO vo) throws ApiException, ZcpException {
+	public void giveClusterRole(MemberVO vo) throws ApiException, KeycloakException {
 		//2. clusterRolebindinding 식제
 		try {
 			AuthMng.deleteClusterRoleBinding(this.clusterRoleBindingPrefix + vo.getUserName(), new V1DeleteOptions());
@@ -386,14 +392,14 @@ public class UserService {
 		V1ClusterRoleBinding binding = createClusterRoleBinding(vo);
 		this.createAndEditClusterRoleBinding(vo.getUserName(), binding);
 		
-		keycloakDao.editAttribute(vo);
+		keycloakMng.editAttribute(vo);
 		
 	}
 	
 	private V1ClusterRoleBinding createClusterRoleBinding(MemberVO vo) {
 		V1ClusterRoleBinding binding = new V1ClusterRoleBinding();
 		V1ObjectMeta cmetadata = new V1ObjectMeta();
-		List<V1Subject> subjects = new ArrayList();
+		List<V1Subject> subjects = new ArrayList<V1Subject>();
 		V1RoleRef roleRef = new V1RoleRef();
 		V1Subject subject = new V1Subject();
 		subject.setKind("ServiceAccount");
@@ -410,6 +416,10 @@ public class UserService {
 		binding.setRoleRef(roleRef);
 		binding.setMetadata(cmetadata);
 		return binding;
+	}
+	
+	public void logout(String userName) throws KeycloakException {
+		keycloakMng.logout(userName);
 	}
 	
 }

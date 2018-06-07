@@ -23,19 +23,14 @@ import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
 import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
-import io.kubernetes.client.models.V1ClusterRoleList;
 import io.kubernetes.client.models.V1LimitRange;
-import io.kubernetes.client.models.V1LimitRangeList;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1NamespaceSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ResourceQuota;
-import io.kubernetes.client.models.V1ResourceQuotaList;
 import io.kubernetes.client.models.V1RoleRef;
-import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Subject;
-import io.kubernetes.client.proto.Meta.Status;
 
 @Service
 public class NamespaceService {
@@ -130,7 +125,7 @@ public class NamespaceService {
 		V1ObjectMeta namespace_meta = new V1ObjectMeta();
 		V1ObjectMeta quota_meta = new V1ObjectMeta();
 		V1ObjectMeta limit_meta = new V1ObjectMeta();
-		Map<String, String> labels = new HashMap();
+		Map<String, String> labels = new HashMap<String, String>();
 		labels.put("zcp-system-ns", "true");
 		
 		namespace_meta.setName(data.getNamespace());
@@ -189,12 +184,12 @@ public class NamespaceService {
 	
 	
 	public void deleteClusterRoleBinding(KubeDeleteOptionsVO data) throws IOException, ApiException{
-		V1Status status = AuthMng.deleteClusterRoleBinding(data.getName(), data);
+		AuthMng.deleteClusterRoleBinding(data.getName(), data);
 	}
 	
 	
 	public void createRoleBinding(RoleBindingVO binding) throws IOException, ApiException{
-		Map<String, String> labels = new HashMap();
+		Map<String, String> labels = new HashMap<String, String>();
 		labels.put("zcp-system-user", "true");
 		labels.put("zcp-system-username", binding.getUserName());
 		
@@ -213,7 +208,7 @@ public class NamespaceService {
 		roleRef.setKind("ClusterRole");
 		roleRef.setName(binding.getClusterRole());
 		
-		List<V1Subject> subjects = new ArrayList();
+		List<V1Subject> subjects = new ArrayList<V1Subject>();
 
 		binding.setApiVersion("rbac.authorization.k8s.io/v1");
 		binding.setKind("RoleBinding");
@@ -237,7 +232,7 @@ public class NamespaceService {
 	
 	public void deleteRoleBinding(KubeDeleteOptionsVO data) throws IOException, ApiException{
 		try {
-			V1Status status = AuthMng.deleteRoleBinding(data.getNamespace(), roleBindingPrefix + data.getUserName() , data);
+			AuthMng.deleteRoleBinding(data.getNamespace(), roleBindingPrefix + data.getUserName() , data);
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;

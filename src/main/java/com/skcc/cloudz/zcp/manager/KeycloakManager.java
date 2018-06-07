@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.skcc.cloudz.zcp.common.exception.ZcpException;
+import com.skcc.cloudz.zcp.common.exception.KeycloakException;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.user.vo.PassResetVO;
 
@@ -40,7 +40,7 @@ public class KeycloakManager {
 	}
 
 	
-	public void deleteUser(String userName) throws ZcpException{
+	public void deleteUser(String userName) throws KeycloakException{
 		UsersResource userRessource = keycloak.realm(realm).users();
 		UserRepresentation user = getUser(userRessource, userName);
 		if(user != null) {
@@ -48,7 +48,7 @@ public class KeycloakManager {
 		}
 	}
 	
-	public void editAttribute(MemberVO vo) throws ZcpException{
+	public void editAttribute(MemberVO vo) throws KeycloakException{
 		UsersResource userRessource = keycloak.realm(realm).users();
 		UserRepresentation user = getUser(userRessource, vo.getUserName());
 		if(user != null) {
@@ -71,7 +71,7 @@ public class KeycloakManager {
 	}
 	
 	
-	public void editUser(MemberVO vo) throws ZcpException{
+	public void editUser(MemberVO vo) throws KeycloakException{
 		UsersResource userRessource = keycloak.realm(realm).users();
 		UserRepresentation user = getUser(userRessource, vo.getUserName());
 		if(user != null) {
@@ -85,7 +85,7 @@ public class KeycloakManager {
 		}
 	}
 	
-	public MemberVO getUser(MemberVO vo) throws ZcpException{
+	public MemberVO getUser(MemberVO vo) throws KeycloakException{
 		UsersResource userRessource = keycloak.realm(realm).users();
 		UserRepresentation userp = getUser(userRessource, vo.getUserName());
 		if(userp != null) {
@@ -102,7 +102,7 @@ public class KeycloakManager {
 	
 	
 	
-	private UserRepresentation getUser(UsersResource usersResource, String username) throws ZcpException {
+	private UserRepresentation getUser(UsersResource usersResource, String username) throws KeycloakException {
 		List<UserRepresentation> users = usersResource.search(username);
 		UserRepresentation user=null;
 		for(UserRepresentation userp : users) {
@@ -112,13 +112,13 @@ public class KeycloakManager {
 		}
 		if(user ==  null) {
 			LOG.debug("User name didn't find");
-			throw new ZcpException("E00003"); 
+			throw new KeycloakException("E00003"); 
 		}else
 			return user;
 	}
 	
 	
-	public void editUserPassword(MemberVO vo) throws ZcpException{
+	public void editUserPassword(MemberVO vo) throws KeycloakException{
 		UsersResource userRessource = keycloak.realm(realm).users();
 		UserRepresentation userp = getUser(userRessource, vo.getUserName());
 		if(userp != null) {
@@ -130,7 +130,7 @@ public class KeycloakManager {
 		}
 	}
 	
-	public void initUserPassword(PassResetVO vo) throws ZcpException{
+	public void initUserPassword(PassResetVO vo) throws KeycloakException{
 		UsersResource usersResource = keycloak.realm(realm).users();
 		UserRepresentation userp = getUser(usersResource, vo.getUserName());
 		if(userp != null) {
@@ -144,12 +144,21 @@ public class KeycloakManager {
 		}
 	}
 	
-	public void removeOtpPassword(String userName) throws ZcpException {
+	public void removeOtpPassword(String userName) throws KeycloakException {
 		UsersResource usersResource = keycloak.realm(realm).users();
 		UserRepresentation userp = getUser(usersResource, userName);
 		if(userp != null) {
 			UserResource user = usersResource.get(userp.getId());
 			user.removeTotp();
+		}
+	}
+	
+	public void logout(String userName) throws KeycloakException {
+		UsersResource usersResource = keycloak.realm(realm).users();
+		UserRepresentation userp = getUser(usersResource, userName);
+		if(userp != null) {
+			UserResource user = usersResource.get(userp.getId());
+			user.logout();
 		}
 	}
 	

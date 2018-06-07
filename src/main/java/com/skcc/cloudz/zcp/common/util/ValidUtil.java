@@ -14,6 +14,7 @@ public class ValidUtil {
 	public static String EMAIL = "([\\w-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([\\w-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)$";
 	
 	
+	@SuppressWarnings("unchecked")
 	public static String required(Object requestParam, String... keys) {
 		if(requestParam instanceof Map) {
 			for(String key : keys) {
@@ -40,7 +41,7 @@ public class ValidUtil {
 									return "필수 값 : " + key;
 								}
 							}else if(field.get(requestParam) instanceof List) {
-								if(((List)field.get(requestParam)).size() == 0) {
+								if(((List<?>)field.get(requestParam)).size() == 0) {
 									return "필수 값 : " + key;
 								}
 							}	
