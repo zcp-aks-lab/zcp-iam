@@ -27,6 +27,7 @@ import com.skcc.cloudz.zcp.user.service.UserService;
 import com.skcc.cloudz.zcp.user.vo.UserVO;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
 @Configuration
 @RestController
@@ -45,7 +46,7 @@ public class NamespaceController {
 	@RequestMapping(value="/namespaces", method=RequestMethod.GET)
 	Response<V1NamespaceList> getNamespaces(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
 		Response<V1NamespaceList> vo = new Response();
-		vo.setData(namespaceSvc.getNamespace(""));	
+		vo.setData(namespaceSvc.getNamespaceList());	
 		
 		return vo;
 	}
@@ -60,8 +61,8 @@ public class NamespaceController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/namespace/{namespace}", method=RequestMethod.GET)
-	Response<V1NamespaceList> getNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws  ApiException, ParseException{
-		Response<V1NamespaceList> vo = new Response();
+	Response<V1Namespace> getNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws  ApiException, ParseException{
+		Response<V1Namespace> vo = new Response();
 		vo.setData(namespaceSvc.getNamespace(namespace));	
 		
 		return vo;

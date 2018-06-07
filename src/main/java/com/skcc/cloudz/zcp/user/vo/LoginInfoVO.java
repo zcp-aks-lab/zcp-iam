@@ -1,17 +1,18 @@
 package com.skcc.cloudz.zcp.user.vo;
 
 import io.kubernetes.client.models.V1ClusterRoleBinding;
-import io.kubernetes.client.models.V1NamespaceList;
+import io.kubernetes.client.models.V1Namespace;
 
 public class LoginInfoVO {
 	MemberVO user;
-	V1NamespaceList namespace;
+	V1Namespace namespace;
 	V1ClusterRoleBinding clusterrolebinding;
 	
-	public V1NamespaceList getNamespace() {
+	
+	public V1Namespace getNamespace() {
 		return namespace;
 	}
-	public void setNamespace(V1NamespaceList namespace) {
+	public void setNamespace(V1Namespace namespace) {
 		this.namespace = namespace;
 	}
 	public V1ClusterRoleBinding getClusterrolebinding() {

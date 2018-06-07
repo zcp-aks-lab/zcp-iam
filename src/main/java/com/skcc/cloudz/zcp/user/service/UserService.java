@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.Util;
 import com.skcc.cloudz.zcp.manager.KeycloakManager;
+import com.skcc.cloudz.zcp.manager.KubeAuthManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
@@ -32,7 +33,7 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1LimitRange;
-import io.kubernetes.client.models.V1NamespaceList;
+import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1ResourceQuota;
@@ -51,7 +52,10 @@ public class UserService {
 	KeycloakManager keycloakDao;
 	
 	@Autowired
-	KubeCoreManager kubeDao;
+	KubeCoreManager CoreMng;
+	
+	@Autowired
+	KubeAuthManager AuthMng;
 	
 //	@Autowired
 //	NamespaceService nmSrv;
@@ -86,7 +90,7 @@ public class UserService {
 		
 		for(UserVO user : userList) {
 			V1RoleBindingList  rolebinding =null;
-			rolebinding = kubeDao.RoleBindingListOfUser(user.getUserId());
+			rolebinding = AuthMng.RoleBindingListOfUser(user.getUserId());
 			int count = rolebinding.getItems().size();
 			user.setUsedNamespace(count);
 		}
@@ -99,7 +103,7 @@ public class UserService {
 		List<UserRepresentation> keyCloakUser = keycloakDao.getUserList();
 		
 		List<UserVO> userList = new ArrayList();
-		V1RoleBindingList rolebinding = kubeDao.RoleBindingListOfNamespace(namespace);
+		V1RoleBindingList rolebinding = AuthMng.RoleBindingListOfNamespace(namespace);
 		List<V1RoleBinding> bindingUsers = rolebinding.getItems();
 		for(V1RoleBinding binding : bindingUsers) {
 			String name = binding.getMetadata().getName();
@@ -118,7 +122,7 @@ public class UserService {
 		}
 		
 		for(UserVO user : userList) {
-			V1RoleBindingList mapUser = kubeDao.RoleBindingListOfUser(user.getUserId());
+			V1RoleBindingList mapUser = AuthMng.RoleBindingListOfUser(user.getUserId());
 			int count = mapUser.getItems().size();
 			user.setUsedNamespace(count);
 		}
@@ -139,7 +143,7 @@ public class UserService {
 		//1.service account 삭제
 		V1DeleteOptions deleteOption = new V1DeleteOptions();
 		try {
-			kubeDao.deleteServiceAccount(serviceAccountPrefix + userName, systemNamespace, deleteOption);
+			CoreMng.deleteServiceAccount(serviceAccountPrefix + userName, systemNamespace, deleteOption);
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;
@@ -148,7 +152,7 @@ public class UserService {
 
 		//2.cluster role binding 삭제
 		try {
-			kubeDao.deleteClusterRoleBinding(serviceAccountPrefix + userName, deleteOption);
+			AuthMng.deleteClusterRoleBinding(serviceAccountPrefix + userName, deleteOption);
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;
@@ -203,10 +207,10 @@ public class UserService {
 			LOG.debug("cluster role binding is nothing..");
 			return info;
 		}
-		V1NamespaceList mapNamespace = null;
+		V1Namespace mapNamespace = null;
 		String namespace = clusterrolebinding.getSubjects().get(0).getNamespace();
 		try {
-			mapNamespace =kubeDao.namespaceList(namespace);
+			mapNamespace =CoreMng.namespace(namespace);
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;
@@ -232,7 +236,7 @@ public class UserService {
 		List<NamespaceVO> namespaceList = new ArrayList();
 		
 		if("simple".equals(mode)) {
-			V1RoleBindingList rolebinding = kubeDao.RoleBindingListOfUser(userName);
+			V1RoleBindingList rolebinding = AuthMng.RoleBindingListOfUser(userName);
 			
 			List<String> name = new ArrayList();
 			String namespaceNames ="";
@@ -243,13 +247,13 @@ public class UserService {
 			vo.setNamespace(Util.asCommaData(name));
 			namespaceList.add(vo);
 		}else if("full".equals(mode)) {
-			V1RoleBindingList rolebinding = kubeDao.RoleBindingListOfUser(userName);
+			V1RoleBindingList rolebinding = AuthMng.RoleBindingListOfUser(userName);
 			for(V1RoleBinding nm : rolebinding.getItems()) {
 				String namespaceName = nm.getMetadata().getName();
 				NamespaceVO vo = new NamespaceVO();
 				vo.setNamespace(namespaceName);
-				V1ResourceQuota quota =  kubeDao.getQuota(namespaceName);
-				V1LimitRange limitRanges =  kubeDao.getLimitRanges(namespaceName);
+				V1ResourceQuota quota =  CoreMng.getQuota(namespaceName, namespaceName);
+				V1LimitRange limitRanges =  CoreMng.getLimitRanges(namespaceName, namespaceName);
 				vo.setLimitRange(limitRanges);
 				vo.setResourceQuota(quota);
 				namespaceList.add(vo);
@@ -269,7 +273,7 @@ public class UserService {
 	 */
 	public V1ClusterRoleBinding getClusterRoleBinding(String username) throws ApiException{
 		
-		List<V1ClusterRoleBinding> items = kubeDao.clusterRoleBindingList().getItems();
+		List<V1ClusterRoleBinding> items = AuthMng.clusterRoleBindingList().getItems();
 		Stream<V1ClusterRoleBinding> serviceAccount = items.stream().filter((srvAcc) -> { 
 			List<V1Subject> subjects = srvAcc.getSubjects();
 			if(subjects != null) {
@@ -296,7 +300,7 @@ public class UserService {
 	
 	public String getServiceAccountToken(String namespace, String username) throws IOException, ApiException, InterruptedException{
 		//1. delete service account
-		kubeDao.deleteServiceAccount(serviceAccountPrefix + username, namespace, new V1DeleteOptions());
+		CoreMng.deleteServiceAccount(serviceAccountPrefix + username, namespace, new V1DeleteOptions());
 		
 		//2. create service account
 		MemberVO vo = new MemberVO();
@@ -305,11 +309,11 @@ public class UserService {
 		
 		//3. get secretes though serviceAccount 
 		Thread.sleep(100);//sync problem raise
-		List<V1ObjectReference> secrets = kubeDao.getServiceAccount(namespace, username).getItems().get(0).getSecrets();
+		List<V1ObjectReference> secrets = CoreMng.getServiceAccount(namespace, username).getItems().get(0).getSecrets();
 		if(secrets != null)
 			for(V1ObjectReference secret : secrets) {
 				String secretName = secret.getName();
-				Map<String, byte[]> secretList = kubeDao.getSecret(namespace, secretName).getData();
+				Map<String, byte[]> secretList = CoreMng.getSecret(namespace, secretName).getData();
 				
 				return new String(secretList.get("token"));
 			}
@@ -321,10 +325,10 @@ public class UserService {
 
 	private V1ServiceAccount  createAndEditServiceAccount(String name, String namespace, ServiceAccountVO vo) throws ApiException {
 		try {
-			return kubeDao.createServiceAccount(vo.getNamespace(), vo);
+			return CoreMng.createServiceAccount(vo.getNamespace(), vo);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
-				return kubeDao.editServiceAccount(name, vo.getNamespace(), vo);
+				return CoreMng.editServiceAccount(name, vo.getNamespace(), vo);
 			}else {
 				throw e;	
 			}
@@ -333,7 +337,7 @@ public class UserService {
 	
 	private void createAndEditClusterRoleBinding(String username, V1ClusterRoleBinding clusterRoleBinding) throws ApiException {
 		try {
-			kubeDao.createClusterRoleBinding( clusterRoleBinding, username);
+			AuthMng.createClusterRoleBinding( clusterRoleBinding, username);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
 				//kubeDao.editClusterRoleBinding(clusterRoleBinding.getMetadata().getName(), clusterRoleBinding, username);
@@ -359,7 +363,7 @@ public class UserService {
 	 */
 	public List<Map> clusterRoleList() throws ApiException{
 		List<Map> clusterRoleNameList = new ArrayList();
-		kubeDao.clusterRoleList().getItems().stream().forEach((data) -> {
+		AuthMng.clusterRoleList().getItems().stream().forEach((data) -> {
 			Map<String, String> clusterRoleName = new HashMap();
 			clusterRoleName.put("name", data.getMetadata().getName());
 			clusterRoleNameList.add(clusterRoleName);
@@ -371,7 +375,7 @@ public class UserService {
 	public void giveClusterRole(MemberVO vo) throws ApiException, ZcpException {
 		//2. clusterRolebindinding 식제
 		try {
-			kubeDao.deleteClusterRoleBinding(this.clusterRoleBindingPrefix + vo.getUserName(), new V1DeleteOptions());
+			AuthMng.deleteClusterRoleBinding(this.clusterRoleBindingPrefix + vo.getUserName(), new V1DeleteOptions());
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;

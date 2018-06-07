@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.manager.KeycloakManager;
+import com.skcc.cloudz.zcp.manager.KubeAuthManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
@@ -24,12 +25,15 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ClusterRoleList;
 import io.kubernetes.client.models.V1LimitRange;
+import io.kubernetes.client.models.V1LimitRangeList;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1NamespaceSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ResourceQuota;
+import io.kubernetes.client.models.V1ResourceQuotaList;
 import io.kubernetes.client.models.V1RoleRef;
+import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Subject;
 import io.kubernetes.client.proto.Meta.Status;
 
@@ -42,7 +46,10 @@ public class NamespaceService {
 	KeycloakManager keycloakDao;
 	
 	@Autowired
-	KubeCoreManager kubeDao;
+	KubeCoreManager CoreMng;
+	
+	@Autowired
+	KubeAuthManager AuthMng;
 	
 	@Value("${kube.cluster.role.binding.prefix}")
 	String clusterRoleBindingPrefix;
@@ -57,18 +64,9 @@ public class NamespaceService {
 	String systemNamespace;
 	
 	
-	/**
-	 * @return
-	 * @throws ApiException
-	 * @throws ParseException
-	 * 
-	 * 네임 스페이스 정보
-	 * 
-	 */
-	public V1NamespaceList getNamespace(String namespace) throws ApiException, ParseException{
-		
+	public V1Namespace getNamespace(String namespace) throws ApiException, ParseException{
 		try {
-			return kubeDao.namespaceList(namespace);
+			return CoreMng.namespace(namespace);
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;
@@ -77,18 +75,21 @@ public class NamespaceService {
 		return null;
 	}
 	
-	/**
-	 * @return
-	 * @throws ApiException
-	 * @throws ParseException
-	 * 
-	 * 네임 스페이스 정보
-	 * 
-	 */
+	public V1NamespaceList getNamespaceList() throws ApiException, ParseException{
+		try {
+			return CoreMng.namespaceList();
+		}catch(ApiException e) {
+			if(!e.getMessage().equals("Not Found")){
+				throw e;
+			}
+		}
+		return null;
+	}
+	
 	public NamespaceVO getNamespaceResource(String namespace) throws ApiException, ParseException{
 		NamespaceVO vo = new NamespaceVO();
-		V1ResourceQuota quota =  kubeDao.getQuota(namespace);
-		V1LimitRange limitRanges =  kubeDao.getLimitRanges(namespace);
+		V1ResourceQuota quota =  CoreMng.getQuota(namespace, namespace);
+		V1LimitRange limitRanges =  CoreMng.getLimitRanges(namespace, namespace);
 		vo.setLimitRange(limitRanges);
 		vo.setResourceQuota(quota);
 		
@@ -106,7 +107,7 @@ public class NamespaceService {
 	@SuppressWarnings(value= {"unchecked", "rawtypes"})
 	public List<Map> getAllOfNamespace() throws ApiException, ParseException{
 		List<Map> namespaceList = new ArrayList();
-		V1NamespaceList map =  kubeDao.namespaceList("");
+		V1NamespaceList map =  CoreMng.namespaceList();
 		List<V1Namespace> item = (List<V1Namespace>) map.getItems();
 		item.stream().forEach((data) ->{
 			String name = data.getMetadata().getName();
@@ -153,32 +154,32 @@ public class NamespaceService {
 		
 		String namespace = data.getNamespace();
 		try {
-			kubeDao.createNamespace(namespace, namespacevo);
+			CoreMng.createNamespace(namespace, namespacevo);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
-				kubeDao.editNamespace(namespace, namespacevo);
+				CoreMng.editNamespace(namespace, namespacevo);
 			}else {
 				throw e;	
 			}
 		}
 		
 		try {
-			kubeDao.createLimitRanges(namespace, limitvo);
+			CoreMng.createLimitRanges(namespace, limitvo);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
 				String name = limitvo.getMetadata().getName();
-				kubeDao.editLimitRanges(namespace, name, limitvo);
+				CoreMng.editLimitRanges(namespace, name, limitvo);
 			}else {
 				throw e;	
 			}
 		}
 		
 		try {
-			kubeDao.createQuota(namespace, quotavo);
+			CoreMng.createQuota(namespace, quotavo);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
 				String name = limitvo.getMetadata().getName();
-				kubeDao.editQuota(namespace, name, quotavo);
+				CoreMng.editQuota(namespace, name, quotavo);
 			}else {
 				throw e;	
 			}
@@ -188,7 +189,7 @@ public class NamespaceService {
 	
 	
 	public void deleteClusterRoleBinding(KubeDeleteOptionsVO data) throws IOException, ApiException{
-		Status status = kubeDao.deleteClusterRoleBinding(data.getName(), data);
+		V1Status status = AuthMng.deleteClusterRoleBinding(data.getName(), data);
 	}
 	
 	
@@ -223,7 +224,7 @@ public class NamespaceService {
 		subjects.add(subject);
 		
 		try {
-			kubeDao.createRoleBinding(binding.getNamespace(), binding);
+			AuthMng.createRoleBinding(binding.getNamespace(), binding);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
 				LOG.debug("Conflict...");
@@ -236,7 +237,7 @@ public class NamespaceService {
 	
 	public void deleteRoleBinding(KubeDeleteOptionsVO data) throws IOException, ApiException{
 		try {
-			V1ClusterRoleList status = kubeDao.deleteRoleBinding(data.getNamespace(), roleBindingPrefix + data.getUserName() , data);
+			V1Status status = AuthMng.deleteRoleBinding(data.getNamespace(), roleBindingPrefix + data.getUserName() , data);
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;
@@ -248,10 +249,10 @@ public class NamespaceService {
 
 	public void  createAndEditServiceAccount(String name, String namespace, ServiceAccountVO vo) throws ApiException {
 		try {
-			kubeDao.createServiceAccount(vo.getNamespace(), vo);
+			CoreMng.createServiceAccount(vo.getNamespace(), vo);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
-				kubeDao.editServiceAccount(name, vo.getNamespace(), vo);
+				CoreMng.editServiceAccount(name, vo.getNamespace(), vo);
 			}else {
 				throw e;	
 			}
@@ -260,10 +261,10 @@ public class NamespaceService {
 	
 	public void createAndEditClusterRoleBinding(String username, V1ClusterRoleBinding clusterRoleBinding) throws ApiException {
 		try {
-			kubeDao.createClusterRoleBinding( clusterRoleBinding, username);
+			AuthMng.createClusterRoleBinding( clusterRoleBinding, username);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
-				kubeDao.editClusterRoleBinding(clusterRoleBinding.getMetadata().getName(), clusterRoleBinding, username);
+				AuthMng.editClusterRoleBinding(clusterRoleBinding.getMetadata().getName(), clusterRoleBinding, username);
 			}else {
 				throw e;	
 			}
