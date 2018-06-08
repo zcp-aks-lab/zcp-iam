@@ -11,8 +11,8 @@ import com.skcc.cloudz.zcp.common.vo.Ivo;
 
 public class ValidUtil {
 	
-	public static String EMAIL = "([\\w-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([\\w-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)$";
-	
+	public static final String EMAIL = "([\\w-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([\\w-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)$";
+	public static final String SERVICE_ACCOUNT_NAME ="([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]";
 	
 	@SuppressWarnings("unchecked")
 	public static String required(Object requestParam, String... keys) {

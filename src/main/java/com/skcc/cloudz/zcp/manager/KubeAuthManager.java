@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
@@ -29,7 +30,11 @@ public class KubeAuthManager {
 	ApiClient client;// = Configuration.getDefaultApiClient();
 	RbacAuthorizationV1Api api; // = new KubeClient(this.client);
 	
-	String labelZcp = "zcp-system-user=true";
+	@Value("${kube.label.zcp.user}")//iam.cloudzcp.io/zcp-system-user
+	String lblZcpUser;
+	
+	@Value("${kube.label.zcp.username}")//iam.cloudzcp.io/zcp-system-username
+	String lblZcpUsername;
 	
 	public KubeAuthManager() throws IOException {
 		client = Config.defaultClient();
@@ -39,7 +44,7 @@ public class KubeAuthManager {
 
 	
 	public V1ClusterRoleList clusterRoleList() throws ApiException{
-		return api.listClusterRole("true", null, null, null, labelZcp, null, null, null, null);
+		return api.listClusterRole("true", null, null, null, lblZcpUser+"=true", null, null, null, null);
 	}
 	
 	public V1ClusterRoleBindingList clusterRoleBindingList() throws ApiException{
@@ -49,8 +54,8 @@ public class KubeAuthManager {
 
 	public V1ClusterRoleBinding createClusterRoleBinding(V1ClusterRoleBinding clusterrolebinding, String username) throws ApiException{
 		Map<String, String> labels = new HashMap<String, String>();
-		labels.put("zcp-system-user", "true");
-		labels.put("zcp-system-username", username);
+		labels.put(lblZcpUser, "true");
+		labels.put(lblZcpUsername, username);
 		clusterrolebinding.getMetadata().setLabels(labels);
 		return api.createClusterRoleBinding(clusterrolebinding, "true");
 	}
@@ -61,19 +66,19 @@ public class KubeAuthManager {
 	
 	public V1ClusterRoleBinding editClusterRoleBinding(String name, V1ClusterRoleBinding clusterrolebinding, String username) throws ApiException{
 		Map<String, String> labels = new HashMap<String, String>();
-		labels.put("zcp-system-user", "true");
-		labels.put("zcp-system-username", username);
+		labels.put(lblZcpUser, "true");
+		labels.put(lblZcpUsername, username);
 		
 		return api.replaceClusterRoleBinding(name, clusterrolebinding, "true");
 	}
 	
 	
 	public V1RoleBindingList RoleBindingListOfUser(String username) throws ApiException{
-		return api.listRoleBindingForAllNamespaces(null, null, null, "zcp-system-username="+username, null, "true", null, null, null);
+		return api.listRoleBindingForAllNamespaces(null, null, null, lblZcpUsername + "=" +username, null, "true", null, null, null);
 	}
 	
 	public V1RoleBindingList RoleBindingListOfNamespace(String namespace) throws ApiException{
-		return api.listNamespacedRoleBinding(namespace, "true", null, null, null, labelZcp, null, null, null, null);
+		return api.listNamespacedRoleBinding(namespace, "true", null, null, null,  lblZcpUser+"=true" , null, null, null, null);
 	}
 	
 	public V1RoleBinding createRoleBinding(String namespace, RoleBindingVO rolebinding) throws ApiException{

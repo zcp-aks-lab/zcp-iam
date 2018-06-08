@@ -13,15 +13,16 @@ public class MemberVO implements Ivo {
 	String lastName;
 	String email;
 	String password;
-	ClusterRole clusterRole;
+	int clusterRole;
 	Attribute attribute = new Attribute();
 	boolean enabled;
 	boolean isChangedAfterLogin;
 	
-	public ClusterRole getClusterRole() {
+	
+	public int getClusterRole() {
 		return clusterRole;
 	}
-	public void setClusterRole(ClusterRole clusterRole) {
+	public void setClusterRole(int clusterRole) {
 		this.clusterRole = clusterRole;
 	}
 	public boolean isChangedAfterLogin() {

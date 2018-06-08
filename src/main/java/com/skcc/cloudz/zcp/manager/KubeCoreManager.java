@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import io.kubernetes.client.ApiClient;
@@ -31,6 +32,13 @@ public class KubeCoreManager {
 	ApiClient client;// = Configuration.getDefaultApiClient();
 	CoreV1Api api; // = new KubeClient(this.client);
 	
+	@Value("${kube.label.zcp.user}")//iam.cloudzcp.io/zcp-system-user
+	String lblZcpUser;
+	
+	@Value("${kube.label.zcp.username}")//iam.cloudzcp.io/zcp-system-username
+	String lblZcpUsername;
+	
+	
 	public KubeCoreManager() throws IOException {
 		client = Config.defaultClient();
 		Configuration.setDefaultApiClient(client);
@@ -39,7 +47,7 @@ public class KubeCoreManager {
 
 	public V1ServiceAccount createServiceAccount(String namespace, V1ServiceAccount serviceAccount) throws ApiException{
 		Map<String, String> labels = new HashMap<String, String>();
-		labels.put("zcp-system-user", "true");
+		labels.put(  lblZcpUser, "true");
 		serviceAccount.getMetadata().setLabels(labels);
 		
 		return api.createNamespacedServiceAccount(namespace, serviceAccount, "true");
@@ -47,7 +55,7 @@ public class KubeCoreManager {
 	
 	public V1ServiceAccount editServiceAccount(String name, String namespace, V1ServiceAccount serviceAccount) throws ApiException{
 		Map<String, String> labels = new HashMap<String, String>();
-		labels.put("zcp-system-user", "true");
+		labels.put( lblZcpUser, "true");
 		serviceAccount.getMetadata().setLabels(labels);
 		return api.replaceNamespacedServiceAccount(name, namespace, serviceAccount, "true");
 	}
@@ -58,7 +66,7 @@ public class KubeCoreManager {
 	
 	
 	public V1ServiceAccountList getServiceAccount(String namespace, String name) throws ApiException{
-		return api.listNamespacedServiceAccount(namespace, "true", null, null, null, "zcp-system-user=true", null, null, null, null);
+		return api.listNamespacedServiceAccount(namespace, "true", null, null, null,  lblZcpUser+"=true", null, null, null, null);
 	}
 	
 	public V1Secret getSecret(String namespace, String secretName ) throws ApiException{
@@ -66,7 +74,7 @@ public class KubeCoreManager {
 }
 	
 	public V1NamespaceList namespaceList() throws ApiException{
-		return api.listNamespace("true", null, null, null, "zcp-system-user=true", null, null, null, null);
+		return api.listNamespace("true", null, null, null,  lblZcpUser+"=true", null, null, null, null);
 	}
 	
 	public V1Namespace namespace(String namespace) throws ApiException{

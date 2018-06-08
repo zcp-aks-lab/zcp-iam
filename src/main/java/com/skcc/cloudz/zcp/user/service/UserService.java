@@ -3,7 +3,6 @@ package com.skcc.cloudz.zcp.user.service;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -23,6 +22,7 @@ import com.skcc.cloudz.zcp.manager.KeycloakManager;
 import com.skcc.cloudz.zcp.manager.KubeAuthManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
+import com.skcc.cloudz.zcp.user.vo.ClusterRole;
 import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.user.vo.PassResetVO;
@@ -175,7 +175,7 @@ public class UserService {
 		
 		//2. clusterRolebindinding 생성
 		V1ClusterRoleBinding binding = createClusterRoleBinding(vo);
-		this.createAndEditClusterRoleBinding(vo.getUserName(), binding);
+		this.createClusterRoleBinding(vo.getUserName(), binding);
 		
 		keycloakMng.createUser(vo);
 	}
@@ -224,6 +224,7 @@ public class UserService {
 			}
 		}
 		
+		user.setClusterRole(ClusterRole.getNumber(clusterrolebinding.getRoleRef().getName()));
 		info.setClusterrolebinding(clusterrolebinding);
 		info.setNamespace(mapNamespace);
 		
@@ -341,7 +342,7 @@ public class UserService {
 		}
 	}
 	
-	private void createAndEditClusterRoleBinding(String username, V1ClusterRoleBinding clusterRoleBinding) throws ApiException {
+	private void createClusterRoleBinding(String username, V1ClusterRoleBinding clusterRoleBinding) throws ApiException {
 		try {
 			AuthMng.createClusterRoleBinding( clusterRoleBinding, username);
 		} catch (ApiException e) {
@@ -367,13 +368,18 @@ public class UserService {
 	 * @return
 	 * @throws ApiException
 	 */
-	public List<Map<String, String>> clusterRoleList() throws ApiException{
-		List<Map<String, String>> clusterRoleNameList = new ArrayList<Map<String, String>>();
-		AuthMng.clusterRoleList().getItems().stream().forEach((data) -> {
-			Map<String, String> clusterRoleName = new HashMap<String, String>();
-			clusterRoleName.put("name", data.getMetadata().getName());
-			clusterRoleNameList.add(clusterRoleName);
-		});
+	public List<ClusterRole> clusterRoleList() throws ApiException{
+		List<ClusterRole> clusterRoleNameList = new ArrayList<ClusterRole>();
+//		AuthMng.clusterRoleList().getItems().stream().forEach((data) -> {
+//			Map<String, String> clusterRoleName = new HashMap<String, String>();
+//			clusterRoleName.put("name", data.getMetadata().getName());
+//			clusterRoleNameList.add(clusterRoleName);
+//		});
+		clusterRoleNameList.add(ClusterRole.NONE);
+		clusterRoleNameList.add(ClusterRole.ADMIN);
+		clusterRoleNameList.add(ClusterRole.CLUSTER_ADMIN);
+		clusterRoleNameList.add(ClusterRole.EDIT);
+		clusterRoleNameList.add(ClusterRole.VIEW);
 		
 		return clusterRoleNameList;
 	}
@@ -390,7 +396,7 @@ public class UserService {
 		
 		//2. clusterRolebindinding 생성
 		V1ClusterRoleBinding binding = createClusterRoleBinding(vo);
-		this.createAndEditClusterRoleBinding(vo.getUserName(), binding);
+		this.createClusterRoleBinding(vo.getUserName(), binding);
 		
 		keycloakMng.editAttribute(vo);
 		
@@ -407,7 +413,7 @@ public class UserService {
 		subject.setNamespace(systemNamespace);
 		roleRef.setApiGroup("rbac.authorization.k8s.io");
 		roleRef.setKind("ClusterRole");
-		roleRef.setName(vo.getClusterRole().name());
+		roleRef.setName(ClusterRole.get(vo.getClusterRole()));
 		cmetadata.setName(clusterRoleBindingPrefix + vo.getUserName());
 		binding.setApiVersion("rbac.authorization.k8s.io/v1");
 		binding.setKind("ClusterRoleBinding");

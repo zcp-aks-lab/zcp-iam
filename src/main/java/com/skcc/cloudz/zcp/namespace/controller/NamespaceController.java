@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.skcc.cloudz.zcp.common.annotation.RemoveProperty;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
@@ -59,6 +60,7 @@ public class NamespaceController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/namespace/{namespace}", method=RequestMethod.GET)
+	@RemoveProperty(field= {"metadata.creationTimestamp", "spec"})
 	Response<V1Namespace> getNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws  ApiException, ParseException{
 		Response<V1Namespace> vo = new Response<V1Namespace>();
 		vo.setData(namespaceSvc.getNamespace(namespace));	

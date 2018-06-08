@@ -60,6 +60,18 @@ public class ExceptionController {
 		RtnVO vo = new RtnVO(e.code, msg);
 		return vo;
 	}
+	
+	
+	@ExceptionHandler(KeycloakException.class)
+	@ResponseBody
+	public Object KeycloakExceptionResolver(HttpServletRequest req, KeycloakException e) { 
+		RtnVO vo = new RtnVO();
+		LOG.debug("{} : {} ",e.getCode(), e.msg,e );
+		vo.setData("");
+		vo.setCode(e.getCode());//코드 수정 예정
+		vo.setMsg(e.getMessage());
+		return vo; 
+	}
 
 
 }

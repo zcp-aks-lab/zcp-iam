@@ -1,10 +1,10 @@
 package com.skcc.cloudz.zcp.user.controller;
 
 import static com.skcc.cloudz.zcp.common.util.ValidUtil.EMAIL;
+import static com.skcc.cloudz.zcp.common.util.ValidUtil.SERVICE_ACCOUNT_NAME;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -27,6 +27,7 @@ import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.user.service.UserService;
+import com.skcc.cloudz.zcp.user.vo.ClusterRole;
 import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.user.vo.PassResetVO;
@@ -99,7 +100,7 @@ public class UserController {
 	 * @throws ZcpException
 	 * @throws KeycloakException 
 	 */
-	@RequestMapping(value="/user/{userName}logout", method=RequestMethod.POST)
+	@RequestMapping(value="/user/{userName}/logout", method=RequestMethod.POST)
 	Response<Object> logout(HttpSession session
 			, @PathVariable("userName") String userName) throws KeycloakException{
 		Response<Object> vo = new Response<Object>();
@@ -172,7 +173,8 @@ public class UserController {
 	Response<Object> addUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException{
 		Response<Object> vo = new Response<Object>();
 		String msg = ValidUtil.required(memberVO,  "userName", "firstName", "lastName", "clusterRole");
-		if(!ValidUtil.check(EMAIL, memberVO.getEmail())) msg="email invalid";
+		if(!ValidUtil.check(EMAIL, memberVO.getEmail())) msg="email is invalid";
+		if(!ValidUtil.check(SERVICE_ACCOUNT_NAME, memberVO.getUserName())) msg="userName is invalid";
 		
 		if(msg != null) {
 			vo.setMsg(msg);
@@ -274,8 +276,8 @@ public class UserController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/user/clusterRole", method=RequestMethod.GET)
-	Response<List<Map<String, String>>> getClusterRole(HttpServletRequest httpServletRequest) throws  ApiException {
-		Response<List<Map<String, String>>> vo = new Response<List<Map<String, String>>>();
+	Response<List<ClusterRole>> getClusterRole(HttpServletRequest httpServletRequest) throws  ApiException {
+		Response<List<ClusterRole>> vo = new Response<List<ClusterRole>>();
 		vo.setData(userSvc.clusterRoleList());
 		return vo;
 	}

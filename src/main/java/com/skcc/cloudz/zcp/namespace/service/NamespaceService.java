@@ -100,6 +100,7 @@ public class NamespaceService {
 	 * @throws ParseException
 	 */
 	@SuppressWarnings(value= {"unchecked", "rawtypes"})
+	@Deprecated
 	public List<Map> getAllOfNamespace() throws ApiException, ParseException{
 		List<Map> namespaceList = new ArrayList();
 		V1NamespaceList map =  CoreMng.namespaceList();
