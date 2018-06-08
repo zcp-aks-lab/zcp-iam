@@ -18,6 +18,7 @@ import com.skcc.cloudz.zcp.manager.KubeAuthManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
+import com.skcc.cloudz.zcp.user.vo.ClusterRole;
 import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
 
 import ch.qos.logback.classic.Logger;
@@ -126,8 +127,7 @@ public class NamespaceService {
 		V1ObjectMeta namespace_meta = new V1ObjectMeta();
 		V1ObjectMeta quota_meta = new V1ObjectMeta();
 		V1ObjectMeta limit_meta = new V1ObjectMeta();
-		Map<String, String> labels = new HashMap<String, String>();
-		labels.put("zcp-system-ns", "true");
+		
 		
 		namespace_meta.setName(data.getNamespace());
 		quota_meta.setName(data.getNamespace());
@@ -140,7 +140,6 @@ public class NamespaceService {
 		namespacevo.setKind("Namespace");
 		namespacevo.setSpec(new V1NamespaceSpec().addFinalizersItem("kubernetes"));
 		namespacevo.setMetadata(namespace_meta);
-		namespacevo.getMetadata().setLabels(labels);
 		quotavo.setApiVersion("v1");
 		quotavo.setKind("ResourceQuota");
 		quotavo.setMetadata(quota_meta);
@@ -207,7 +206,7 @@ public class NamespaceService {
 		V1RoleRef roleRef = new V1RoleRef();
 		roleRef.setApiGroup("rbac.authorization.k8s.io");
 		roleRef.setKind("ClusterRole");
-		roleRef.setName(binding.getClusterRole());
+		roleRef.setName(ClusterRole.get(binding.getClusterRole()));
 		
 		List<V1Subject> subjects = new ArrayList<V1Subject>();
 

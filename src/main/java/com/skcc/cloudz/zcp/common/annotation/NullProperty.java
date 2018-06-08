@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RemoveProperty {
+public @interface NullProperty {
 
     public String[] field(); 
 

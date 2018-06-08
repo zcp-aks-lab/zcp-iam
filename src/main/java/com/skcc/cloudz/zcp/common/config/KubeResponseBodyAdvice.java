@@ -12,19 +12,17 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
-import com.skcc.cloudz.zcp.common.annotation.RemoveProperty;
+import com.skcc.cloudz.zcp.common.annotation.NullProperty;
 import com.skcc.cloudz.zcp.common.vo.Response;
-
-import io.kubernetes.client.models.V1ObjectMeta;
 
 @ControllerAdvice 
 public class KubeResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 
-	RemoveProperty property = null; 
+	NullProperty property = null; 
 	
 	@Override
 	public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-		property = returnType.getMethod().getAnnotation(RemoveProperty.class);
+		property = returnType.getMethod().getAnnotation(NullProperty.class);
 		return property != null;
 	}
 
@@ -46,12 +44,46 @@ public class KubeResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 				}
 				else if(field.split("\\.").length == 2) {
 					Object data = ((Response<Object>)body).getData();
-					Field fieldMeta = data.getClass().getDeclaredField(field.split("\\.")[0]);
-					fieldMeta.setAccessible(true);
-					V1ObjectMeta metadata = (V1ObjectMeta)fieldMeta.get(data);
-					Field timeField = metadata.getClass().getDeclaredField(field.split("\\.")[1]);
-					timeField.setAccessible(true);
-					timeField.set(metadata, null);
+					Field field1 = data.getClass().getDeclaredField(field.split("\\.")[0]);
+					field1.setAccessible(true);
+					Object obj1 = field1.get(data);
+					if(obj1 instanceof List){
+						List<Object> listObj = (List<Object> )obj1;
+						for(Object o : listObj) {
+							Field field2 = o.getClass().getDeclaredField(field.split("\\.")[1]);
+							field2.setAccessible(true);
+							field2.set(o, null);
+						}
+					}else {
+						Field field2 = obj1.getClass().getDeclaredField(field.split("\\.")[1]);
+						field2.setAccessible(true);
+						field2.set(obj1, null);
+					}
+					
+				}
+				else if(field.split("\\.").length == 3) {
+					Object data = ((Response<Object>)body).getData();
+					Field field1 = data.getClass().getDeclaredField(field.split("\\.")[0]);
+					field1.setAccessible(true);
+					Object obj1 = field1.get(data);
+					if(obj1 instanceof List){
+						List<Object> listObj = (List<Object> )obj1;
+						for(Object o : listObj) {
+							Field field2 = o.getClass().getDeclaredField(field.split("\\.")[1]);
+							field2.setAccessible(true);
+							Object obj2 = field2.get(o);
+							Field field3 = obj2.getClass().getDeclaredField(field.split("\\.")[2]);
+							field3.setAccessible(true);
+							field3.set(obj2, null);
+						}
+					}else {
+						Field field2 = obj1.getClass().getDeclaredField(field.split("\\.")[1]);
+						field2.setAccessible(true);
+						Object obj2 = field2.get(obj1);
+						Field field3 = obj2.getClass().getDeclaredField(field.split("\\.")[2]);
+						field3.setAccessible(true);
+						field3.set(obj2, null);
+					}
 				}
 			}
 		} catch (SecurityException | NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
@@ -60,6 +92,10 @@ public class KubeResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 		}
 			
 		return body;
-	} 
+	}
+	
+//	private Field setNull(Object data, String[] name) {
+//		
+//	}
 	
 }

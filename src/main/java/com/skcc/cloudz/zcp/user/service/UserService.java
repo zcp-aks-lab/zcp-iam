@@ -193,15 +193,7 @@ public class UserService {
 		
 	}
 	
-	/**
-	 * @return
-	 * @throws ApiException
-	 * @throws ParseException
-	 * 
-	 * 사용자 로그인시 namespace 정보와 clusterbinding 정보를 가져옴
-	 * @throws ZcpException 
-	 * 
-	 */
+	
 	public LoginInfoVO getUserInfo(String username) throws ApiException, ParseException, KeycloakException{
 		LoginInfoVO info = new LoginInfoVO();
 		MemberVO user = new MemberVO();
@@ -243,17 +235,17 @@ public class UserService {
 	public List<NamespaceVO> getNamespaces(String mode, String userName) throws ApiException{
 		List<NamespaceVO> namespaceList = new ArrayList<NamespaceVO>();
 		
-		if("simple".equals(mode)) {
-			V1RoleBindingList rolebinding = AuthMng.RoleBindingListOfUser(userName);
-			
-			List<String> name = new ArrayList<String>();
-			for(V1RoleBinding nm : rolebinding.getItems()) {
-				name.add( nm.getMetadata().getName());
-			}
-			NamespaceVO vo = new NamespaceVO();
-			vo.setNamespace(Util.asCommaData(name));
-			namespaceList.add(vo);
-		}else if("full".equals(mode)) {
+//		if("simple".equals(mode)) {
+//			V1RoleBindingList rolebinding = AuthMng.RoleBindingListOfUser(userName);
+//			
+//			List<String> name = new ArrayList<String>();
+//			for(V1RoleBinding nm : rolebinding.getItems()) {
+//				name.add( nm.getMetadata().getName());
+//			}
+//			NamespaceVO vo = new NamespaceVO();
+//			vo.setNamespace(Util.asCommaData(name));
+//			namespaceList.add(vo);
+//		}else if("full".equals(mode)) {
 			V1RoleBindingList rolebinding = AuthMng.RoleBindingListOfUser(userName);
 			for(V1RoleBinding nm : rolebinding.getItems()) {
 				String namespaceName = nm.getMetadata().getName();
@@ -265,7 +257,7 @@ public class UserService {
 				vo.setResourceQuota(quota);
 				namespaceList.add(vo);
 			}
-		}
+//		}
 		
 		return namespaceList;
 		

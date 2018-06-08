@@ -5,7 +5,7 @@ import io.kubernetes.client.models.V1RoleBinding;
 public class RoleBindingVO extends V1RoleBinding implements Ivo{
 	String namespace;
 	String userName;
-	String clusterRole;
+	int clusterRole;
 	
 	public String getUserName() {
 		return userName;
@@ -14,12 +14,11 @@ public class RoleBindingVO extends V1RoleBinding implements Ivo{
 	public void setUserName(String userName) {
 		this.userName = userName;
 	}
-
-	public String getClusterRole() {
+	public int getClusterRole() {
 		return clusterRole;
 	}
 
-	public void setClusterRole(String clusterRole) {
+	public void setClusterRole(int clusterRole) {
 		this.clusterRole = clusterRole;
 	}
 

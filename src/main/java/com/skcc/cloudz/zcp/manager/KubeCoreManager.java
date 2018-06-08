@@ -38,6 +38,8 @@ public class KubeCoreManager {
 	@Value("${kube.label.zcp.username}")//iam.cloudzcp.io/zcp-system-username
 	String lblZcpUsername;
 	
+	@Value("${kube.label.zcp.namespace}")//iam.cloudzcp.io/zcp-system-user
+	String lblZcpNamespace;
 	
 	public KubeCoreManager() throws IOException {
 		client = Config.defaultClient();
@@ -74,7 +76,7 @@ public class KubeCoreManager {
 }
 	
 	public V1NamespaceList namespaceList() throws ApiException{
-		return api.listNamespace("true", null, null, null,  lblZcpUser+"=true", null, null, null, null);
+		return api.listNamespace("true", null, null, null,  lblZcpNamespace+"=true", null, null, null, null);
 	}
 	
 	public V1Namespace namespace(String namespace) throws ApiException{
@@ -116,6 +118,9 @@ public class KubeCoreManager {
 	}
 	
 	public V1Namespace createNamespace(String namespaceName, V1Namespace namespace) throws ApiException{
+		Map<String, String> labels = new HashMap<String, String>();
+		labels.put(lblZcpNamespace, "true");
+		namespace.getMetadata().setLabels(labels);
 		return api.createNamespace(namespace, "true");
 	}
 

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.skcc.cloudz.zcp.common.annotation.NullProperty;
 import com.skcc.cloudz.zcp.common.exception.KeycloakException;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
@@ -120,6 +121,7 @@ public class UserController {
 	 * @throws ZcpException 
 	 */
 	@RequestMapping(value="/user/{userName}", method=RequestMethod.GET)
+	@NullProperty(field= {"namespace.metadata.creationTimestamp", "namespace.spec", "clusterrolebinding.metadata.creationTimestamp"})
 	Response<LoginInfoVO> getUser(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws ApiException, ParseException, KeycloakException {
 		Response<LoginInfoVO> vo = new Response<LoginInfoVO>();
 		vo.setData(userSvc.getUserInfo(userName));
