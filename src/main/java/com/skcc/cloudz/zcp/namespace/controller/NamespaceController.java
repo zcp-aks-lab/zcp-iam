@@ -33,7 +33,7 @@ import io.kubernetes.client.models.V1NamespaceList;
 @RequestMapping("/iam")
 public class NamespaceController {
 
-	private static final Logger LOG = LoggerFactory.getLogger(NamespaceController.class);    
+	private static final Logger log = LoggerFactory.getLogger(NamespaceController.class);    
 	
 	@Autowired
 	NamespaceService namespaceSvc;
@@ -80,7 +80,7 @@ public class NamespaceController {
 	Response<UserList> userListOfNamespace(HttpServletRequest httpServletRequest
 			, @PathVariable("namespace") String namespace) throws ApiException{
 		Response<UserList> vo = new Response<UserList>();
-		vo.setData(userSvc.getUserList(namespace));
+		vo.setData(userSvc.getUserListByNamespace(namespace));
 		return vo;
 	}
 	

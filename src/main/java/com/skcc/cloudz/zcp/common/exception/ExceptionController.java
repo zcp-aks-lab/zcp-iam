@@ -19,59 +19,57 @@ import io.kubernetes.client.ApiException;
 
 @ControllerAdvice
 public class ExceptionController {
-	
-	final Logger LOG = LoggerFactory.getLogger(ExceptionController.class);
-	
-	Properties prop= new Properties();
-	  
-    public ExceptionController() throws IOException{
-    	prop.load(getClass().getClassLoader().getResourceAsStream("exception.properties"));
-    }
-    
-    @ExceptionHandler(Exception.class)
-	@ResponseBody
-	public Object exceptionResolver(HttpServletRequest req, Exception e) { 
-		RtnVO vo = new RtnVO();
-		LOG.debug("UnKnown Error...{}",e);
-		vo.setCode("500");//코드 수정 예정
-		vo.setMsg(e.getMessage());
-		return vo; 
+
+	private final Logger logger = LoggerFactory.getLogger(ExceptionController.class);
+
+	private Properties prop = new Properties();
+
+	public ExceptionController() throws IOException {
+		prop.load(getClass().getClassLoader().getResourceAsStream("exception.properties"));
 	}
-    
-    @ExceptionHandler(ApiException.class)
+
+	@ExceptionHandler(Exception.class)
 	@ResponseBody
-	public Object exceptionResolver(HttpServletRequest req, ApiException e) { 
+	public Object exceptionResolver(HttpServletRequest req, Exception e) {
 		RtnVO vo = new RtnVO();
-		LOG.debug(e.getResponseHeaders() == null ?  "" : e.getResponseHeaders().toString());
-		LOG.debug(e.getResponseBody());
-		LOG.debug(e.getMessage());
-		LOG.debug("",e);
+		logger.debug("UnKnown Error...{}", e);
+		vo.setCode("500");// 코드 수정 예정
+		vo.setMsg(e.getMessage());
+		return vo;
+	}
+
+	@ExceptionHandler(ApiException.class)
+	@ResponseBody
+	public Object exceptionResolver(HttpServletRequest req, ApiException e) {
+		RtnVO vo = new RtnVO();
+		logger.debug(e.getResponseHeaders() == null ? "" : e.getResponseHeaders().toString());
+		logger.debug(e.getResponseBody());
+		logger.debug(e.getMessage());
+		logger.debug("", e);
 		vo.setData(e.getResponseBody());
-		vo.setCode("K500");//코드 수정 예정
+		vo.setCode("K500");// 코드 수정 예정
 		vo.setMsg(e.getMessage());
-		return vo; 
+		return vo;
 	}
-	
+
 	@ExceptionHandler(ZcpException.class)
 	@ResponseBody
 	public Object zcpExceptionResolver(HttpServletRequest req, ZcpException e) {
-		String msg = prop.getProperty(e.code);
-		LOG.debug(msg,e);
-		RtnVO vo = new RtnVO(e.code, msg);
+		String msg = prop.getProperty(e.getCode());
+		logger.debug(msg, e);
+		RtnVO vo = new RtnVO(e.getCode(), msg);
 		return vo;
 	}
-	
-	
-	@ExceptionHandler(KeycloakException.class)
-	@ResponseBody
-	public Object KeycloakExceptionResolver(HttpServletRequest req, KeycloakException e) { 
-		RtnVO vo = new RtnVO();
-		LOG.debug("{} : {} ",e.getCode(), e.msg,e );
-		vo.setData("");
-		vo.setCode(e.getCode());//코드 수정 예정
-		vo.setMsg(e.getMessage());
-		return vo; 
-	}
 
+	@ExceptionHandler(KeyCloakException.class)
+	@ResponseBody
+	public Object KeycloakExceptionResolver(HttpServletRequest req, KeyCloakException e) {
+		RtnVO vo = new RtnVO();
+		logger.debug("{} : {} ", e.getCode(), e.getMessage());
+		vo.setData("");
+		vo.setCode(e.getCode());// 코드 수정 예정
+		vo.setMsg(e.getMessage());
+		return vo;
+	}
 
 }

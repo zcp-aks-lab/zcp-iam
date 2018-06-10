@@ -1,15 +1,12 @@
 package com.skcc.cloudz.zcp.user.controller;
 
-import static com.skcc.cloudz.zcp.common.util.ValidUtil.EMAIL;
-import static com.skcc.cloudz.zcp.common.util.ValidUtil.SERVICE_ACCOUNT_NAME;
-
 import java.io.IOException;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
 
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,271 +18,200 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.skcc.cloudz.zcp.common.annotation.NullProperty;
-import com.skcc.cloudz.zcp.common.exception.KeycloakException;
+import com.skcc.cloudz.zcp.common.exception.KeyCloakException;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.user.service.UserService;
-import com.skcc.cloudz.zcp.user.vo.ClusterRole;
-import com.skcc.cloudz.zcp.user.vo.LoginInfoVO;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.user.vo.PassResetVO;
 import com.skcc.cloudz.zcp.user.vo.UserList;
+import com.skcc.cloudz.zcp.user.vo.ZcpUser;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ClusterRoleList;
 
 @Configuration
 @RestController
 @RequestMapping("/iam")
 public class UserController {
 
-	private static final Logger LOG = LoggerFactory.getLogger(UserController.class);    
-	
+	private final Logger logger = LoggerFactory.getLogger(UserController.class);
+
 	@Autowired
-	UserService userSvc;
-	
-	/**
-	 * all user list
-	 * 
-	 * @param httpServletRequest
-	 * @return
-	 * @throws ApiException 
-	 */
-	@RequestMapping(value="/users", method=RequestMethod.GET)
-	Response<UserList> getUsers(HttpServletRequest httpServletRequest) throws ApiException{
-		Response<UserList> vo = new Response<UserList>();
-		vo.setData(userSvc.getUserList());
-		return vo;
+	private UserService userService;
+
+	@RequestMapping(value = "/users", method = RequestMethod.GET)
+	public Response<UserList> getUsers() throws Exception {
+		Response<UserList> response = new Response<UserList>();
+		response.setData(userService.getUserList());
+		return response;
 	}
-	
-	
-	/**
-	 * all user list by namespace
-	 * @param httpServletRequest
-	 * @param map
-	 * @return
-	 * @throws ApiException
-	 */
-	@RequestMapping(value="/user/namespace/{namespace}", method=RequestMethod.GET)
-	@Deprecated
-	Response<UserList> userListOfNamespace(HttpServletRequest httpServletRequest, @PathVariable("namespace") String namespace) throws ApiException{
-		Response<UserList> vo = new Response<UserList>();
-		vo.setData(userSvc.getUserList(namespace));
-		return vo;
+
+	@RequestMapping(value = "/user/{username}", method = RequestMethod.GET)
+	public Response<ZcpUser> getUser(@PathVariable("username") String username) throws Exception {
+		logger.debug("The requested username is {}", username);
+
+		Response<ZcpUser> response = new Response<ZcpUser>();
+		response.setData(userService.getUser(username));
+		return response;
 	}
-	
-	
+
 	/**
 	 * all namespace list by user id
+	 * 
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
 	 * @throws ApiException
 	 */
-	@RequestMapping(value="/user/{userName}/namespaces", method=RequestMethod.GET)
-	Response<List<NamespaceVO>> getUserNamespaces(HttpServletRequest httpServletRequest
-			, @PathVariable("userName") String userName
-			, @RequestParam("mode") String mode) throws ApiException{
+	@RequestMapping(value = "/user/{username}/namespaces", method = RequestMethod.GET)
+	Response<List<NamespaceVO>> getUserNamespaces(HttpServletRequest httpServletRequest,
+			@PathVariable("username") String username, @RequestParam("mode") String mode) throws ApiException {
 		Response<List<NamespaceVO>> vo = new Response<List<NamespaceVO>>();
-		vo.setData(userSvc.getNamespaces(mode, userName));
+		vo.setData(userService.getNamespaces(mode, username));
 		return vo;
 	}
-	
+
 	/**
 	 * User Logout
+	 * 
 	 * @param session
 	 * @return
 	 * @throws ApiException
 	 * @throws ZcpException
-	 * @throws KeycloakException 
+	 * @throws KeyCloakException
 	 */
-	@RequestMapping(value="/user/{userName}/logout", method=RequestMethod.POST)
-	Response<Object> logout(HttpSession session
-			, @PathVariable("userName") String userName) throws KeycloakException{
+	@RequestMapping(value = "/user/{username}/logout", method = RequestMethod.POST)
+	public Response<Object> logout(HttpSession session, @PathVariable("username") String username)
+			throws KeyCloakException {
 		Response<Object> vo = new Response<Object>();
-		userSvc.logout(userName);
+		userService.logout(username);
 		return vo;
 	}
-	
+
 	/**
-	 * user info - need to login user
-	 * @param httpServletRequest
-	 * @param map
-	 * @return
-	 * @throws KeycloakException 
-	 * @throws IOException
-	 * @throws ApiException
-	 * @throws ParseException 
-	 * @throws ZcpException 
-	 */
-	@RequestMapping(value="/user/{userName}", method=RequestMethod.GET)
-	@NullProperty(field= {"namespace.metadata.creationTimestamp", "namespace.spec", "clusterrolebinding.metadata.creationTimestamp"})
-	Response<LoginInfoVO> getUser(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws ApiException, ParseException, KeycloakException {
-		Response<LoginInfoVO> vo = new Response<LoginInfoVO>();
-		vo.setData(userSvc.getUserInfo(userName));
-		return vo;
-	}
-	
-	
-	/**
-	 * get serviceAccount  token 
+	 * get serviceAccount token
+	 * 
 	 * @param httpServletRequest
 	 * @param map
 	 * @return
 	 * @throws IOException
 	 * @throws ApiException
-	 * @throws InterruptedException 
+	 * @throws InterruptedException
 	 * 
 	 */
-	@RequestMapping(value="/user/{userName}/serviceAccountToken", method=RequestMethod.GET)
-	Response<String> regenerateServiceAccount(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws IOException, ApiException, InterruptedException{
+	@RequestMapping(value = "/user/{username}/serviceAccountToken", method = RequestMethod.GET)
+	Response<String> regenerateServiceAccount(HttpServletRequest httpServletRequest,
+			@PathVariable("username") String username) throws IOException, ApiException, InterruptedException {
 		Response<String> vo = new Response<String>();
-		vo.setData(userSvc.getServiceAccountToken("zcp-system", userName));	
+		vo.setData(userService.getServiceAccountToken("zcp-system", username));
 		return vo;
 	}
-	
-	
-	
+
 	/**
 	 * edit user
-	 * @param httpServletRequest
-	 * @param memberVO
-	 * @return
-	 * @throws ZcpException 
-	 */
-	@RequestMapping(value="/user/{userName}", method=RequestMethod.PUT)
-	Response<Object> modifyUser(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws KeycloakException{
-		Response<Object> vo = new Response<Object>();
-		memberVO.setUserName(userName);
-		userSvc.editUser(memberVO);	
-		return vo;
-	}
-	
-	/**
-	 * create user
 	 * 
 	 * @param httpServletRequest
 	 * @param memberVO
 	 * @return
-	 * @throws ApiException
+	 * @throws ZcpException
 	 */
-	@RequestMapping(value="/user", method=RequestMethod.POST)
-	Response<Object> addUser(HttpServletRequest httpServletRequest, @RequestBody MemberVO memberVO) throws ApiException{
+	@RequestMapping(value = "/user/{username}", method = RequestMethod.PUT)
+	Response<Object> modifyUser(HttpServletRequest httpServletRequest, @PathVariable("username") String username,
+			@RequestBody MemberVO memberVO) throws KeyCloakException {
 		Response<Object> vo = new Response<Object>();
-		String msg = ValidUtil.required(memberVO,  "userName", "firstName", "lastName", "clusterRole");
-		if(!ValidUtil.check(EMAIL, memberVO.getEmail())) msg="email is invalid";
-		if(!ValidUtil.check(SERVICE_ACCOUNT_NAME, memberVO.getUserName())) msg="userName is invalid";
-		
-		if(msg != null) {
-			vo.setMsg(msg);
-			vo.setCode("500");
-		}
-		else {
-			userSvc.createUser(memberVO);	
-		}
+		memberVO.setUserName(username);
+		userService.editUser(memberVO);
 		return vo;
 	}
-	
-	
-	
+
+	@RequestMapping(value = "/user", method = RequestMethod.POST)
+	public Response<Object> addUser(@RequestBody @Valid ZcpUser zcpUser) throws Exception {
+		Response<Object> response = new Response<Object>();
+		userService.createUser(zcpUser);
+		return response;
+	}
+
 	/**
 	 * not yet implement - initialize user password
+	 * 
 	 * @param httpServletRequest
-	 * @param userName
+	 * @param username
 	 * @param password
 	 * @return
 	 * @throws ZcpException
 	 */
-	@RequestMapping(value="/user/{userName}/initUserPassword", method=RequestMethod.PUT)
-	Response<Object> initUserPassword(HttpServletRequest httpServletRequest
-			, @PathVariable("userName") String userName, @RequestBody PassResetVO password) throws KeycloakException{
+	@RequestMapping(value = "/user/{username}/initUserPassword", method = RequestMethod.PUT)
+	Response<Object> initUserPassword(HttpServletRequest httpServletRequest, @PathVariable("username") String username,
+			@RequestBody PassResetVO password) throws KeyCloakException {
 		Response<Object> vo = new Response<Object>();
 		String msg = ValidUtil.required(password, "actions");
-		
-		if(msg != null) {
+
+		if (msg != null) {
 			vo.setMsg(msg);
 			vo.setCode("500");
-		}
-		else {
-			password.setUserName(userName);
-			userSvc.initUserPassword(password);	
+		} else {
+			password.setUserName(username);
+			userService.initUserPassword(password);
 		}
 		return vo;
 	}
-	
-	
+
 	/**
-	 * delete the user opt password 
+	 * delete the user opt password
+	 * 
 	 * @param httpServletRequest
 	 * @param user
 	 * @return
 	 * @throws ZcpException
 	 */
-	@RequestMapping(value="/user/{userName}/removeOtpPassword", method=RequestMethod.DELETE)
-	Response<Object> removeOtpPassword(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws KeycloakException{
+	@RequestMapping(value = "/user/{username}/removeOtpPassword", method = RequestMethod.DELETE)
+	Response<Object> removeOtpPassword(HttpServletRequest httpServletRequest, @PathVariable("username") String username)
+			throws KeyCloakException {
 		Response<Object> vo = new Response<Object>();
-		userSvc.removeOtpPassword(userName);	
+		userService.removeOtpPassword(username);
 		return vo;
 	}
-	
-	
-	/**
-	 * delete user
-	 * @param httpServletRequest
-	 * @param memberVO
-	 * @return
-	 * @throws ZcpException 
-	 * @throws ApiException 
-	 */
-	@RequestMapping(value="/user/{userName}", method=RequestMethod.DELETE)
-	Response<Object> deleteUser(HttpServletRequest httpServletRequest, @PathVariable("userName") String userName) throws KeycloakException, ApiException{
-		Response<Object> vo = new Response<Object>();
-		userSvc.deleteUser(userName);	
-		return vo;
+
+	@RequestMapping(value = "/user/{username}", method = RequestMethod.DELETE)
+	Response<Object> deleteUser(@PathVariable("username") String username) throws KeyCloakException, ApiException {
+		Response<Object> response = new Response<Object>();
+		userService.deleteUser(username);
+		return response;
 	}
-	
-	
+
 	/**
 	 * chanage password
+	 * 
 	 * @param httpServletRequest
 	 * @param memberVO
 	 * @return
-	 * @throws ZcpException 
+	 * @throws ZcpException
 	 */
-	@RequestMapping(value="/user/{userName}/resetPassword", method=RequestMethod.PUT)
-	Response<Object> resetPassword(HttpServletRequest httpServletRequest
-			, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws KeycloakException{
+	@RequestMapping(value = "/user/{username}/resetPassword", method = RequestMethod.PUT)
+	Response<Object> resetPassword(HttpServletRequest httpServletRequest, @PathVariable("username") String username,
+			@RequestBody MemberVO memberVO) throws KeyCloakException {
 		Response<Object> vo = new Response<Object>();
 		String msg = ValidUtil.required(memberVO, "password");
-		if(msg != null) {
+		if (msg != null) {
 			vo.setMsg(msg);
 			vo.setCode("500");
-		}
-		else {
-			memberVO.setUserName(userName);
-			userSvc.editUserPassword(memberVO);	
+		} else {
+			memberVO.setUserName(username);
+			userService.editUserPassword(memberVO);
 		}
 		return vo;
 	}
-	
-	/**
-	 * all only cluster name  list
-	 * @param httpServletRequest
-	 * @param map
-	 * @return
-	 * @throws ApiException
-	 */
-	@RequestMapping(value="/user/clusterRole", method=RequestMethod.GET)
-	Response<List<ClusterRole>> getClusterRole(HttpServletRequest httpServletRequest) throws  ApiException {
-		Response<List<ClusterRole>> vo = new Response<List<ClusterRole>>();
-		vo.setData(userSvc.clusterRoleList());
-		return vo;
+
+	@RequestMapping(value = "/clusterRoles", method = RequestMethod.GET)
+	public Response<V1ClusterRoleList> getClusterRole() throws ApiException {
+		Response<V1ClusterRoleList> response = new Response<>();
+		response.setData(userService.clusterRoleList());
+		return response;
 	}
-	
-	
-	
+
 	/**
 	 * only clusterRoleBinding
 	 * 
@@ -295,23 +221,19 @@ public class UserController {
 	 * @throws ApiException
 	 * @throws ZcpException
 	 */
-	@RequestMapping(value="/user/{userName}/clusterRoleBinding", method=RequestMethod.PUT)
-	Response<Object> editClusterRole(HttpServletRequest httpServletRequest
-			, @PathVariable("userName") String userName, @RequestBody MemberVO memberVO) throws ApiException, KeycloakException{
+	@RequestMapping(value = "/user/{username}/clusterRoleBinding", method = RequestMethod.PUT)
+	Response<Object> editClusterRole(HttpServletRequest httpServletRequest, @PathVariable("username") String username,
+			@RequestBody MemberVO memberVO) throws ApiException, KeyCloakException {
 		Response<Object> vo = new Response<Object>();
-		String msg = ValidUtil.required(memberVO,  "clusterRole");
-		if(msg != null) {
+		String msg = ValidUtil.required(memberVO, "clusterRole");
+		if (msg != null) {
 			vo.setMsg(msg);
 			vo.setCode("500");
-		}
-		else {
-			memberVO.setUserName(userName);
-			userSvc.giveClusterRole(memberVO);	
+		} else {
+			memberVO.setUserName(username);
+			userService.giveClusterRole(memberVO);
 		}
 		return vo;
 	}
-	
-	
-	
-	
+
 }

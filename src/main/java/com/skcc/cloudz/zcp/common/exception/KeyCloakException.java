@@ -1,18 +1,18 @@
 package com.skcc.cloudz.zcp.common.exception;
 
-public class ZcpException extends Exception {
-	
-	private static final long serialVersionUID = 4608131642086831206L;
-	
+public class KeyCloakException extends Exception {
+
+	private static final long serialVersionUID = -9187848309581965198L;
+
 	private String message;
 	private String code;
 	
-	public ZcpException(String code, String message) {
+	public KeyCloakException(String code, String message) {
 		this.code = code;
 		this.message = message;
 	}
 	
-	public ZcpException(String code) {
+	public KeyCloakException(String code) {
 		this.code = code;
 	}
 	
