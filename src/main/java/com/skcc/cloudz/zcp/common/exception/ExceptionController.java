@@ -33,7 +33,16 @@ public class ExceptionController {
 	public Object exceptionResolver(HttpServletRequest req, Exception e) {
 		RtnVO vo = new RtnVO();
 		logger.debug("UnKnown Error...{}", e);
-		vo.setCode("500");// 코드 수정 예정
+		if (e instanceof ZcpException) {
+			vo.setCode(((ZcpException)e).getCode());
+		} else if (e instanceof KeyCloakException) {
+			vo.setCode(((KeyCloakException)e).getCode());
+		} else if (e instanceof ApiException ) {
+			vo.setCode(String.valueOf(((ApiException)e).getCode()));
+		} else {
+			vo.setCode("500");
+		}
+
 		vo.setMsg(e.getMessage());
 		return vo;
 	}

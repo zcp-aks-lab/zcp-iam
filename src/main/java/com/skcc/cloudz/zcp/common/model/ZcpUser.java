@@ -1,4 +1,4 @@
-package com.skcc.cloudz.zcp.user.vo;
+package com.skcc.cloudz.zcp.common.model;
 
 import java.util.Date;
 import java.util.List;
@@ -17,8 +17,8 @@ public class ZcpUser {
 	private String firstName;
 	private String lastName;
 	private Date createdDate;
-	private boolean enabled;
-	private boolean emailVerified;
+	private Boolean enabled;
+	private Boolean emailVerified;
 	private ClusterRole clusterRole;
 	private List<String> namespaces;
 	private String defaultNamespace;
@@ -76,22 +76,6 @@ public class ZcpUser {
 		this.createdDate = createdDate;
 	}
 
-	public boolean isEnabled() {
-		return enabled;
-	}
-
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
-
-	public boolean isEmailVerified() {
-		return emailVerified;
-	}
-
-	public void setEmailVerified(boolean emailVerified) {
-		this.emailVerified = emailVerified;
-	}
-
 	public ClusterRole getClusterRole() {
 		return clusterRole;
 	}
@@ -130,6 +114,22 @@ public class ZcpUser {
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+
+	public Boolean getEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(Boolean enabled) {
+		this.enabled = enabled;
+	}
+
+	public Boolean getEmailVerified() {
+		return emailVerified;
+	}
+
+	public void setEmailVerified(Boolean emailVerified) {
+		this.emailVerified = emailVerified;
 	}
 
 }

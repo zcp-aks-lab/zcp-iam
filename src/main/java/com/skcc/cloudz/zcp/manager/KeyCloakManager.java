@@ -1,8 +1,6 @@
 package com.skcc.cloudz.zcp.manager;
 
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -12,20 +10,20 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.skcc.cloudz.zcp.common.exception.KeyCloakException;
-import com.skcc.cloudz.zcp.user.vo.MemberVO;
-import com.skcc.cloudz.zcp.user.vo.PassResetVO;
-import com.skcc.cloudz.zcp.user.vo.ZcpUser;
 
 @Component
 public class KeyCloakManager {
 
 	private final Logger logger = LoggerFactory.getLogger(KeyCloakManager.class);
+
+	public static final String DEFAULT_NAMESPACE_ATTRIBUTE_KEY = "defaultNamespace";
 
 	@Autowired
 	@Qualifier("keycloak")
@@ -42,72 +40,47 @@ public class KeyCloakManager {
 		return realmResource.users().list();
 	}
 
-	public void createUser(ZcpUser zcpUser) {
-		UsersResource userRessource = keycloak.realm(realm).users();
-		UserRepresentation user = new UserRepresentation();
-		user.setFirstName(zcpUser.getFirstName());
-		user.setLastName(zcpUser.getLastName());
-		user.setEmail(zcpUser.getEmail());
-		user.setUsername(zcpUser.getUsername());
-		user.setEnabled(zcpUser.isEnabled());
-		userRessource.create(user);
-		// TODO defaultNamesapce
+	public void createUser(UserRepresentation userRepresentation) {
+		UsersResource usersRessource = keycloak.realm(realm).users();
+		usersRessource.create(userRepresentation);
 	}
 
-	public ZcpUser getUser(String username) throws KeyCloakException {
-		UsersResource userRessource = keycloak.realm(realm).users();
-		UserRepresentation userRepresentation = getUser(userRessource, username);
+	public UserRepresentation getUser(String id) throws KeyCloakException {
+		UsersResource usersRessource = keycloak.realm(realm).users();
+		UserResource userResource = usersRessource.get(id);
+		if (userResource == null) {
+			throw new KeyCloakException("KK-0001", "The user does not exist");
+		}
+		
+		return userResource.toRepresentation();
+	}
+	
+	public void editUser(UserRepresentation userRepresentation) throws KeyCloakException {
+		UsersResource usersRessource = keycloak.realm(realm).users();
+		// to keep the other's original values
+		UserResource userResource = usersRessource.get(userRepresentation.getId());
+		UserRepresentation currnetUserRepresentation = userResource.toRepresentation();
 
-		ZcpUser user = new ZcpUser();
-		user.setId(userRepresentation.getId());
-		user.setFirstName(userRepresentation.getFirstName());
-		user.setLastName(userRepresentation.getLastName());
-		user.setEmail(userRepresentation.getEmail());
-		user.setEnabled(userRepresentation.isEnabled());
-		user.setUsername(userRepresentation.getUsername());
-		user.setCreatedDate(new Date(userRepresentation.getCreatedTimestamp()));
-		user.setEmailVerified(userRepresentation.isEmailVerified());
-		Map<String, List<String>> attributes = userRepresentation.getAttributes();
-		if (attributes != null) {
-			List<String> defaultNamespaces = attributes.get("defaultNamespace");
-			if (defaultNamespaces != null && !defaultNamespaces.isEmpty()) {
-				user.setDefaultNamespace(defaultNamespaces.get(0));
-			}
+		if (currnetUserRepresentation == null) {
+			throw new KeyCloakException("KK-0001", "The user does not exist");
 		}
 
-		return user;
+		BeanUtils.copyProperties(userRepresentation, currnetUserRepresentation);
+
+		userResource.update(currnetUserRepresentation);
 	}
 
-	public void editUser(MemberVO vo) throws KeyCloakException {
-		UsersResource userRessource = keycloak.realm(realm).users();
-		UserRepresentation user = getUser(userRessource, vo.getUserName());
-		if (user != null) {
-			user.setFirstName(vo.getFirstName());
-			user.setLastName(vo.getLastName());
-			user.setEmail(vo.getEmail());
-			user.setAttributes(vo.rcvAttributeMap());
-			user.setUsername(vo.getUserName());
-			user.setEnabled(vo.getEnabled());
-			userRessource.get(user.getId()).update(user);
+	public void deleteUser(String id) throws KeyCloakException {
+		UsersResource usersRessource = keycloak.realm(realm).users();
+		UserResource userResource = usersRessource.get(id);
+		if (userResource == null) {
+			throw new KeyCloakException("KK-0001", "The user does not exist");
 		}
+		
+		userResource.remove();
 	}
 
-	public void editAttribute(MemberVO vo) throws KeyCloakException {
-		UsersResource userRessource = keycloak.realm(realm).users();
-		UserRepresentation user = getUser(userRessource, vo.getUserName());
-		if (user != null) {
-			userRessource.get(user.getId()).update(user);
-		}
-	}
-
-	public void deleteUser(String userName) throws KeyCloakException {
-		UsersResource userRessource = keycloak.realm(realm).users();
-		UserRepresentation user = getUser(userRessource, userName);
-		if (user != null) {
-			userRessource.get(user.getId()).remove();
-		}
-	}
-
+	@Deprecated
 	private UserRepresentation getUser(UsersResource usersResource, String username) throws KeyCloakException {
 		List<UserRepresentation> users = usersResource.search(username);
 		if (users == null || users.isEmpty()) {
@@ -128,49 +101,43 @@ public class KeyCloakManager {
 		return users.get(0);
 	}
 
-	public void editUserPassword(MemberVO vo) throws KeyCloakException {
-		UsersResource userRessource = keycloak.realm(realm).users();
-		UserRepresentation userRepresentation = getUser(userRessource, vo.getUserName());
-		if (userRepresentation != null) {
-			CredentialRepresentation credentail = new CredentialRepresentation();
-			credentail.setType(CredentialRepresentation.PASSWORD);
-			credentail.setValue(vo.getPassword());
-			credentail.setTemporary(vo.isChangedAfterLogin());
-			userRessource.get(userRepresentation.getId()).resetPassword(credentail);
+	public void editUserPassword(String id, CredentialRepresentation credentail) throws KeyCloakException {
+		UsersResource usersRessource = keycloak.realm(realm).users();
+		UserResource userResource = usersRessource.get(id);
+		UserRepresentation userRepresentation = userResource.toRepresentation();
+		if (userRepresentation == null) {
+			throw new KeyCloakException("KK-000", "user does not exist");
 		}
+		userResource.resetPassword(credentail);
 	}
 
-	public void initUserPassword(PassResetVO vo) throws KeyCloakException {
+	public void resetUserCredentials(String id, List<String> actions) throws KeyCloakException {
 		UsersResource usersResource = keycloak.realm(realm).users();
-		UserRepresentation userp = getUser(usersResource, vo.getUserName());
-		if (userp != null) {
-			UserResource user = usersResource.get(userp.getId());
-			// CredentialRepresentation credentialRepresentation = new
-			// CredentialRepresentation();
-			// credentialRepresentation.setPeriod(vo.getPeriod());
-			// //usersResource.get(userp.getId()).update(userp);
-			// credentialRepresentation.setType(CredentialRepresentation.PASSWORD);
-			// user.resetPassword(credentialRepresentation);
-			user.executeActionsEmail(null, vo.getRedirectUri(), vo.getActions());
+		UserResource userResource = usersResource.get(id);
+
+		if (userResource == null) {
+			throw new KeyCloakException("KK-000", "user does not exist");
 		}
+
+		userResource.executeActionsEmail(actions);
 	}
 
-	public void removeOtpPassword(String username) throws KeyCloakException {
+	public void deleteUserOtpPassword(String id) throws KeyCloakException {
 		UsersResource usersResource = keycloak.realm(realm).users();
-		UserRepresentation userRepresentation = getUser(usersResource, username);
-		if (userRepresentation != null) {
-			UserResource user = usersResource.get(userRepresentation.getId());
-			user.removeTotp();
+		UserResource userResource = usersResource.get(id);
+		if (userResource == null) {
+			throw new KeyCloakException("KK-000", "user does not exist");
 		}
+		userResource.removeTotp();
 	}
 
-	public void logout(String username) throws KeyCloakException {
+	public void logout(String id) throws KeyCloakException {
 		UsersResource usersResource = keycloak.realm(realm).users();
-		UserRepresentation userRepresentation = getUser(usersResource, username);
-		if (userRepresentation != null) {
-			UserResource user = usersResource.get(userRepresentation.getId());
-			user.logout();
+		UserResource userResource = usersResource.get(id);
+		if (userResource == null) {
+			throw new KeyCloakException("KK-000", "user does not exist");
 		}
+		userResource.logout();
 	}
 
 }

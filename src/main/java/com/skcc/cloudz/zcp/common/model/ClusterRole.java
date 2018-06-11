@@ -1,4 +1,4 @@
-package com.skcc.cloudz.zcp.user.vo;
+package com.skcc.cloudz.zcp.common.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

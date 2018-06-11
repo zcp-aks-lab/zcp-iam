@@ -7,7 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.json.simple.parser.ParseException;
+import org.apache.commons.lang3.StringUtils;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,24 +18,25 @@ import org.springframework.stereotype.Service;
 
 import com.skcc.cloudz.zcp.common.exception.KeyCloakException;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
+import com.skcc.cloudz.zcp.common.model.ClusterRole;
+import com.skcc.cloudz.zcp.common.model.UserList;
+import com.skcc.cloudz.zcp.common.model.ZcpUser;
 import com.skcc.cloudz.zcp.manager.KeyCloakManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.manager.ResourcesLabelManager;
 import com.skcc.cloudz.zcp.manager.ResourcesNameManager;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
-import com.skcc.cloudz.zcp.user.vo.ClusterRole;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
-import com.skcc.cloudz.zcp.user.vo.PassResetVO;
-import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
-import com.skcc.cloudz.zcp.user.vo.UserList;
-import com.skcc.cloudz.zcp.user.vo.ZcpUser;
+import com.skcc.cloudz.zcp.user.vo.ResetCredentialVO;
+import com.skcc.cloudz.zcp.user.vo.ResetPasswordVO;
+import com.skcc.cloudz.zcp.user.vo.UpdateClusterRoleVO;
+import com.skcc.cloudz.zcp.user.vo.UpdatePasswordVO;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.models.V1ClusterRoleList;
-import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
@@ -60,15 +62,6 @@ public class UserService {
 
 	@Autowired
 	private KubeRbacAuthzManager kubeRbacAuthzManager;
-
-	@Value("${kube.cluster.role.binding.prefix}")
-	private String clusterRoleBindingPrefix;
-
-	@Value("${kube.role.binding.prefix}")
-	private String roleBindingPrefix;
-
-	@Value("${kube.service.account.prefix}")
-	private String serviceAccountPrefix;
 
 	@Value("${kube.system.namespace}")
 	private String zcpSystemNamespace;
@@ -150,6 +143,7 @@ public class UserService {
 		return map;
 	}
 
+	@Deprecated
 	public UserList getUserListByNamespace(String namespace) throws ApiException {
 
 		List<ZcpUser> users = new ArrayList<ZcpUser>();
@@ -160,7 +154,7 @@ public class UserService {
 		for (V1RoleBinding binding : rolebindings) {
 			String name = binding.getMetadata().getName();
 			for (UserRepresentation cloakUser : keyCloakUsers) {
-				if (name.equals(this.roleBindingPrefix + cloakUser.getUsername())) {
+				if (name.equals(ResourcesNameManager.getRoleBindingName(cloakUser.getUsername()))) {
 					ZcpUser user = new ZcpUser();
 					user.setUsername(cloakUser.getUsername());
 					user.setEmail(cloakUser.getEmail());
@@ -188,29 +182,29 @@ public class UserService {
 
 	}
 
-	public void createUser(ZcpUser zcpUser) throws ZcpException {
+	public void createUser(MemberVO user) throws ZcpException {
 		// 1. create service account
 		V1ServiceAccountList serviceAccountList = null;
 		try {
 			serviceAccountList = kubeCoreManager.getServiceAccountListByUsername(zcpSystemNamespace,
-					zcpUser.getUsername());
+					user.getUsername());
 		} catch (ApiException e) {
 			// ignore
 		}
-		
+
 		if (serviceAccountList != null) {
 			V1Status status = null;
 			try {
-				status = kubeCoreManager.deleteServiceAccountListByUsername(zcpSystemNamespace,
-						zcpUser.getUsername());
+				status = kubeCoreManager.deleteServiceAccountListByUsername(zcpSystemNamespace, user.getUsername());
 			} catch (ApiException e) {
 				throw new ZcpException("ZCP-008", e.getMessage());
 			}
-			
-			logger.debug("The serviceaccounts of user({}) have been removed. {}", zcpUser.getUsername(), status.getMessage());
+
+			logger.debug("The serviceaccounts of user({}) have been removed. {}", user.getUsername(),
+					status.getMessage());
 		}
 
-		V1ServiceAccount serviceAccount = getServiceAccount(zcpUser.getUsername());
+		V1ServiceAccount serviceAccount = getServiceAccount(user.getUsername());
 
 		try {
 			serviceAccount = kubeCoreManager.createServiceAccount(zcpSystemNamespace, serviceAccount);
@@ -219,26 +213,27 @@ public class UserService {
 		}
 
 		// 2. create clusterRolebindinding
-		 V1ClusterRoleBindingList clusterRoleBindingList = null;
-		 try {
-			clusterRoleBindingList = kubeRbacAuthzManager.getClusterRoleBindingListByUsername(zcpUser.getUsername());
+		V1ClusterRoleBindingList clusterRoleBindingList = null;
+		try {
+			clusterRoleBindingList = kubeRbacAuthzManager.getClusterRoleBindingListByUsername(user.getUsername());
 		} catch (ApiException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		 
+
 		if (clusterRoleBindingList != null) {
 			V1Status status = null;
 			try {
-				status = kubeRbacAuthzManager.deleteClusterRoleBindingByUsername(zcpUser.getUsername());
+				status = kubeRbacAuthzManager.deleteClusterRoleBindingByUsername(user.getUsername());
 			} catch (ApiException e) {
 				throw new ZcpException("ZCP-008", e.getMessage());
 			}
-			
-			logger.debug("The clusterRoleBindings of user({}) have been removed. {}", zcpUser.getUsername(), status.getMessage());
+
+			logger.debug("The clusterRoleBindings of user({}) have been removed. {}", user.getUsername(),
+					status.getMessage());
 		}
-		
-		V1ClusterRoleBinding clusterRoleBinding = getClusterRoleBinding(zcpUser);
+
+		V1ClusterRoleBinding clusterRoleBinding = getClusterRoleBinding(user.getUsername(), user.getClusterRole());
 		try {
 			clusterRoleBinding = kubeRbacAuthzManager.createClusterRoleBinding(clusterRoleBinding);
 		} catch (ApiException e) {
@@ -246,79 +241,23 @@ public class UserService {
 		}
 
 		// 3. create keycloak user
-		 keyCloakManager.createUser(zcpUser);
+		user.setEnabled(Boolean.TRUE);
+		UserRepresentation userRepresentation = getKeyCloakUser(null, user);
+
+		keyCloakManager.createUser(userRepresentation);
 	}
 
-	private V1ServiceAccount getServiceAccount(String username) {
-		String serviceAccountName = ResourcesNameManager.getServiceAccountName(username);
-		V1ObjectMeta metadata = new V1ObjectMeta();
-		metadata.setName(serviceAccountName);
-		metadata.setNamespace(zcpSystemNamespace);
-		metadata.setLabels(ResourcesLabelManager.getSystemUsernameLabels(username));
-
-		V1ServiceAccount serviceAccount = new V1ServiceAccount();
-		serviceAccount.setMetadata(metadata);
-
-		return serviceAccount;
-	}
-
-	private V1ClusterRoleBinding getClusterRoleBinding(ZcpUser zcpUser) {
-		String username = zcpUser.getUsername();
-		String serviceAccountName = ResourcesNameManager.getServiceAccountName(username);
-		String clusterRoleBindingName = ResourcesNameManager.getServiceAccountName(username);
-
-		V1ObjectMeta metadata = new V1ObjectMeta();
-		metadata.setName(clusterRoleBindingName);
-		metadata.setNamespace(zcpSystemNamespace);
-		metadata.setLabels(ResourcesLabelManager.getSystemUsernameLabels(username));
-
-		V1Subject subject = new V1Subject();
-		subject.setKind("ServiceAccount");
-		subject.setName(serviceAccountName);
-		subject.setNamespace(zcpSystemNamespace);
-
-		List<V1Subject> subjects = new ArrayList<V1Subject>();
-		subjects.add(subject);
-
-		V1RoleRef roleRef = new V1RoleRef();
-		roleRef.setApiGroup("rbac.authorization.k8s.io");
-		roleRef.setKind("ClusterRole");
-		roleRef.setName(zcpUser.getClusterRole().getRole());
-
-		V1ClusterRoleBinding clusterRoleBinding = new V1ClusterRoleBinding();
-		clusterRoleBinding.setMetadata(metadata);
-		clusterRoleBinding.setRoleRef(roleRef);
-		clusterRoleBinding.setSubjects(subjects);
-
-		return clusterRoleBinding;
-	}
-
-	public void giveClusterRole(MemberVO vo) throws ApiException, KeyCloakException {
-		// 2. clusterRolebindinding 식제
-		try {
-			kubeRbacAuthzManager.deleteClusterRoleBinding(this.clusterRoleBindingPrefix + vo.getUserName(),
-					new V1DeleteOptions());
-		} catch (ApiException e) {
-			if (!e.getMessage().equals("Not Found")) {
-				throw e;
-			}
-		}
-
-		// 2. clusterRolebindinding 생성
-		// V1ClusterRoleBinding binding = createClusterRoleBinding(vo);
-		// this.createClusterRoleBinding(vo.getUserName(), binding);
-
-		keyCloakManager.editAttribute(vo);
-
-	}
-
-	public ZcpUser getUser(String username) throws ZcpException {
+	public ZcpUser getUser(String id) throws ZcpException {
+		UserRepresentation userRepresentation = null;
 		ZcpUser zcpUser = null;
 		try {
-			zcpUser = keyCloakManager.getUser(username);
+			userRepresentation = keyCloakManager.getUser(id);
 		} catch (KeyCloakException e) {
 			throw new ZcpException("ZCP-0001", e.getMessage());
 		}
+
+		zcpUser = convertUser(userRepresentation);
+		String username = zcpUser.getUsername();
 
 		V1ClusterRoleBinding userClusterRoleBinding = getClusterRoleBindingByUsername(username);
 		if (userClusterRoleBinding == null) {
@@ -350,59 +289,209 @@ public class UserService {
 
 	}
 
-	public void editUser(MemberVO vo) throws KeyCloakException {
-		keyCloakManager.editUser(vo);
-	}
-
-	public void editUserPassword(MemberVO vo) throws KeyCloakException {
-		keyCloakManager.editUserPassword(vo);
-	}
-
-	public void deleteUser(String username) throws KeyCloakException, ApiException {
-		// 1.service account 삭제
-		V1DeleteOptions deleteOption = new V1DeleteOptions();
-		try {
-			kubeCoreManager.deleteServiceAccount(serviceAccountPrefix + username, zcpSystemNamespace, deleteOption);
-		} catch (ApiException e) {
-			if (!e.getMessage().equals("Not Found")) {
-				throw e;
+	private ZcpUser convertUser(UserRepresentation userRepresentation) {
+		ZcpUser user = new ZcpUser();
+		user.setId(userRepresentation.getId());
+		user.setFirstName(userRepresentation.getFirstName());
+		user.setLastName(userRepresentation.getLastName());
+		user.setEmail(userRepresentation.getEmail());
+		user.setEnabled(userRepresentation.isEnabled());
+		user.setUsername(userRepresentation.getUsername());
+		user.setCreatedDate(new Date(userRepresentation.getCreatedTimestamp()));
+		user.setEmailVerified(userRepresentation.isEmailVerified());
+		Map<String, List<String>> attributes = userRepresentation.getAttributes();
+		if (attributes != null) {
+			List<String> defaultNamespaces = attributes.get(KeyCloakManager.DEFAULT_NAMESPACE_ATTRIBUTE_KEY);
+			if (defaultNamespaces != null && !defaultNamespaces.isEmpty()) {
+				user.setDefaultNamespace(defaultNamespaces.get(0));
 			}
 		}
 
-		// 2.cluster role binding 삭제
+		return user;
+	}
+
+	public void editUser(String id, MemberVO user) throws ZcpException {
+
 		try {
-			kubeRbacAuthzManager.deleteClusterRoleBinding(serviceAccountPrefix + username, deleteOption);
+			keyCloakManager.editUser(getKeyCloakUser(id, user));
+		} catch (KeyCloakException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
+	}
+
+	private UserRepresentation getKeyCloakUser(String id, MemberVO user) {
+		UserRepresentation userRepresentation = new UserRepresentation();
+		userRepresentation.setId(id);
+		userRepresentation.setFirstName(user.getFirstName());
+		userRepresentation.setLastName(user.getLastName());
+		userRepresentation.setEmail(user.getEmail());
+		userRepresentation.setUsername(user.getUsername());
+		userRepresentation.setEnabled(user.getEnabled());
+		if (StringUtils.isNoneEmpty(user.getDefaultNamespace())) {
+			List<String> defaultNamespaces = new ArrayList<>();
+			defaultNamespaces.add(user.getDefaultNamespace());
+
+			Map<String, List<String>> attributes = new HashMap<>();
+			attributes.put(KeyCloakManager.DEFAULT_NAMESPACE_ATTRIBUTE_KEY, defaultNamespaces);
+
+			userRepresentation.setAttributes(attributes);
+		}
+
+		return userRepresentation;
+	}
+
+	private V1ServiceAccount getServiceAccount(String username) {
+		String serviceAccountName = ResourcesNameManager.getServiceAccountName(username);
+		V1ObjectMeta metadata = new V1ObjectMeta();
+		metadata.setName(serviceAccountName);
+		metadata.setNamespace(zcpSystemNamespace);
+		metadata.setLabels(ResourcesLabelManager.getSystemUsernameLabels(username));
+
+		V1ServiceAccount serviceAccount = new V1ServiceAccount();
+		serviceAccount.setMetadata(metadata);
+
+		return serviceAccount;
+	}
+
+	private V1ClusterRoleBinding getClusterRoleBinding(String username, ClusterRole clusterRole) {
+		String serviceAccountName = ResourcesNameManager.getServiceAccountName(username);
+		String clusterRoleBindingName = ResourcesNameManager.getServiceAccountName(username);
+
+		V1ObjectMeta metadata = new V1ObjectMeta();
+		metadata.setName(clusterRoleBindingName);
+		metadata.setNamespace(zcpSystemNamespace);
+		metadata.setLabels(ResourcesLabelManager.getSystemUsernameLabels(username));
+
+		V1Subject subject = new V1Subject();
+		subject.setKind("ServiceAccount");
+		subject.setName(serviceAccountName);
+		subject.setNamespace(zcpSystemNamespace);
+
+		List<V1Subject> subjects = new ArrayList<V1Subject>();
+		subjects.add(subject);
+
+		V1RoleRef roleRef = new V1RoleRef();
+		roleRef.setApiGroup("rbac.authorization.k8s.io");
+		roleRef.setKind("ClusterRole");
+		roleRef.setName(clusterRole.getRole());
+
+		V1ClusterRoleBinding clusterRoleBinding = new V1ClusterRoleBinding();
+		clusterRoleBinding.setMetadata(metadata);
+		clusterRoleBinding.setRoleRef(roleRef);
+		clusterRoleBinding.setSubjects(subjects);
+
+		return clusterRoleBinding;
+	}
+
+	public void updateUserClusterRole(String id, UpdateClusterRoleVO vo) throws ZcpException {
+		UserRepresentation userRepresentation = null;
+		try {
+			userRepresentation = keyCloakManager.getUser(id);
+		} catch (KeyCloakException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
+		
+		String username = userRepresentation.getUsername();
+		
+		// delete clusterRolebindinding
+		try {
+			kubeRbacAuthzManager.deleteClusterRoleBindingByUsername(username);
 		} catch (ApiException e) {
-			if (!e.getMessage().equals("Not Found")) {
-				throw e;
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
+
+		// create new clusterRolebindinding
+		V1ClusterRoleBinding clusterRoleBinding = getClusterRoleBinding(username, vo.getClusterRole());
+		try {
+			clusterRoleBinding = kubeRbacAuthzManager.createClusterRoleBinding(clusterRoleBinding);
+		} catch (ApiException e) {
+			throw new ZcpException("ZCP-009", e.getMessage());
+		}
+	}
+
+	public void updateUserPassword(String id, UpdatePasswordVO vo) throws ZcpException {
+		// TODO check current password
+		try {
+			keyCloakManager.editUserPassword(id, getCredentialRepresentation(vo.getNewPassword(), Boolean.FALSE));
+		} catch (KeyCloakException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
+	}
+
+	public void resetUserPassword(String id, ResetPasswordVO vo) throws ZcpException {
+		try {
+			keyCloakManager.editUserPassword(id, getCredentialRepresentation(vo.getPassword(), vo.getTemporary()));
+		} catch (KeyCloakException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
+	}
+
+	private CredentialRepresentation getCredentialRepresentation(String password, Boolean temporary) {
+		CredentialRepresentation credentail = new CredentialRepresentation();
+		credentail.setType(CredentialRepresentation.PASSWORD);
+		credentail.setValue(password);
+		credentail.setTemporary(temporary);
+		return credentail;
+	}
+
+	public void deleteUser(String id) throws ZcpException {
+		UserRepresentation userRepresentation = null;
+		try {
+			userRepresentation = keyCloakManager.getUser(id);
+		} catch (KeyCloakException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
+		
+		String username = userRepresentation.getUsername();
+		
+		// delete service account
+		try {
+			kubeCoreManager.deleteServiceAccountListByUsername(zcpSystemNamespace, username);
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
+
+		// delete clusterrolebinding
+		try {
+			kubeRbacAuthzManager.deleteClusterRoleBindingByUsername(username);
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
+
+		// delete rolebindings
+		List<String> userNamespaces = getUser(username).getNamespaces();
+		if (userNamespaces != null && !userNamespaces.isEmpty()) {
+			for (String namespace : userNamespaces) {
+				try {
+					kubeRbacAuthzManager.deleteRoleBindingListByUsername(namespace, username);
+				} catch (ApiException e) {
+					e.printStackTrace();
+					throw new ZcpException("ZCP-000", e.getMessage());
+				}
 			}
 		}
 
-		keyCloakManager.deleteUser(username);
+		// delete keycloak user
+		try {
+			keyCloakManager.deleteUser(id);
+		} catch (KeyCloakException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
 	}
 
-	/**
-	 * @return
-	 * @throws ApiException
-	 * @throws ParseException
-	 * 
-	 *             네임 스페이스 정보
-	 * 
-	 */
+	@Deprecated
 	public List<NamespaceVO> getNamespaces(String mode, String username) throws ApiException {
 		List<NamespaceVO> namespaceList = new ArrayList<NamespaceVO>();
 
-		// if("simple".equals(mode)) {
-		// V1RoleBindingList rolebinding = AuthMng.RoleBindingListOfUser(username);
-		//
-		// List<String> name = new ArrayList<String>();
-		// for(V1RoleBinding nm : rolebinding.getItems()) {
-		// name.add( nm.getMetadata().getName());
-		// }
-		// NamespaceVO vo = new NamespaceVO();
-		// vo.setNamespace(Util.asCommaData(name));
-		// namespaceList.add(vo);
-		// }else if("full".equals(mode)) {
 		V1RoleBindingList rolebinding = kubeRbacAuthzManager.getRoleBindingListByNamespace(username);
 		for (V1RoleBinding nm : rolebinding.getItems()) {
 			String namespaceName = nm.getMetadata().getName();
@@ -414,19 +503,11 @@ public class UserService {
 			vo.setResourceQuota(quota);
 			namespaceList.add(vo);
 		}
-		// }
 
 		return namespaceList;
 
 	}
 
-	/**
-	 * 사용자 이름에 따른 clusterrolebinding 값
-	 * 
-	 * @param username
-	 * @return
-	 * @throws ApiException
-	 */
 	public V1ClusterRoleBinding getClusterRoleBindingByUsername(String username) throws ZcpException {
 
 		List<V1ClusterRoleBinding> userClusterRoleBindings = null;
@@ -449,42 +530,11 @@ public class UserService {
 
 		return userClusterRoleBindings.get(0);
 
-		// Stream<V1ClusterRoleBinding> serviceAccount =
-		// userClusterRoleBindings.stream().filter((srvAcc) -> {
-		// List<V1Subject> subjects = srvAcc.getSubjects();
-		// if (subjects != null) {
-		// Stream<V1Subject> s = subjects.stream().filter((subject) -> {
-		// log.debug("kind={} , name={}", subject.getKind(), subject.getName());
-		// return subject.getKind().equals("ServiceAccount")
-		// && subject.getName().equals(serviceAccountPrefix + username);
-		// });
-		// if (s != null)
-		// return s.count() > 0;
-		// else
-		// return false;
-		// }
-		// return false;
-		// });
-		// try {
-		// return serviceAccount.findAny().get();
-		// } catch (NoSuchElementException e) {
-		// return null;
-		// }
-
 	}
 
+	@Deprecated
 	public String getServiceAccountToken(String namespace, String username)
 			throws IOException, ApiException, InterruptedException {
-		// 1. delete service account
-		kubeCoreManager.deleteServiceAccount(serviceAccountPrefix + username, namespace, new V1DeleteOptions());
-
-		// 2. create service account
-		MemberVO vo = new MemberVO();
-		vo.setUserName(username);
-		createServiceAccount(vo);
-
-		// 3. get secretes though serviceAccount
-		Thread.sleep(100);// sync problem raise
 		List<V1ObjectReference> secrets = kubeCoreManager.getServiceAccountListByUsername(namespace, username)
 				.getItems().get(0).getSecrets();
 		if (secrets != null)
@@ -498,44 +548,25 @@ public class UserService {
 		return null;
 	}
 
-	public void initUserPassword(PassResetVO password) throws KeyCloakException {
-		keyCloakManager.initUserPassword(password);
+	public void resetUserCredentials(String id, ResetCredentialVO resetCredentialVO) throws ZcpException {
+		try {
+			keyCloakManager.resetUserCredentials(id, resetCredentialVO.getActions());
+		} catch (KeyCloakException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
 	}
 
-	public void removeOtpPassword(String username) throws KeyCloakException {
-		keyCloakManager.removeOtpPassword(username);
+	public void deleteOtpPassword(String id) throws KeyCloakException {
+		keyCloakManager.deleteUserOtpPassword(id);
 	}
 
 	public V1ClusterRoleList clusterRoleList() throws ApiException {
 		return kubeRbacAuthzManager.getClusterRoleList();
 	}
 
-	public void logout(String username) throws KeyCloakException {
-		keyCloakManager.logout(username);
-	}
-	
-	private V1ServiceAccount createServiceAccount(MemberVO vo) throws ApiException {
-		ServiceAccountVO data = new ServiceAccountVO();
-		data.setNamespace(zcpSystemNamespace);
-		data.setApiVersion("v1");
-		data.setKind("ServiceAccount");
-		V1ObjectMeta smetadata = new V1ObjectMeta();
-		smetadata.setName(serviceAccountPrefix + vo.getUserName());
-		data.setMetadata(smetadata);
-		
-		return createAndEditServiceAccount(serviceAccountPrefix + vo.getUserName(), zcpSystemNamespace, data);
-		
+	public void logout(String id) throws KeyCloakException {
+		keyCloakManager.logout(id);
 	}
 
-	private V1ServiceAccount  createAndEditServiceAccount(String name, String namespace, ServiceAccountVO vo) throws ApiException {
-		try {
-			return kubeCoreManager.createServiceAccount(vo.getNamespace(), vo);
-		} catch (ApiException e) {
-			if(e.getMessage().equals("Conflict")) {
-				return kubeCoreManager.editServiceAccount(name, vo.getNamespace(), vo);
-			}else {
-				throw e;	
-			}
-		}
-	}
 }

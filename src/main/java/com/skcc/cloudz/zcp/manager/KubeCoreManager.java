@@ -49,12 +49,12 @@ public class KubeCoreManager {
 		return api.createNamespacedServiceAccount(namespace, serviceAccount, pretty);
 	}
 
-	public V1ServiceAccount editServiceAccount(String serviceAccountName, String namespace,
+	public V1ServiceAccount editServiceAccount(String namespace, String serviceAccountName,
 			V1ServiceAccount serviceAccount) throws ApiException {
 		return api.replaceNamespacedServiceAccount(serviceAccountName, namespace, serviceAccount, pretty);
 	}
 
-	public V1Status deleteServiceAccount(String serviceAccountName, String namespace, V1DeleteOptions deleteOption)
+	public V1Status deleteServiceAccount(String namespace, String serviceAccountName, V1DeleteOptions deleteOption)
 			throws ApiException {
 		return api.deleteNamespacedServiceAccount(serviceAccountName, namespace, deleteOption, pretty, null, null,
 				null);
@@ -87,7 +87,8 @@ public class KubeCoreManager {
 		return api.createNamespacedLimitRange(namespace, limitRange, pretty);
 	}
 
-	public V1LimitRange editLimitRange(String namespace, String limitRangeName, V1LimitRange limitRange) throws ApiException {
+	public V1LimitRange editLimitRange(String namespace, String limitRangeName, V1LimitRange limitRange)
+			throws ApiException {
 		return api.replaceNamespacedLimitRange(limitRangeName, namespace, limitRange, pretty);
 	}
 

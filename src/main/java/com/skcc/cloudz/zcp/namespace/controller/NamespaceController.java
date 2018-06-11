@@ -16,14 +16,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skcc.cloudz.zcp.common.annotation.NullProperty;
+import com.skcc.cloudz.zcp.common.model.UserList;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.Response;
-import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.namespace.service.NamespaceService;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
+import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.user.service.UserService;
-import com.skcc.cloudz.zcp.user.vo.UserList;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Namespace;

@@ -1,118 +1,76 @@
 package com.skcc.cloudz.zcp.user.vo;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.validation.constraints.NotNull;
 
+import com.skcc.cloudz.zcp.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.common.vo.Ivo;
 
 public class MemberVO implements Ivo {
-	String userName;//사용자 ID
-	String firstName;
-	String lastName;
-	String email;
-	String password;
-	int clusterRole;
-	Attribute attribute = new Attribute();
-	boolean enabled;
-	boolean isChangedAfterLogin;
-	
-	
-	public int getClusterRole() {
-		return clusterRole;
+	@NotNull
+	private String username;
+	@NotNull
+	private String firstName;
+	private String lastName;
+	@NotNull
+	private String email;
+	private String defaultNamespace;
+	private ClusterRole clusterRole = ClusterRole.NONE;
+	private Boolean enabled;
+
+	public String getUsername() {
+		return username;
 	}
-	public void setClusterRole(int clusterRole) {
-		this.clusterRole = clusterRole;
+
+	public void setUsername(String username) {
+		this.username = username;
 	}
-	public boolean isChangedAfterLogin() {
-		return isChangedAfterLogin;
-	}
-	public void setChangedAfterLogin(boolean isChangedAfterLogin) {
-		this.isChangedAfterLogin = isChangedAfterLogin;
-	}
-	public String getPassword() {
-		return password;
-	}
-	public void setPassword(String password) {
-		this.password = password;
-	}
-	public boolean getEnabled() {
-		return enabled;
-	}
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
-	public String getUserName() {
-		return userName;
-	}
-	public void setUserName(String userName) {
-		this.userName = userName;
-	}
+
 	public String getFirstName() {
 		return firstName;
 	}
+
 	public void setFirstName(String firstName) {
 		this.firstName = firstName;
 	}
+
 	public String getLastName() {
 		return lastName;
 	}
+
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
 	}
+
 	public String getEmail() {
 		return email;
 	}
+
 	public void setEmail(String email) {
 		this.email = email;
 	}
-	
-	public Attribute getAttribute() {
-		return attribute;
-	}
-	public void setAttribute(Attribute attribute) {
-		this.attribute = attribute;
-	}
-	
-	public void putAttributeMap(Map<String, List<String>> attr) {
-		if(attr != null) {
-			this.attribute.setDefaultNamespace(attr.get("defaultNamespace"));
-			this.attribute.setEmailVerified(attr.get("emailVerified"));
-		}
-	}
-	
-	public Map<String, List<String>> rcvAttributeMap() {
-		Map<String, List<String>> attr = new HashMap<String, List<String>>();
-		
-		attr.put("defaultNamespace", this.attribute.getDefaultNamespace());
-		attr.put("emailVerified", this.attribute.getEmailVerified());
-		
-		return attr;
-		
+
+	public ClusterRole getClusterRole() {
+		return clusterRole;
 	}
 
-	public class Attribute implements Ivo {
-		List<String> defaultNamespace;
-		List<String> emailVerified;
-		
-		public List<String> getDefaultNamespace() {
-			return defaultNamespace;
-		}
-		public void setDefaultNamespace(List<String> defaultNamespace) {
-			this.defaultNamespace = defaultNamespace;
-		}
-		public List<String> getEmailVerified() {
-			return emailVerified;
-		}
-		public void setEmailVerified(List<String> emailVerified) {
-			this.emailVerified = emailVerified;
-		}
-		public void asListEmailVerified(Boolean emailVerified2) {
-			String[] bool = {emailVerified2 ? "true" : "false"};
-			this.emailVerified = Arrays.asList(bool);
-		}
+	public void setClusterRole(ClusterRole clusterRole) {
+		this.clusterRole = clusterRole;
 	}
+
+	public Boolean getEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(Boolean enabled) {
+		this.enabled = enabled;
+	}
+
+	public String getDefaultNamespace() {
+		return defaultNamespace;
+	}
+
+	public void setDefaultNamespace(String defaultNamespace) {
+		this.defaultNamespace = defaultNamespace;
+	}
+
 }
-
-

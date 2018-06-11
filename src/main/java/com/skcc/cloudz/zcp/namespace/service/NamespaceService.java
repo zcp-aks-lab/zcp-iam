@@ -12,12 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.skcc.cloudz.zcp.common.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.manager.KeyCloakManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
+import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
 
 import ch.qos.logback.classic.Logger;
