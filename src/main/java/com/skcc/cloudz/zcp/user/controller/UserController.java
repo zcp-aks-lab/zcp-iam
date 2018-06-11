@@ -91,7 +91,7 @@ public class UserController {
 		return response;
 	}
 
-	@RequestMapping(value = "/user/{id}/updatePassword", method = RequestMethod.PUT)
+	@RequestMapping(value = "/user/{id}/password", method = RequestMethod.PUT)
 	public Response<Object> updatePassword(@PathVariable("id") String id,
 			@RequestBody @Valid UpdatePasswordVO vo) throws Exception {
 		userService.updateUserPassword(id, vo);
@@ -130,7 +130,7 @@ public class UserController {
 		return vo;
 	}
 
-	@RequestMapping(value = "/user/{id}/deleteOtpPassword", method = RequestMethod.DELETE)
+	@RequestMapping(value = "/user/{id}/otpPassword", method = RequestMethod.DELETE)
 	public Response<Object> deleteOtpPassword(@PathVariable("id") String id) throws Exception {
 		Response<Object> vo = new Response<Object>();
 		userService.deleteOtpPassword(id);
