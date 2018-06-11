@@ -32,8 +32,8 @@ public class KubeRbacAuthzManager {
 	@Value("${kube.system.json.pretty}")
 	private String pretty;
 
-	@Value("${kube.label.zcp.system}")
-	private String zcpSystemLabel;
+//	@Value("${kube.label.zcp.system}")
+//	private String zcpSystemLabel;
 
 	@Value("${kube.label.zcp.system.user}")
 	private String zcpSystemUserLabel;

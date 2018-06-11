@@ -26,6 +26,7 @@ import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.user.vo.ClusterRole;
 import com.skcc.cloudz.zcp.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.user.vo.PassResetVO;
+import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
 import com.skcc.cloudz.zcp.user.vo.UserList;
 import com.skcc.cloudz.zcp.user.vo.ZcpUser;
 
@@ -480,7 +481,7 @@ public class UserService {
 		// 2. create service account
 		MemberVO vo = new MemberVO();
 		vo.setUserName(username);
-		// createServiceAccount(vo);
+		createServiceAccount(vo);
 
 		// 3. get secretes though serviceAccount
 		Thread.sleep(100);// sync problem raise
@@ -512,5 +513,29 @@ public class UserService {
 	public void logout(String username) throws KeyCloakException {
 		keyCloakManager.logout(username);
 	}
+	
+	private V1ServiceAccount createServiceAccount(MemberVO vo) throws ApiException {
+		ServiceAccountVO data = new ServiceAccountVO();
+		data.setNamespace(zcpSystemNamespace);
+		data.setApiVersion("v1");
+		data.setKind("ServiceAccount");
+		V1ObjectMeta smetadata = new V1ObjectMeta();
+		smetadata.setName(serviceAccountPrefix + vo.getUserName());
+		data.setMetadata(smetadata);
+		
+		return createAndEditServiceAccount(serviceAccountPrefix + vo.getUserName(), zcpSystemNamespace, data);
+		
+	}
 
+	private V1ServiceAccount  createAndEditServiceAccount(String name, String namespace, ServiceAccountVO vo) throws ApiException {
+		try {
+			return kubeCoreManager.createServiceAccount(vo.getNamespace(), vo);
+		} catch (ApiException e) {
+			if(e.getMessage().equals("Conflict")) {
+				return kubeCoreManager.editServiceAccount(name, vo.getNamespace(), vo);
+			}else {
+				throw e;	
+			}
+		}
+	}
 }

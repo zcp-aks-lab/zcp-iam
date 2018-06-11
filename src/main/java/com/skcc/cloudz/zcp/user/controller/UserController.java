@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.skcc.cloudz.zcp.common.annotation.NullProperty;
 import com.skcc.cloudz.zcp.common.exception.KeyCloakException;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
@@ -206,6 +207,7 @@ public class UserController {
 	}
 
 	@RequestMapping(value = "/clusterRoles", method = RequestMethod.GET)
+	@NullProperty(field= {"items.metadata.creationTimestamp", "items.rules"})
 	public Response<V1ClusterRoleList> getClusterRole() throws ApiException {
 		Response<V1ClusterRoleList> response = new Response<>();
 		response.setData(userService.clusterRoleList());

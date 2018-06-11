@@ -1,0 +1,44 @@
+keycloak:
+  clientId: account
+  clientSecret: 611c87d9-37f3-4078-b500-542cf419b113
+  password: admin1234
+  realm: zcp
+  serverUrl: http://keycloak.cberry.xyz/auth
+  username: 1800275@partner.skcc.com
+kube:
+  cluster:
+    role:
+      binding:
+        prefix: iam.cloudzcp.io.zcp-system-crb-
+  label:
+    zcp:
+      namespace: iam.cloudzcp.io/zcp-system-nm
+      service:
+        account: iam.cloudzcp.io/zcp-system-user
+      user: iam.cloudzcp.io.zcp-system-user
+      username: iam.cloudzcp.io.zcp-system-username
+  namespace:
+    prefix: iam.cloudzcp.io.zcp-system-nm
+  role:
+    binding:
+      prefix: iam.cloudzcp.io.zcp-system-rb-
+  service:
+    account:
+      prefix: zcp-system-sa-
+  system:
+    namespace: zcp-system
+logging:
+  level:
+    com:
+      skcc:
+        cloudz:
+          zcp: DEBUG
+    org:
+      hibernate: DEBUG
+      springframework:
+        security: DEBUG
+        web: DEBUG
+server:
+  port: 8282
+zcp:
+  realm: zcp

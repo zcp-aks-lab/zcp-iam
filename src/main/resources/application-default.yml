@@ -1,0 +1,51 @@
+keycloak:
+  clientId: master-realm
+  clientSecret: 237ef2ad-c5f3-491a-89ab-dab04c8bf268
+  password: Password1!
+  realm: master
+  serverUrl: https://keycloak.cloudzcp.io/auth/
+  username: zcp-admin
+kube:
+  cluster:
+    role:
+      binding:
+        prefix: zcp-system-crb-
+  label:
+    zcp:
+      namespace: iam.cloudzcp.io/zcp-system-nm
+      service:
+        account: iam.cloudzcp.io/zcp-system-user
+      system:
+        user: cloudzcp.io/zcp-system-user
+        username: cloudzcp.io/zcp-system-username
+  namespace:
+    prefix: ns-zcp-system-nm
+  role:
+    binding:
+      prefix: zcp-system-rb-
+  service:
+    account:
+      prefix: zcp-system-sa-
+  system:
+    json:
+      pretty: true
+    namespace: zcp-system
+logging:
+  level:
+    com:
+      skcc:
+        cloudz:
+          zcp: DEBUG
+    io:
+      kubernetes:
+        client: DEBUG
+    org:
+      hibernate: DEBUG
+      keycloak: DEBUG
+      springframework:
+        security: DEBUG
+        web: DEBUG
+server:
+  port: 8181
+zcp:
+  realm: zcp
