@@ -1,5 +1,6 @@
 package com.skcc.cloudz.zcp.namespace.vo;
 
+import com.skcc.cloudz.zcp.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.common.vo.Ivo;
 
 import io.kubernetes.client.models.V1RoleBinding;
@@ -7,7 +8,7 @@ import io.kubernetes.client.models.V1RoleBinding;
 public class RoleBindingVO extends V1RoleBinding implements Ivo{
 	String namespace;
 	String userName;
-	int clusterRole;
+	ClusterRole clusterRole;
 	
 	public String getUserName() {
 		return userName;
@@ -16,11 +17,12 @@ public class RoleBindingVO extends V1RoleBinding implements Ivo{
 	public void setUserName(String userName) {
 		this.userName = userName;
 	}
-	public int getClusterRole() {
+	
+	public ClusterRole getClusterRole() {
 		return clusterRole;
 	}
 
-	public void setClusterRole(int clusterRole) {
+	public void setClusterRole(ClusterRole clusterRole) {
 		this.clusterRole = clusterRole;
 	}
 

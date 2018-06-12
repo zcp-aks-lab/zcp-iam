@@ -9,6 +9,8 @@ public class ResourcesLabelManager {
 	public static final String SYSTEM_USER_LABEL_NAME = "cloudzcp.io/zcp-system-user";
 	public static final String SYSTEM_USER_LABEL_VALUE = "true";
 	public static final String SYSTEM_USERNAME_LABEL_NAME = "cloudzcp.io/zcp-system-username";
+	public static final String SYSTEM_NAMESPACE_LABEL_NAME = "cloudzcp.io/zcp-system-nm";
+	public static final String SYSTEM_NAMESPACE_LABEL_VALUE = "TRUE";
 	
 	public static String getSystemLabelSelector() {
 		StringBuilder builder = new StringBuilder();
@@ -52,6 +54,12 @@ public class ResourcesLabelManager {
 		labels.put(SYSTEM_USER_LABEL_NAME, SYSTEM_USER_LABEL_VALUE);
 		labels.put(SYSTEM_USERNAME_LABEL_NAME, username);
 		
+		return labels;
+	}
+	
+	public static Map<String, String> getSystemNamespaceLabels() {
+		Map<String, String> labels = new HashMap<String, String>();
+		labels.put(SYSTEM_NAMESPACE_LABEL_NAME, SYSTEM_NAMESPACE_LABEL_VALUE);
 		return labels;
 	}
 }

@@ -1,6 +1,7 @@
 package com.skcc.cloudz.zcp.namespace.controller;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -16,12 +17,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skcc.cloudz.zcp.common.annotation.NullProperty;
+import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.model.UserList;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.namespace.service.NamespaceService;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
+import com.skcc.cloudz.zcp.namespace.vo.QuotaList;
 import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.user.service.UserService;
 
@@ -100,6 +103,40 @@ public class NamespaceController {
 		return vo;
 	}
 	
+	
+	/**
+	 * resource quota info
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 */
+	@RequestMapping(value="/resourceQuota", method=RequestMethod.GET)
+	Response<QuotaList> getResourceQuota(HttpServletRequest httpServletRequest ) throws  ApiException, ParseException{
+		Response<QuotaList> vo = new Response<>();
+		vo.setData(namespaceSvc.getResourceQuota());	
+		return vo;
+	}
+	
+	
+	/**
+	 * create Namespace Label
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 * @throws ZcpException 
+	 */
+	@RequestMapping(value="/namespace/{namespace}/label", method=RequestMethod.POST)
+	Response<Object> createNamespaceLabel(HttpServletRequest httpServletRequest
+			, @PathVariable("namespace") String namespace
+			, HashMap<String, String> label) throws  ApiException, ParseException, ZcpException{
+		namespaceSvc.createNamespaceLabel(namespace, label);	
+		return new Response<Object>();
+	}
+	
 	/**
 	 * all namespace resource info
 	 * @param httpServletRequest
@@ -108,7 +145,7 @@ public class NamespaceController {
 	 * @throws IOException
 	 * @throws ApiException
 	 */
-	@RequestMapping(value="/namespace/resource", method=RequestMethod.GET)
+	@RequestMapping(value="/resource", method=RequestMethod.GET)
 	Response<NamespaceVO> getAllOfNamespaceResource(HttpServletRequest httpServletRequest) throws  ApiException, ParseException{
 		Response<NamespaceVO> vo = new Response<NamespaceVO>();
 		vo.setData(namespaceSvc.getNamespaceResource(""));
@@ -158,7 +195,7 @@ public class NamespaceController {
 	 * @throws IOException
 	 * @throws ApiException
 	 */
-	@RequestMapping(value="/namespace/{namespace}/roleBinding", method=RequestMethod.PUT)
+	@RequestMapping(value="/namespace/{namespace}/roleBinding", method=RequestMethod.POST)
 	Response<Object> createRoleBinding(HttpServletRequest httpServletRequest 
 			, @PathVariable("namespace") String namespace
 			, @RequestBody RoleBindingVO data) throws IOException, ApiException{
@@ -171,6 +208,33 @@ public class NamespaceController {
 		else {
 			data.setNamespace(namespace);
 			namespaceSvc.createRoleBinding(data);	
+		}
+		return vo;
+		
+	}
+	
+	
+	/**
+	 * each user namespace and rolebinding
+	 * @param httpServletRequest
+	 * @param data
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 */
+	@RequestMapping(value="/namespace/{namespace}/roleBinding", method=RequestMethod.PUT)
+	Response<Object> editRoleBinding(HttpServletRequest httpServletRequest 
+			, @PathVariable("namespace") String namespace
+			, @RequestBody RoleBindingVO data) throws IOException, ApiException{
+		Response<Object> vo = new Response<Object>();
+		String msg = ValidUtil.required(data,  "userName", "clusterRole");
+		if(msg != null) {
+			vo.setMsg(msg);
+			vo.setCode("500");
+		}
+		else {
+			data.setNamespace(namespace);
+			namespaceSvc.editRoleBinding(data);	
 		}
 		return vo;
 		
@@ -203,5 +267,6 @@ public class NamespaceController {
 		}
 		return vo;
 	}
+	
 	
 }

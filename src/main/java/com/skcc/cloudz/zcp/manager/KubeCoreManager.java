@@ -115,13 +115,24 @@ public class KubeCoreManager {
 	public V1ResourceQuota getQuota(String namespace, String quotaName) throws ApiException {
 		return api.readNamespacedResourceQuota(quotaName, namespace, pretty, null, null);
 	}
+	
+	public V1ResourceQuotaList getAllQuota() throws ApiException {
+		return api.listResourceQuotaForAllNamespaces(null, null, null
+				, null, null, null, null, null, null);
+	}
+	
 
 	public V1Namespace createNamespace(String namespaceName, V1Namespace namespace) throws ApiException {
 		return api.createNamespace(namespace, pretty);
 	}
-
+	
 	public V1Namespace editNamespace(String quotaName, V1Namespace namespace) throws ApiException {
 		return api.replaceNamespace(quotaName, namespace, pretty);
 	}
+
+	public V1Namespace editNamespaceLabel(String namespaceName, Object namespace) throws ApiException {
+		return api.patchNamespace(namespaceName, namespace, pretty);
+	}
+
 
 }

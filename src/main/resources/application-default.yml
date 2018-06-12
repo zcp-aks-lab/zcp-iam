@@ -1,10 +1,11 @@
 keycloak:
   clientId: master-realm
   clientSecret: 237ef2ad-c5f3-491a-89ab-dab04c8bf268
-  password: Password1!
   realm: master
   serverUrl: https://keycloak.cloudzcp.io/auth/
   username: zcp-admin
+  password: Password1!
+  
 kube:
   cluster:
     role:
@@ -30,6 +31,7 @@ kube:
     json:
       pretty: true
     namespace: zcp-system
+    
 logging:
   level:
     com:
@@ -45,6 +47,7 @@ logging:
       springframework:
         security: DEBUG
         web: DEBUG
+        
 server:
   port: 8181
 zcp:

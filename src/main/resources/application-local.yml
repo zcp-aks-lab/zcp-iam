@@ -5,6 +5,7 @@ keycloak:
   realm: master
   serverUrl: http://127.0.0.1:8080/auth
   username: root
+  
 kube:
   cluster:
     role:
@@ -27,6 +28,7 @@ kube:
       prefix: zcp-system-sa-
   system:
     namespace: zcp-system
+    
 logging:
   level:
     com:
@@ -39,11 +41,13 @@ logging:
       springframework:
         security: DEBUG
         web: DEBUG
+        
 server:
   contextPath: /
   port: 8181
   servlet:
     session:
       timeout: 30000
+      
 zcp:
   realm: test1

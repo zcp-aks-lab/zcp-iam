@@ -6,17 +6,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.joda.time.DateTime;
 import org.json.simple.parser.ParseException;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.manager.KeyCloakManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
+import com.skcc.cloudz.zcp.manager.ResourcesLabelManager;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
+import com.skcc.cloudz.zcp.namespace.vo.QuotaList;
+import com.skcc.cloudz.zcp.namespace.vo.QuotaVO;
 import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
 
@@ -29,6 +37,8 @@ import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1NamespaceSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ResourceQuota;
+import io.kubernetes.client.models.V1ResourceQuotaList;
+import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1Subject;
 
@@ -92,6 +102,78 @@ public class NamespaceService {
 		
 	}
 	
+	public QuotaList getResourceQuota() throws ApiException, ParseException{
+		V1ResourceQuotaList quota = kubeCoreManager.getAllQuota();
+		List<QuotaVO> listQuota = new ArrayList<>();
+		for(V1ResourceQuota q : quota.getItems()) {
+			QuotaVO vo = new QuotaVO();
+			vo.setName(q.getMetadata().getName());
+			vo.setNamespace(q.getMetadata().getNamespace());
+			vo.setUserCount(getNamespaceUserCount(q.getMetadata().getNamespace()));
+			//vo.setSpec(q.getSpec());
+			vo.setStatus(q.getStatus());
+			vo.setUsedCpuRate(getUsedCpuRate(q.getStatus().getUsed().get("limits.cpu")
+					, q.getStatus().getHard().get("limits.cpu")));
+			vo.setUsedMemoryRate(getUsedMemoryRate(q.getStatus().getUsed().get("limits.memory")
+					, q.getStatus().getHard().get("limits.memory")));
+			vo.setCreationTimestamp(new DateTime(q.getMetadata().getCreationTimestamp()));
+			listQuota.add(vo);
+		}
+		QuotaList list = new QuotaList();
+		list.setItems(listQuota);
+		return  list;
+	}
+	
+	private int getUsedMemoryRate(String used, String hard) {
+		int iUsed=0;
+		int iHard=0;
+		if(used != null)
+			if(used.indexOf("Gi") > -1) {
+				iUsed = Integer.parseInt(used.replace("Gi", ""));
+			}else { 
+				iUsed = Integer.parseInt(used.replace("Gi", ""));
+				iUsed *= 1000;
+			}
+		
+		if(hard != null)
+			if(hard.indexOf("Gi") > -1) {
+				iHard = Integer.parseInt(hard.replace("Gi", ""));
+			}else { 
+				iHard = Integer.parseInt(hard.replace("Gi", ""));
+				iHard *= 1000;
+			}
+		
+		return iHard == 0 ? 0 : iUsed/iHard;
+	}
+	
+	private int getUsedCpuRate(String used, String hard) {
+		int iUsed=0;
+		int iHard=0;
+		if(used != null)
+			if(used.indexOf("m") > -1) {
+				iUsed = Integer.parseInt(used.replace("m", ""));
+			}else { 
+				iUsed = Integer.parseInt(used.replace("m", ""));
+				iUsed *= 1000;
+			}
+		if(hard != null)
+			if(hard.indexOf("m") > -1) {
+				iHard = Integer.parseInt(hard.replace("m", ""));
+			}else { 
+				iHard = Integer.parseInt(hard.replace("m", ""));
+				iHard *= 1000;
+			}
+		
+		return iHard == 0 ? 0 : iUsed/iHard;
+	}
+	
+	private int getNamespaceUserCount(String namespaceName) throws ApiException {
+		V1RoleBindingList list = kubeRbacAuthzManager.getRoleBindingListByNamespace(namespaceName);
+		return list.getItems().size();
+	}
+	
+	
+	
 	/**
 	 * only name of namespaces
 	 * @param namespace
@@ -146,6 +228,8 @@ public class NamespaceService {
 		limitvo.setKind("LimitRange");
 		limitvo.setMetadata(quota_meta);
 		
+		namespacevo.getMetadata().setLabels(ResourcesLabelManager.getSystemNamespaceLabels());
+		
 		String namespace = data.getNamespace();
 		try {
 			kubeCoreManager.createNamespace(namespace, namespacevo);
@@ -188,6 +272,34 @@ public class NamespaceService {
 	
 	
 	public void createRoleBinding(RoleBindingVO binding) throws IOException, ApiException{
+		binding = makeRoleBinding(binding);
+		
+		try {
+			//if name exist, new binding can't create
+			kubeRbacAuthzManager.createRoleBinding(binding.getNamespace(), binding);
+		} catch (ApiException e) {
+			if(e.getMessage().equals("Conflict")) {
+				LOG.debug("Conflict...");
+			}else {
+				throw e;	
+			}
+		}
+	}
+	
+	public void editRoleBinding(RoleBindingVO binding) throws ApiException, IOException {
+		binding = makeRoleBinding(binding);
+		
+		//1.delete RoleBinding
+		KubeDeleteOptionsVO data = new KubeDeleteOptionsVO();
+		data.setNamespace(binding.getNamespace());
+		data.setUserName(binding.getUserName());
+		deleteRoleBinding(data);
+
+		//2.create RoleBinding
+		kubeRbacAuthzManager.createRoleBinding(binding.getNamespace(), binding);
+	}
+	
+	private RoleBindingVO makeRoleBinding(RoleBindingVO binding) {
 		Map<String, String> labels = new HashMap<String, String>();
 		labels.put("zcp-system-user", "true");
 		labels.put("zcp-system-username", binding.getUserName());
@@ -205,7 +317,7 @@ public class NamespaceService {
 		V1RoleRef roleRef = new V1RoleRef();
 		roleRef.setApiGroup("rbac.authorization.k8s.io");
 		roleRef.setKind("ClusterRole");
-//		roleRef.setName(ClusterRole.get(binding.getClusterRole()));
+		roleRef.setName(binding.getClusterRole().getRole());
 		
 		List<V1Subject> subjects = new ArrayList<V1Subject>();
 
@@ -217,16 +329,7 @@ public class NamespaceService {
 		
 		subjects.add(subject);
 		
-		try {
-			kubeRbacAuthzManager.createRoleBinding(binding.getNamespace(), binding);
-		} catch (ApiException e) {
-			if(e.getMessage().equals("Conflict")) {
-				LOG.debug("Conflict...");
-			}else {
-				throw e;	
-			}
-		}
-		
+		return binding;
 	}
 	
 	public void deleteRoleBinding(KubeDeleteOptionsVO data) throws IOException, ApiException{
@@ -264,5 +367,30 @@ public class NamespaceService {
 			}
 		}
 	}
+	
+	public void createNamespaceLabel(String namespaceName, Map<String, String> label) throws ApiException, ParseException, ZcpException {
+		V1Namespace namespace = getNamespace(namespaceName);
+		if(namespace == null) {
+			LOG.debug("namespace : " + namespace + "don't exist");
+			throw new ZcpException("E00004");
+		}else {
+			namespace.getMetadata().setLabels(label);
+			V1ObjectMeta meta = new V1ObjectMeta();
+			meta.setLabels(label);
+			String json = String.format("{\r\n" + 
+					"	\"op\" : \"replace\",\r\n" + 
+					"	\"path\" : \"/metadata/labels\",\r\n" + 
+					"	\"labels\": {\"%s\" : \"%s\"}\r\n" + 
+					"}", "test2", "1234");
+			ArrayList<JsonObject> arr = new ArrayList<>();
+		    arr.add(((JsonElement) deserialize(json, JsonElement.class)).getAsJsonObject());
+			kubeCoreManager.editNamespaceLabel(namespaceName, arr);
+		}
+	}
+	
+	public Object deserialize(String jsonStr, Class<?> targetClass) {
+	    Object obj = (new Gson()).fromJson(jsonStr, targetClass);
+	    return obj;
+	  }
 	
 }
