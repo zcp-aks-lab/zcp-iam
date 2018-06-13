@@ -5,30 +5,7 @@ keycloak:
   realm: master
   serverUrl: http://127.0.0.1:8080/auth
   username: root
-  
-kube:
-  cluster:
-    role:
-      binding:
-        prefix: iam.cloudzcp.io.zcp-system-crb-
-  label:
-    zcp:
-      namespace: iam.cloudzcp.io/zcp-system-nm
-      service:
-        account: iam.cloudzcp.io/zcp-system-user
-      user: iam.cloudzcp.io.zcp-system-user
-      username: iam.cloudzcp.io.zcp-system-username
-  namespace:
-    prefix: iam.cloudzcp.io.zcp-system-nm
-  role:
-    binding:
-      prefix: iam.cloudzcp.io.zcp-system-rb-
-  service:
-    account:
-      prefix: zcp-system-sa-
-  system:
-    namespace: zcp-system
-    
+
 logging:
   level:
     com:
@@ -42,12 +19,19 @@ logging:
         security: DEBUG
         web: DEBUG
         
+kube:
+  client:
+    api:
+      output:
+        pretty: true
+  server:
+    apiserver:
+      endpoint: https://169.56.69.242:23078
+    
 server:
-  contextPath: /
-  port: 8181
-  servlet:
-    session:
-      timeout: 30000
-      
+  port: 8282
 zcp:
-  realm: test1
+  keycloak:
+    realm: zcp
+  kube:
+    namespace: zcp-system

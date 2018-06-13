@@ -23,7 +23,7 @@ public class Util {
 	@Qualifier("keycloak")
 	Keycloak keycloak;
 	
-	@Value("${zcp.realm}")
+	@Value("${zcp.keycloak.realm}")
 	String realm;
 
 	//email test bundle collection
