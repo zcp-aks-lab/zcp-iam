@@ -40,7 +40,7 @@ public class UserController {
 
 	@RequestMapping(value = "/users", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	public Response<UserList> getUserList() throws Exception {
-		Response<UserList> response = new Response<UserList>();
+		Response<UserList> response = new Response<>();
 		response.setData(userService.getUserList());
 		return response;
 	}

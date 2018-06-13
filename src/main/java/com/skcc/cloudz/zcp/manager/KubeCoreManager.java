@@ -120,7 +120,8 @@ public class KubeCoreManager {
 		return api.createNamespacedResourceQuota(namespace, quota, pretty);
 	}
 
-	public V1ResourceQuota editResourceQuota(String namespace, String quotaName, V1ResourceQuota quota) throws ApiException {
+	public V1ResourceQuota editResourceQuota(String namespace, String quotaName, V1ResourceQuota quota)
+			throws ApiException {
 		return api.replaceNamespacedResourceQuota(quotaName, namespace, quota, pretty);
 	}
 

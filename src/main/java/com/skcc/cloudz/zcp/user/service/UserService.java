@@ -614,7 +614,7 @@ public class UserService {
 	private ZcpKubeConfig generateZcpKubeConfig(String apiServerEndpoint, String namespace, String email, String caCrt,
 			String token) {
 		ZcpKubeConfig config = new ZcpKubeConfig();
-		
+
 		ClusterInfo clusterInfo = config.new ClusterInfo();
 		Cluster cluster = clusterInfo.new Cluster();
 		cluster.setCertificateAuthorityData(caCrt);
@@ -658,11 +658,10 @@ public class UserService {
 		}
 
 		String username = userRepresentation.getUsername();
-		
+
 		V1ServiceAccountList serviceAccountList = null;
 		try {
-			serviceAccountList = kubeCoreManager.getServiceAccountListByUsername(zcpSystemNamespace,
-					username);
+			serviceAccountList = kubeCoreManager.getServiceAccountListByUsername(zcpSystemNamespace, username);
 		} catch (ApiException e) {
 			// ignore
 		}
@@ -675,8 +674,7 @@ public class UserService {
 				throw new ZcpException("ZCP-008", e.getMessage());
 			}
 
-			logger.debug("The serviceaccounts of user({}) have been removed. {}", username,
-					status.getMessage());
+			logger.debug("The serviceaccounts of user({}) have been removed. {}", username, status.getMessage());
 		}
 
 		V1ServiceAccount serviceAccount = getServiceAccount(username);
@@ -686,7 +684,7 @@ public class UserService {
 		} catch (ApiException e) {
 			throw new ZcpException("ZCP-009", e.getMessage());
 		}
-		
+
 	}
 
 }
