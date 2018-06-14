@@ -6,32 +6,6 @@ keycloak:
   username: zcp-admin
   password: Password1!
   
-kube:
-  cluster:
-    role:
-      binding:
-        prefix: zcp-system-crb-
-  label:
-    zcp:
-      namespace: iam.cloudzcp.io/zcp-system-nm
-      service:
-        account: iam.cloudzcp.io/zcp-system-user
-      system:
-        user: cloudzcp.io/zcp-system-user
-        username: cloudzcp.io/zcp-system-username
-  namespace:
-    prefix: ns-zcp-system-nm
-  role:
-    binding:
-      prefix: zcp-system-rb-
-  service:
-    account:
-      prefix: zcp-system-sa-
-  system:
-    json:
-      pretty: true
-    namespace: zcp-system
-    
 logging:
   level:
     com:
@@ -48,7 +22,19 @@ logging:
         security: DEBUG
         web: DEBUG
         
+kube:
+  client:
+    api:
+      output:
+        pretty: true
+  server:
+    apiserver:
+      endpoint: https://169.56.69.242:23078
+    
 server:
   port: 8181
 zcp:
-  realm: zcp
+  keycloak:
+    realm: zcp
+  kube:
+    namespace: zcp-system

@@ -21,6 +21,7 @@ import com.skcc.cloudz.zcp.manager.KeyCloakManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.manager.ResourcesLabelManager;
+import com.skcc.cloudz.zcp.manager.ResourcesNameManager;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.namespace.vo.QuotaList;
@@ -56,16 +57,7 @@ public class NamespaceService {
 	@Autowired
 	private KubeRbacAuthzManager kubeRbacAuthzManager;
 	
-	@Value("${kube.cluster.role.binding.prefix}")
-	private String clusterRoleBindingPrefix;
-	
-	@Value("${kube.role.binding.prefix}")
-	private String roleBindingPrefix;
-	
-	@Value("${kube.service.account.prefix}")
-	private String serviceAccountPrefix;
-	
-	@Value("${kube.system.namespace}")
+	@Value("${zcp.kube.namespace}")
 	private String systemNamespace;
 	
 	
@@ -93,8 +85,8 @@ public class NamespaceService {
 	
 	public NamespaceVO getNamespaceResource(String namespace) throws ApiException, ParseException{
 		NamespaceVO vo = new NamespaceVO();
-		V1ResourceQuota quota =  kubeCoreManager.getQuota(namespace, namespace);
-		V1LimitRange limitRanges =  kubeCoreManager.getLimitRanges(namespace, namespace);
+		V1ResourceQuota quota =  kubeCoreManager.getResourceQuota(namespace, namespace);
+		V1LimitRange limitRanges =  kubeCoreManager.getLimitRange(namespace, namespace);
 		vo.setLimitRange(limitRanges);
 		vo.setResourceQuota(quota);
 		
@@ -103,7 +95,7 @@ public class NamespaceService {
 	}
 	
 	public QuotaList getResourceQuota() throws ApiException, ParseException{
-		V1ResourceQuotaList quota = kubeCoreManager.getAllQuota();
+		V1ResourceQuotaList quota = kubeCoreManager.getAllResourceQuotaList();
 		List<QuotaVO> listQuota = new ArrayList<>();
 		for(V1ResourceQuota q : quota.getItems()) {
 			QuotaVO vo = new QuotaVO();
@@ -228,7 +220,7 @@ public class NamespaceService {
 		limitvo.setKind("LimitRange");
 		limitvo.setMetadata(quota_meta);
 		
-		namespacevo.getMetadata().setLabels(ResourcesLabelManager.getSystemNamespaceLabels());
+		namespacevo.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
 		
 		String namespace = data.getNamespace();
 		try {
@@ -253,11 +245,11 @@ public class NamespaceService {
 		}
 		
 		try {
-			kubeCoreManager.createQuota(namespace, quotavo);
+			kubeCoreManager.createResourceQuota(namespace, quotavo);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
 				String name = limitvo.getMetadata().getName();
-				kubeCoreManager.editQuota(namespace, name, quotavo);
+				kubeCoreManager.editResourceQuota(namespace, name, quotavo);
 			}else {
 				throw e;	
 			}
@@ -300,18 +292,19 @@ public class NamespaceService {
 	}
 	
 	private RoleBindingVO makeRoleBinding(RoleBindingVO binding) {
-		Map<String, String> labels = new HashMap<String, String>();
-		labels.put("zcp-system-user", "true");
-		labels.put("zcp-system-username", binding.getUserName());
+		String username = binding.getUserName();
+		String serviceAccountName = ResourcesNameManager.getServiceAccountName(username);
+		String roleBindingName = ResourcesNameManager.getRoleBindingName(username);
+		Map<String, String> labels = ResourcesLabelManager.getSystemUsernameLabels(username);
 		
 		V1ObjectMeta metadata = new V1ObjectMeta();
-		metadata.setName(roleBindingPrefix + binding.getUserName());
+		metadata.setName(roleBindingName);
 		metadata.setLabels(labels);
 		metadata.setNamespace(binding.getNamespace());
 		
 		V1Subject subject = new V1Subject();
 		subject.setKind("ServiceAccount");
-		subject.setName(serviceAccountPrefix + binding.getUserName());
+		subject.setName(serviceAccountName);
 		subject.setNamespace(systemNamespace);
 		
 		V1RoleRef roleRef = new V1RoleRef();
@@ -320,21 +313,20 @@ public class NamespaceService {
 		roleRef.setName(binding.getClusterRole().getRole());
 		
 		List<V1Subject> subjects = new ArrayList<V1Subject>();
-
+		subjects.add(subject);
+		
 		binding.setApiVersion("rbac.authorization.k8s.io/v1");
-		binding.setKind("RoleBinding");
+//		binding.setKind("RoleBinding");
 		binding.setSubjects(subjects);
 		binding.setRoleRef(roleRef);
 		binding.setMetadata(metadata);
-		
-		subjects.add(subject);
 		
 		return binding;
 	}
 	
 	public void deleteRoleBinding(KubeDeleteOptionsVO data) throws IOException, ApiException{
 		try {
-			kubeRbacAuthzManager.deleteRoleBinding(data.getNamespace(), roleBindingPrefix + data.getUserName() , data);
+			kubeRbacAuthzManager.deleteRoleBinding(data.getNamespace(), ResourcesNameManager.getRoleBindingName(data.getUserName()), data);
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;

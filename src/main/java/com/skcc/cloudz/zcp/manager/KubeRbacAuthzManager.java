@@ -29,7 +29,7 @@ public class KubeRbacAuthzManager {
 
 	private RbacAuthorizationV1Api api;
 
-	@Value("${kube.system.json.pretty}")
+	@Value("${kube.client.api.output.pretty}")
 	private String pretty;
 
 	public KubeRbacAuthzManager() throws IOException {

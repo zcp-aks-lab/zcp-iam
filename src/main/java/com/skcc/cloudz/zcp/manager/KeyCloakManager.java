@@ -29,7 +29,7 @@ public class KeyCloakManager {
 	@Qualifier("keycloak")
 	private Keycloak keycloak;
 
-	@Value("${zcp.realm}")
+	@Value("${zcp.keycloak.realm}")
 	private String realm;
 
 	@Value("${keycloak.clientId}")

@@ -33,7 +33,7 @@ public class KubeCoreManager {
 
 	private CoreV1Api api;
 
-	@Value("${kube.system.json.pretty}")
+	@Value("${kube.client.api.output.pretty}")
 	private String pretty;
 
 	public KubeCoreManager() throws IOException {
@@ -47,6 +47,10 @@ public class KubeCoreManager {
 	public V1ServiceAccount createServiceAccount(String namespace, V1ServiceAccount serviceAccount)
 			throws ApiException {
 		return api.createNamespacedServiceAccount(namespace, serviceAccount, pretty);
+	}
+
+	public V1ServiceAccount getServiceAccount(String namespace, String serviceAccountName) throws ApiException {
+		return api.readNamespacedServiceAccount(serviceAccountName, namespace, pretty, null, null);
 	}
 
 	public V1ServiceAccount editServiceAccount(String namespace, String serviceAccountName,
@@ -74,6 +78,10 @@ public class KubeCoreManager {
 		return api.readNamespacedSecret(secretName, namespace, pretty, null, null);
 	}
 
+	public V1Namespace createNamespace(String namespaceName, V1Namespace namespace) throws ApiException {
+		return api.createNamespace(namespace, pretty);
+	}
+
 	public V1NamespaceList getNamespaceList() throws ApiException {
 		return api.listNamespace(pretty, null, null, null, ResourcesLabelManager.getSystemLabelSelector(), null, null,
 				null, null);
@@ -81,6 +89,14 @@ public class KubeCoreManager {
 
 	public V1Namespace getNamespace(String namespace) throws ApiException {
 		return api.readNamespace(namespace, pretty, null, null);
+	}
+
+	public V1Namespace editNamespace(String quotaName, V1Namespace namespace) throws ApiException {
+		return api.replaceNamespace(quotaName, namespace, pretty);
+	}
+
+	public V1Namespace editNamespaceLabel(String namespaceName, Object namespace) throws ApiException {
+		return api.patchNamespace(namespaceName, namespace, pretty);
 	}
 
 	public V1LimitRange createLimitRange(String namespace, V1LimitRange limitRange) throws ApiException {
@@ -96,43 +112,29 @@ public class KubeCoreManager {
 		return api.listNamespacedLimitRange(namespace, pretty, null, null, null, null, null, null, null, null);
 	}
 
-	public V1LimitRange getLimitRanges(String namespace, String limitRangeName) throws ApiException {
+	public V1LimitRange getLimitRange(String namespace, String limitRangeName) throws ApiException {
 		return api.readNamespacedLimitRange(limitRangeName, namespace, pretty, null, null);
 	}
 
-	public V1ResourceQuota createQuota(String namespace, V1ResourceQuota quota) throws ApiException {
+	public V1ResourceQuota createResourceQuota(String namespace, V1ResourceQuota quota) throws ApiException {
 		return api.createNamespacedResourceQuota(namespace, quota, pretty);
 	}
 
-	public V1ResourceQuota editQuota(String namespace, String quotaName, V1ResourceQuota quota) throws ApiException {
+	public V1ResourceQuota editResourceQuota(String namespace, String quotaName, V1ResourceQuota quota)
+			throws ApiException {
 		return api.replaceNamespacedResourceQuota(quotaName, namespace, quota, pretty);
 	}
 
-	public V1ResourceQuotaList getQuota(String namespace) throws ApiException {
+	public V1ResourceQuotaList getResourceQuotaList(String namespace) throws ApiException {
 		return api.listNamespacedResourceQuota(namespace, pretty, null, null, null, null, null, null, null, null);
 	}
 
-	public V1ResourceQuota getQuota(String namespace, String quotaName) throws ApiException {
+	public V1ResourceQuota getResourceQuota(String namespace, String quotaName) throws ApiException {
 		return api.readNamespacedResourceQuota(quotaName, namespace, pretty, null, null);
 	}
-	
-	public V1ResourceQuotaList getAllQuota() throws ApiException {
-		return api.listResourceQuotaForAllNamespaces(null, null, null
-				, null, null, null, null, null, null);
-	}
-	
 
-	public V1Namespace createNamespace(String namespaceName, V1Namespace namespace) throws ApiException {
-		return api.createNamespace(namespace, pretty);
+	public V1ResourceQuotaList getAllResourceQuotaList() throws ApiException {
+		return api.listResourceQuotaForAllNamespaces(null, null, null, null, null, pretty, null, null, null);
 	}
-	
-	public V1Namespace editNamespace(String quotaName, V1Namespace namespace) throws ApiException {
-		return api.replaceNamespace(quotaName, namespace, pretty);
-	}
-
-	public V1Namespace editNamespaceLabel(String namespaceName, Object namespace) throws ApiException {
-		return api.patchNamespace(namespaceName, namespace, pretty);
-	}
-
 
 }
