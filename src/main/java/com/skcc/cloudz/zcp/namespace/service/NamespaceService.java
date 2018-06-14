@@ -94,15 +94,19 @@ public class NamespaceService {
 		
 	}
 	
+	@SuppressWarnings("unchecked")
 	public QuotaList getResourceQuota() throws ApiException, ParseException{
 		V1ResourceQuotaList quota = kubeCoreManager.getAllResourceQuotaList();
 		List<QuotaVO> listQuota = new ArrayList<>();
 		for(V1ResourceQuota q : quota.getItems()) {
 			QuotaVO vo = new QuotaVO();
+			Object[] obj = getInfoOfNamespace(q.getMetadata().getNamespace());
 			vo.setName(q.getMetadata().getName());
 			vo.setNamespace(q.getMetadata().getNamespace());
 			vo.setUserCount(getNamespaceUserCount(q.getMetadata().getNamespace()));
 			//vo.setSpec(q.getSpec());
+			vo.setActive((String)obj[0]);
+			vo.setLabels((List<String>)obj[1]);
 			vo.setStatus(q.getStatus());
 			vo.setUsedCpuRate(getUsedCpuRate(q.getStatus().getUsed().get("limits.cpu")
 					, q.getStatus().getHard().get("limits.cpu")));
@@ -116,7 +120,22 @@ public class NamespaceService {
 		return  list;
 	}
 	
-	private int getUsedMemoryRate(String used, String hard) {
+	public Object[] getInfoOfNamespace(String namespaceName) throws ApiException, ParseException {
+		List<String> labels = new ArrayList<>();
+		V1Namespace namespace = this.getNamespace(namespaceName);
+		String active = namespace.getStatus().getPhase().equals("Active") ? "active" : "inactive";
+		Map<String, String> label = namespace.getMetadata().getLabels();
+		if(label != null)
+			for(String key : label.keySet()) {
+				String strLabel = key + ":" + label.get(key);
+				labels.add(strLabel);
+			}
+		Object[] obj = {active, labels};
+		
+		return obj;
+	}
+	
+	private double getUsedMemoryRate(String used, String hard) {
 		int iUsed=0;
 		int iHard=0;
 		if(used != null)
@@ -135,10 +154,10 @@ public class NamespaceService {
 				iHard *= 1000;
 			}
 		
-		return iHard == 0 ? 0 : iUsed/iHard;
+		return iHard == 0 ? 0 : Math.round((iUsed/iHard*100)/100.0);
 	}
 	
-	private int getUsedCpuRate(String used, String hard) {
+	private double getUsedCpuRate(String used, String hard) {
 		int iUsed=0;
 		int iHard=0;
 		if(used != null)
@@ -156,13 +175,15 @@ public class NamespaceService {
 				iHard *= 1000;
 			}
 		
-		return iHard == 0 ? 0 : iUsed/iHard;
+		return iHard == 0 ? 0 : Math.round((iUsed/iHard*100)/100.0);
 	}
 	
 	private int getNamespaceUserCount(String namespaceName) throws ApiException {
 		V1RoleBindingList list = kubeRbacAuthzManager.getRoleBindingListByNamespace(namespaceName);
 		return list.getItems().size();
 	}
+	
+	
 	
 	
 	
@@ -221,7 +242,8 @@ public class NamespaceService {
 		limitvo.setMetadata(quota_meta);
 		
 		namespacevo.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
-		
+		quotavo.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
+		limitvo.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
 		String namespace = data.getNamespace();
 		try {
 			kubeCoreManager.createNamespace(namespace, namespacevo);

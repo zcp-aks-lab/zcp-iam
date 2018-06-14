@@ -1,6 +1,6 @@
 package com.skcc.cloudz.zcp.namespace.vo;
 
-import java.util.Date;
+import java.util.List;
 
 import org.joda.time.DateTime;
 
@@ -12,20 +12,34 @@ public class QuotaVO {
 	int userCount;
 	V1ResourceQuotaStatus status;
 	DateTime creationTimestamp;
-	int usedMemoryRate;
-	int usedCpuRate;
+	double usedMemoryRate;
+	double usedCpuRate;
+	String active;
+	List<String> labels;
 	
 	
-	public int getUsedMemoryRate() {
+	public List<String> getLabels() {
+		return labels;
+	}
+	public void setLabels(List<String> labels) {
+		this.labels = labels;
+	}
+	public String getActive() {
+		return active;
+	}
+	public void setActive(String active) {
+		this.active = active;
+	}
+	public double getUsedMemoryRate() {
 		return usedMemoryRate;
 	}
-	public void setUsedMemoryRate(int usedMemoryRate) {
+	public void setUsedMemoryRate(double usedMemoryRate) {
 		this.usedMemoryRate = usedMemoryRate;
 	}
-	public int getUsedCpuRate() {
+	public double getUsedCpuRate() {
 		return usedCpuRate;
 	}
-	public void setUsedCpuRate(int usedCpuRate) {
+	public void setUsedCpuRate(double usedCpuRate) {
 		this.usedCpuRate = usedCpuRate;
 	}
 	public int getUserCount() {

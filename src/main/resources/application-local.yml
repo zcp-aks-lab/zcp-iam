@@ -1,17 +1,20 @@
 keycloak:
   clientId: master-realm
-  clientSecret: 39d48509-f52a-441f-a0d9-695f6c8375ef
-  password: 1111
+  clientSecret: 237ef2ad-c5f3-491a-89ab-dab04c8bf268
   realm: master
-  serverUrl: http://127.0.0.1:8080/auth
-  username: root
-
+  serverUrl: https://keycloak.cloudzcp.io/auth/
+  username: zcp-admin
+  password: Password1!
+  
 logging:
   level:
     com:
       skcc:
         cloudz:
           zcp: DEBUG
+    io:
+      kubernetes:
+        client: DEBUG
     org:
       hibernate: DEBUG
       keycloak: DEBUG
