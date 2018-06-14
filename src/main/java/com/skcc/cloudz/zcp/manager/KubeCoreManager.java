@@ -134,7 +134,10 @@ public class KubeCoreManager {
 	}
 
 	public V1ResourceQuotaList getAllResourceQuotaList() throws ApiException {
-		return api.listResourceQuotaForAllNamespaces(null, null, null, ResourcesLabelManager.getSystemLabelSelector(), null, pretty, null, null, null);
+//		return api.listResourceQuotaForAllNamespaces(null, null, null
+//				, ResourcesLabelManager.getSystemLabelSelector(), null, pretty, null, null, null);
+		return api.listResourceQuotaForAllNamespaces(null, null, null
+				, null, null, pretty, null, null, null);
 	}
 
 }
