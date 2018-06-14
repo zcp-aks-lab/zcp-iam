@@ -116,7 +116,7 @@ public class NamespaceService {
 					, q.getStatus().getHard().get("limits.cpu")));
 			vo.setUsedMemoryRate(getUsedMemoryRate(q.getStatus().getUsed().get("limits.memory")
 					, q.getStatus().getHard().get("limits.memory")));
-			//vo.setCreationTimestamp(new DateTime(q.getMetadata().getCreationTimestamp()));
+			vo.setCreationTimestamp(new DateTime(q.getMetadata().getCreationTimestamp()));
 			listQuota.add(vo);
 		}
 		QuotaList list = new QuotaList();
