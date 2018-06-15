@@ -38,12 +38,14 @@ public class KubeResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 			//if(fields.stream().anyMatch(data -> "metadata.creationTimestamp".equals(data))) {
 				if(field.split("\\.").length == 1) {
 					Object data = ((Response<Object>)body).getData();
+					if(data == null) continue;
 					Field fieldMeta = data.getClass().getDeclaredField(field.split("\\.")[0]);
 					fieldMeta.setAccessible(true);
 					fieldMeta.set(data, null);
 				}
 				else if(field.split("\\.").length == 2) {
 					Object data = ((Response<Object>)body).getData();
+					if(data == null) continue;
 					Field field1 = data.getClass().getDeclaredField(field.split("\\.")[0]);
 					field1.setAccessible(true);
 					Object obj1 = field1.get(data);
@@ -63,6 +65,7 @@ public class KubeResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 				}
 				else if(field.split("\\.").length == 3) {
 					Object data = ((Response<Object>)body).getData();
+					if(data == null) continue;
 					Field field1 = data.getClass().getDeclaredField(field.split("\\.")[0]);
 					field1.setAccessible(true);
 					Object obj1 = field1.get(data);

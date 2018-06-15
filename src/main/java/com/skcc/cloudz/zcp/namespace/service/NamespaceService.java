@@ -5,7 +5,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.json.simple.parser.ParseException;
 import org.slf4j.LoggerFactory;
@@ -17,14 +20,16 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
+import com.skcc.cloudz.zcp.common.util.Util;
 import com.skcc.cloudz.zcp.manager.KeyCloakManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.manager.ResourcesLabelManager;
 import com.skcc.cloudz.zcp.manager.ResourcesNameManager;
+import com.skcc.cloudz.zcp.namespace.vo.EnquryNamespaceVO;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
-import com.skcc.cloudz.zcp.namespace.vo.QuotaList;
+import com.skcc.cloudz.zcp.namespace.vo.ItemList;
 import com.skcc.cloudz.zcp.namespace.vo.QuotaVO;
 import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
@@ -95,7 +100,7 @@ public class NamespaceService {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public QuotaList getResourceQuota() throws ApiException, ParseException{
+	private List<QuotaVO> getResourceQuota() throws ApiException, ParseException{
 		V1ResourceQuotaList quota = kubeCoreManager.getAllResourceQuotaList();
 		List<QuotaVO> listQuota = new ArrayList<>();
 		for(V1ResourceQuota q : quota.getItems()) {
@@ -115,25 +120,99 @@ public class NamespaceService {
 			vo.setCreationTimestamp(new DateTime(q.getMetadata().getCreationTimestamp()));
 			listQuota.add(vo);
 		}
-		QuotaList list = new QuotaList();
+		return listQuota;
+	}
+	
+	public ItemList<QuotaVO> getResourceQuota(EnquryNamespaceVO vo) throws ApiException, ParseException{
+		// sortOrder = true asc;
+		// sortOrder = false desc;
+		List<QuotaVO> listQuota = getResourceQuota();
+		ItemList<QuotaVO> list = new ItemList<>();
+		
+		Stream<QuotaVO> stream = listQuota.stream();
+		if(!StringUtils.isEmpty(vo.getSortItem()))
+			switch(vo.getSortItem()) {
+				case "namespace" :
+					if(vo.isSortOrder())
+						stream = stream.sorted((a,b) -> a.getNamespace().compareTo(b.getNamespace()));//asc
+					else
+						stream = stream.sorted((a,b) -> b.getNamespace().compareTo(a.getNamespace()));
+					break;
+				case "cpu" :
+					if(vo.isSortOrder())
+						stream = stream.sorted((a,b) -> Util.compare(a.getUsedCpuRate() ,b.getUsedCpuRate()));
+					else
+						stream = stream.sorted((a,b) -> Util.compare(b.getUsedCpuRate() ,a.getUsedCpuRate()));
+					break;
+				case "memory" :
+					if(vo.isSortOrder())
+						stream = stream.sorted((a,b) -> Util.compare(a.getUsedMemoryRate() ,b.getUsedMemoryRate()));
+					else
+						stream = stream.sorted((a,b) -> Util.compare(b.getUsedMemoryRate() ,a.getUsedMemoryRate()));
+					break;
+				case "user" :
+					if(vo.isSortOrder())
+						stream = stream.sorted((a,b) -> Util.compare(a.getUserCount() ,b.getUserCount()));
+					else
+						stream = stream.sorted((a,b) -> Util.compare(b.getUserCount() ,a.getUserCount()));
+					break;
+				case "status" :
+					if(vo.isSortOrder())
+						stream = stream.sorted((a,b) -> a.getActive().compareTo(b.getActive()));
+					else
+						stream = stream.sorted((a,b) -> b.getActive().compareTo(a.getActive()));
+					break;
+				case "createTime" :
+					if(vo.isSortOrder())
+						stream = stream.sorted((a,b) -> a.getCreationTimestamp().compareTo(b.getCreationTimestamp()));
+					else
+						stream = stream.sorted((a,b) -> b.getCreationTimestamp().compareTo(a.getCreationTimestamp()));
+					break;
+			}
+		if(!StringUtils.isEmpty(vo.getNamespace())) {
+			stream = stream.filter(namespace -> namespace.getNamespace().indexOf(vo.getNamespace()) > -1);
+		}
+		
+		if(!StringUtils.isEmpty(vo.getLabel())) {
+			stream = stream.filter((namespace) ->{ 
+				Stream<String> s = namespace.getLabels().stream().filter(label -> label.indexOf(vo.getLabel()) > -1);
+				return s.count() > 0;
+			});
+		}
+		
+		if(stream != null)
+			listQuota = stream.collect(Collectors.toList());
+		
+		
 		list.setItems(listQuota);
 		return  list;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public Object[] getInfoOfNamespace(String namespaceName) throws ApiException, ParseException {
-		List<String> labels = new ArrayList<>();
 		V1Namespace namespace = this.getNamespace(namespaceName);
 		String active = namespace.getStatus().getPhase().equals("Active") ? "active" : "inactive";
-		Map<String, String> label = namespace.getMetadata().getLabels();
-		if(label != null)
-			for(String key : label.keySet()) {
-				String strLabel = key + ":" + label.get(key);
-				labels.add(strLabel);
-			}
-		Object[] obj = {active, labels};
+		List<String> labels = Util.MapToList(namespace.getMetadata().getLabels());
+ 		Object[] obj = {active, labels};
 		
 		return obj;
 	}
+	
+	@SuppressWarnings("unchecked")
+	public ItemList<String> getLabelsOfNamespaces() throws ApiException, ParseException {
+		List<String> listLabel = new ArrayList<>();
+		for(V1Namespace namespace : this.getNamespaceList().getItems()) {
+			List<String> labels = Util.MapToList(namespace.getMetadata().getLabels());
+			listLabel.addAll(labels);
+		};
+		
+		List<String> items = listLabel.stream().distinct().collect(Collectors.toList());
+		ItemList<String> item = new ItemList<>();
+		item.setItems(items);
+		return item;
+	}
+	
+	 
 	
 	private double getUsedMemoryRate(String used, String hard) {
 		int iUsed=0;

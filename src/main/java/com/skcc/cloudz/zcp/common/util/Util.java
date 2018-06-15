@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.admin.client.Keycloak;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,5 +57,27 @@ public class Util {
 			i++;
 		}
 		return commaData;
+	}
+	
+	public static int compare(double a, double b) {
+		if(a == b) return 0;
+		if(a > b) return 1;
+		else return -1;
+	}
+	
+	public static int compare(int a, int b) {
+		if(a == b) return 0;
+		if(a > b) return 1;
+		else return -1;
+	}
+	
+	public static List MapToList(Map<String, String> data) {
+		List<String> datas = new ArrayList<>();
+		if(data != null)
+			for(String key : data.keySet()) {
+				String strLabel = key + "=" + data.get(key);
+				datas.add(strLabel);
+			}
+		return datas;
 	}
 }

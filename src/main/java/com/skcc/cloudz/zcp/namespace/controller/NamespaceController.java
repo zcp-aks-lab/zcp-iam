@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,9 +23,11 @@ import com.skcc.cloudz.zcp.common.model.UserList;
 import com.skcc.cloudz.zcp.common.util.ValidUtil;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.namespace.service.NamespaceService;
+import com.skcc.cloudz.zcp.namespace.vo.EnquryNamespaceVO;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
-import com.skcc.cloudz.zcp.namespace.vo.QuotaList;
+import com.skcc.cloudz.zcp.namespace.vo.QuotaVO;
+import com.skcc.cloudz.zcp.namespace.vo.ItemList;
 import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.user.service.UserService;
 
@@ -113,9 +116,9 @@ public class NamespaceController {
 	 * @throws ApiException
 	 */
 	@RequestMapping(value="/resourceQuota", method=RequestMethod.GET)
-	Response<QuotaList> getResourceQuota(HttpServletRequest httpServletRequest ) throws  ApiException, ParseException{
-		Response<QuotaList> vo = new Response<>();
-		vo.setData(namespaceSvc.getResourceQuota());	
+	Response<ItemList<QuotaVO>> getResourceQuota(HttpServletRequest httpServletRequest, @ModelAttribute EnquryNamespaceVO enquery) throws  ApiException, ParseException{
+		Response<ItemList<QuotaVO>> vo = new Response<>();
+		vo.setData(namespaceSvc.getResourceQuota(enquery));	
 		return vo;
 	}
 	
@@ -135,6 +138,23 @@ public class NamespaceController {
 			, HashMap<String, String> label) throws  ApiException, ParseException, ZcpException{
 		namespaceSvc.createNamespaceLabel(namespace, label);	
 		return new Response<Object>();
+	}
+	
+	
+	/**
+	 * all Namespace Label
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 * @throws ZcpException 
+	 */
+	@RequestMapping(value="/namespace/labels", method=RequestMethod.GET)
+	Response<ItemList<String>> getNamespaceLabel(HttpServletRequest httpServletRequest) throws  ApiException, ParseException, ZcpException{
+		Response<ItemList<String>> vo = new Response<ItemList<String>>();
+		vo.setData(namespaceSvc.getLabelsOfNamespaces());
+		return vo;
 	}
 	
 	/**
