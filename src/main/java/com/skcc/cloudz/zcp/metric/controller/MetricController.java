@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skcc.cloudz.zcp.common.model.V1alpha1NodeMetricList;
+import com.skcc.cloudz.zcp.common.model.ZcpNodeList;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.metric.service.MetricService;
 
@@ -33,6 +34,12 @@ public class MetricController {
 		return response;
 	}
 
-
+	@RequestMapping(value = "/nodes", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public Response<ZcpNodeList> getNodeList() throws Exception {
+		Response<ZcpNodeList> response = new Response<>();
+		response.setData(metricService.getNodeList());
+		
+		return response;
+	}
 
 }

@@ -1,5 +1,7 @@
 package com.skcc.cloudz.zcp.manager;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+
 import java.io.IOException;
 
 import org.slf4j.Logger;
@@ -16,6 +18,8 @@ import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1LimitRangeList;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
+import io.kubernetes.client.models.V1NodeList;
+import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1ResourceQuotaList;
 import io.kubernetes.client.models.V1Secret;
@@ -140,4 +144,16 @@ public class KubeCoreManager {
 				, null, null, pretty, null, null, null);
 	}
 
+	public V1NodeList getNodeList() throws ApiException {
+		return api.listNode(pretty, null, null, null, null, null, null, null, null);
+	}
+
+	public V1PodList getPodListByNode(String nodeName) throws ApiException {
+		StringBuilder fieldSelector = new StringBuilder();
+		fieldSelector.append("spec.nodeName=");
+		fieldSelector.append(nodeName);
+		fieldSelector.append(",status.phase!=Failed,status.phase!=Succeeded");
+		
+		return api.listPodForAllNamespaces(null, fieldSelector.toString(), null, null, null, pretty, null, null, null);
+	}
 }
