@@ -1,6 +1,8 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
+  annotations:
+   ingress.bluemix.net/redirect-to-https: "True"
   name: zcp-iam-ingress
   namespace: zcp-system
 spec:

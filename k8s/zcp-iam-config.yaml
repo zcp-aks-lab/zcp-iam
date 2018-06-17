@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: cloud-movie-bk-config
-  namespace: zcp-demo
+  name: zcp-iam-config
+  namespace: zcp-system
 data:
   SPRING_ACTIVE_PROFILE: stage 
   MARIADB_HOST: bk-mariadb-mariadb.bk-service
