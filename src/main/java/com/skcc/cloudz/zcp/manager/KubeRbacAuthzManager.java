@@ -1,14 +1,19 @@
 package com.skcc.cloudz.zcp.manager;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.skcc.cloudz.zcp.common.util.KubeClient;
+
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.ApiResponse;
 import io.kubernetes.client.Configuration;
 import io.kubernetes.client.apis.RbacAuthorizationV1Api;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
@@ -28,6 +33,8 @@ public class KubeRbacAuthzManager {
 	private ApiClient client;
 
 	private RbacAuthorizationV1Api api;
+	
+	private KubeClient kubeClient;
 
 	@Value("${kube.client.api.output.pretty}")
 	private String pretty;
@@ -101,6 +108,20 @@ public class KubeRbacAuthzManager {
 	public V1Status deleteRoleBindingListByUsername(String namespace, String username) throws ApiException {
 		return api.deleteCollectionNamespacedRoleBinding(namespace, pretty, null, null, null,
 				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public V1ClusterRoleBinding createClusterRoleBinding(V1ClusterRoleBinding clusterrolebinding, String username) throws ApiException{
+		Map<String, String> labels = new HashMap();
+		labels.put("zcp-system-user", "true");
+		labels.put("zcp-system-username", username);
+		clusterrolebinding.getMetadata().setLabels(labels);
+		String url = "https://169.56.69.242:23078/api/v1/namespaces/{namespace}/services/";
+		String service = "http:heapster:/proxy/apis/metrics/v1alpha1/nodes/10.r=";
+		ApiResponse<V1ClusterRoleBinding> data = (ApiResponse<V1ClusterRoleBinding>) kubeClient.postApiCall(
+				url + service
+				,V1ClusterRoleBinding.class,clusterrolebinding, null, null, null);
+		return data.getData();
 	}
 
 }

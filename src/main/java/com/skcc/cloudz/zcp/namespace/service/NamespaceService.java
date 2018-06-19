@@ -90,10 +90,25 @@ public class NamespaceService {
 	
 	public NamespaceVO getNamespaceResource(String namespace) throws ApiException, ParseException{
 		NamespaceVO vo = new NamespaceVO();
-		V1ResourceQuota quota =  kubeCoreManager.getResourceQuota(namespace, namespace);
-		V1LimitRange limitRanges =  kubeCoreManager.getLimitRange(namespace, namespace);
-		vo.setLimitRange(limitRanges);
-		vo.setResourceQuota(quota);
+		try {
+			V1ResourceQuota quota =  kubeCoreManager.getResourceQuota(namespace, namespace);
+			vo.setResourceQuota(quota);
+		}catch(ApiException e) {
+			if(!e.getMessage().equals("Not Found")){
+				throw e;
+			}
+		}
+		
+		try {
+			V1LimitRange limitRanges =  kubeCoreManager.getLimitRange(namespace, namespace);
+			vo.setLimitRange(limitRanges);
+		}catch(ApiException e) {
+			if(!e.getMessage().equals("Not Found")){
+				throw e;
+			}
+		}
+		
+		vo.setNamespace(namespace);
 		
 		return vo;
 		
@@ -220,20 +235,20 @@ public class NamespaceService {
 		if(used != null)
 			if(used.indexOf("Gi") > -1) {
 				iUsed = Integer.parseInt(used.replace("Gi", ""));
+				iUsed *= 1000;
 			}else { 
 				iUsed = Integer.parseInt(used.replace("Gi", ""));
-				iUsed *= 1000;
 			}
 		
 		if(hard != null)
 			if(hard.indexOf("Gi") > -1) {
 				iHard = Integer.parseInt(hard.replace("Gi", ""));
+				iHard *= 1000;
 			}else { 
 				iHard = Integer.parseInt(hard.replace("Gi", ""));
-				iHard *= 1000;
 			}
 		
-		return iHard == 0 ? 0 : Math.round((iUsed/iHard*100)/100.0);
+		return iHard == 0 ? 0 : Math.round(iUsed/iHard*100);
 	}
 	
 	private double getUsedCpuRate(String used, String hard) {
@@ -254,7 +269,7 @@ public class NamespaceService {
 				iHard *= 1000;
 			}
 		
-		return iHard == 0 ? 0 : Math.round((iUsed/iHard*100)/100.0);
+		return iHard == 0 ? 0 : Math.round(iUsed/iHard*100);
 	}
 	
 	private int getNamespaceUserCount(String namespaceName) throws ApiException {
