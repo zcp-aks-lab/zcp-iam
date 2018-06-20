@@ -1,7 +1,5 @@
 package com.skcc.cloudz.zcp.manager;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
-
 import java.io.IOException;
 
 import org.slf4j.Logger;
