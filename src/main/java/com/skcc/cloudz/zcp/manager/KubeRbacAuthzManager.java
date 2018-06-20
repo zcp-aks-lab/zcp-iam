@@ -34,8 +34,6 @@ public class KubeRbacAuthzManager {
 
 	private RbacAuthorizationV1Api api;
 	
-	private KubeClient kubeClient;
-
 	@Value("${kube.client.api.output.pretty}")
 	private String pretty;
 
@@ -109,19 +107,4 @@ public class KubeRbacAuthzManager {
 		return api.deleteCollectionNamespacedRoleBinding(namespace, pretty, null, null, null,
 				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);
 	}
-	
-	@SuppressWarnings("unchecked")
-	public V1ClusterRoleBinding createClusterRoleBinding(V1ClusterRoleBinding clusterrolebinding, String username) throws ApiException{
-		Map<String, String> labels = new HashMap();
-		labels.put("zcp-system-user", "true");
-		labels.put("zcp-system-username", username);
-		clusterrolebinding.getMetadata().setLabels(labels);
-		String url = "https://169.56.69.242:23078/api/v1/namespaces/{namespace}/services/";
-		String service = "http:heapster:/proxy/apis/metrics/v1alpha1/nodes/10.r=";
-		ApiResponse<V1ClusterRoleBinding> data = (ApiResponse<V1ClusterRoleBinding>) kubeClient.postApiCall(
-				url + service
-				,V1ClusterRoleBinding.class,clusterrolebinding, null, null, null);
-		return data.getData();
-	}
-
 }
