@@ -38,6 +38,7 @@ import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1LimitRange;
+import io.kubernetes.client.models.V1LimitRangeList;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1NamespaceSpec;
@@ -91,8 +92,9 @@ public class NamespaceService {
 	public NamespaceVO getNamespaceResource(String namespace) throws ApiException, ParseException{
 		NamespaceVO vo = new NamespaceVO();
 		try {
-			V1ResourceQuota quota =  kubeCoreManager.getResourceQuota(namespace, namespace);
-			vo.setResourceQuota(quota);
+			V1ResourceQuotaList quota =  kubeCoreManager.getResourceQuotaList(namespace);
+			if(quota.getItems().size() > 0)
+				vo.setResourceQuota(quota.getItems().get(0));
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;
@@ -100,8 +102,9 @@ public class NamespaceService {
 		}
 		
 		try {
-			V1LimitRange limitRanges =  kubeCoreManager.getLimitRange(namespace, namespace);
-			vo.setLimitRange(limitRanges);
+			V1LimitRangeList limitRanges =  kubeCoreManager.getLimitRanges(namespace);
+			if(limitRanges.getItems().size() > 0)
+				vo.setLimitRange(limitRanges.getItems().get(0));
 		}catch(ApiException e) {
 			if(!e.getMessage().equals("Not Found")){
 				throw e;
@@ -128,10 +131,13 @@ public class NamespaceService {
 			vo.setActive((String)obj[0]);
 			vo.setLabels((List<String>)obj[1]);
 			vo.setStatus(q.getStatus());
-			vo.setUsedCpuRate(getUsedCpuRate(q.getStatus().getUsed().get("limits.cpu")
-					, q.getStatus().getHard().get("limits.cpu")));
-			vo.setUsedMemoryRate(getUsedMemoryRate(q.getStatus().getUsed().get("limits.memory")
-					, q.getStatus().getHard().get("limits.memory")));
+			if(q.getStatus().getUsed() != null) {
+				vo.setUsedCpuRate(getUsedCpuRate(q.getStatus().getUsed().get("limits.cpu") == null ? "0" : q.getStatus().getUsed().get("limits.cpu") 
+						, q.getStatus().getHard().get("limits.cpu") == null ? "0" : q.getStatus().getHard().get("limits.cpu")));
+			
+				vo.setUsedMemoryRate(getUsedMemoryRate(q.getStatus().getUsed().get("limits.memory") == null ? "0" : q.getStatus().getUsed().get("limits.memory")
+						, q.getStatus().getHard().get("limits.memory") ==  null ? "0" : q.getStatus().getHard().get("limits.memory") ));
+			}
 			vo.setCreationTimestamp(new DateTime(q.getMetadata().getCreationTimestamp()));
 			listQuota.add(vo);
 		}
