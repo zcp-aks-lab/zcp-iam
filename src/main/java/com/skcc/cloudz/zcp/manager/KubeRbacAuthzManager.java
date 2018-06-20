@@ -1,19 +1,14 @@
 package com.skcc.cloudz.zcp.manager;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.skcc.cloudz.zcp.common.util.KubeClient;
-
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.ApiResponse;
 import io.kubernetes.client.Configuration;
 import io.kubernetes.client.apis.RbacAuthorizationV1Api;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
