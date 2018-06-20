@@ -36,6 +36,13 @@ spec:
         ports:
         - name: cont-port
           containerPort: 8181
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1024Mi"
+            cpu: "800m"
 #        envFrom:
 #        - configMapRef:
 #            name: cloud-movie-bk-config
