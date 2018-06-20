@@ -506,5 +506,5 @@ public class NamespaceService {
 	    Object obj = (new Gson()).fromJson(jsonStr, targetClass);
 	    return obj;
 	  }
-	
+	////테스트
 }
