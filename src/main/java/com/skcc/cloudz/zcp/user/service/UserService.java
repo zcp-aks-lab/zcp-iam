@@ -74,8 +74,8 @@ public class UserService {
 	@Value("${kube.server.apiserver.endpoint}")
 	private String kubeApiServerEndpoint;
 
-	public UserList getUserList() throws ZcpException {
-		List<UserRepresentation> keyCloakUsers = keyCloakManager.getUserList();
+	public UserList getUserList(String keyword) throws ZcpException {
+		List<UserRepresentation> keyCloakUsers = keyCloakManager.getUserList(keyword);
 
 		List<ZcpUser> users = new ArrayList<ZcpUser>();
 		for (UserRepresentation cloakUser : keyCloakUsers) {
@@ -560,16 +560,31 @@ public class UserService {
 		}
 	}
 
-	public void deleteOtpPassword(String id) throws KeyCloakException {
-		keyCloakManager.deleteUserOtpPassword(id);
+	public void deleteOtpPassword(String id) throws ZcpException {
+		try {
+			keyCloakManager.deleteUserOtpPassword(id);
+		} catch (KeyCloakException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
 	}
 
-	public V1ClusterRoleList clusterRoleList() throws ApiException {
-		return kubeRbacAuthzManager.getClusterRoleList();
+	public V1ClusterRoleList clusterRoleList() throws ZcpException {
+		try {
+			return kubeRbacAuthzManager.getClusterRoleList();
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
 	}
 
-	public void logout(String id) throws KeyCloakException {
-		keyCloakManager.logout(id);
+	public void logout(String id) throws ZcpException  {
+		try {
+			keyCloakManager.logout(id);
+		} catch (KeyCloakException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
 	}
 
 	public ZcpKubeConfig getKubeConfig(String id, String namespace) throws ZcpException {
@@ -685,6 +700,16 @@ public class UserService {
 			throw new ZcpException("ZCP-009", e.getMessage());
 		}
 
+	}
+
+	public void enableOtpPassword(String id) throws ZcpException {
+		try {
+			keyCloakManager.enableUserOtpPassword(id);
+		} catch (KeyCloakException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-008", e.getMessage());
+		}
+		
 	}
 
 }

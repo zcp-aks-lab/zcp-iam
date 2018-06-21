@@ -39,9 +39,9 @@ public class UserController {
 	private UserService userService;
 
 	@RequestMapping(value = "/users", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<UserList> getUserList() throws Exception {
+	public Response<UserList> getUserList(@RequestParam (required=false, value="keyword") String keyword) throws Exception {
 		Response<UserList> response = new Response<>();
-		response.setData(userService.getUserList());
+		response.setData(userService.getUserList(keyword));
 		return response;
 	}
 
@@ -114,6 +114,13 @@ public class UserController {
 	public Response<Object> removeOtpPassword(@PathVariable("id") String id) throws Exception {
 		Response<Object> vo = new Response<Object>();
 		userService.deleteOtpPassword(id);
+		return vo;
+	}
+	
+	@RequestMapping(value = "/user/{id}/otpPassword", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+	public Response<Object> enableOtpPassword(@PathVariable("id") String id) throws Exception {
+		Response<Object> vo = new Response<Object>();
+		userService.enableOtpPassword(id);
 		return vo;
 	}
 

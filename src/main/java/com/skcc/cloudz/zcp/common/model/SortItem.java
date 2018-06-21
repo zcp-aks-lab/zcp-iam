@@ -2,7 +2,6 @@ package com.skcc.cloudz.zcp.common.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.skcc.cloudz.zcp.common.model.ClusterRole.SimpleRole;
 
 public enum SortItem {
 	NAMESPACE("namespace", 0)
