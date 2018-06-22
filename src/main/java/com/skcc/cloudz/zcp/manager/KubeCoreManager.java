@@ -1,7 +1,5 @@
 package com.skcc.cloudz.zcp.manager;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
-
 import java.io.IOException;
 
 import org.slf4j.Logger;
@@ -71,6 +69,10 @@ public class KubeCoreManager {
 	public V1Status deleteServiceAccountListByUsername(String namespace, String username) throws ApiException {
 		return api.deleteCollectionNamespacedServiceAccount(namespace, pretty, null, null, null,
 				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);
+	}
+	
+	public V1Status deleteNamespace(String namespace, V1DeleteOptions deleteOptions) throws ApiException{
+		return api.deleteNamespace(namespace, deleteOptions, pretty, null, null, null);
 	}
 
 	public V1ServiceAccountList getServiceAccountListByUsername(String namespace, String username) throws ApiException {
