@@ -479,15 +479,17 @@ public class UserService {
 	}
 
 	public void deleteUser(String id) throws ZcpException {
-		UserRepresentation userRepresentation = null;
-		try {
-			userRepresentation = keyCloakManager.getUser(id);
-		} catch (KeyCloakException e) {
-			e.printStackTrace();
-			throw new ZcpException("ZCP-000", e.getMessage());
-		}
+//		UserRepresentation userRepresentation = null;
+//		try {
+//			userRepresentation = keyCloakManager.getUser(id);
+//		} catch (KeyCloakException e) {
+//			e.printStackTrace();
+//			throw new ZcpException("ZCP-000", e.getMessage());
+//		}
+		
+		ZcpUser zcpUser = getUser(id);
 
-		String username = userRepresentation.getUsername();
+		String username = zcpUser.getUsername();
 
 		// delete service account
 		try {
@@ -506,7 +508,7 @@ public class UserService {
 		}
 
 		// delete rolebindings
-		List<String> userNamespaces = getUser(username).getNamespaces();
+		List<String> userNamespaces = zcpUser.getNamespaces();
 		if (userNamespaces != null && !userNamespaces.isEmpty()) {
 			for (String namespace : userNamespaces) {
 				try {
