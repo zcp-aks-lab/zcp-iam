@@ -12,7 +12,7 @@ public class ZcpKubeConfig {
 	private List<ClusterInfo> clusters;
 	private List<ContextInfo> contexts;
 	private List<UserInfo> users;
-	private List<String> preferences;
+	private List<PreferenceInfo> preferences;
 
 	@JsonProperty("current-context")
 	private String currentContext;
@@ -21,7 +21,7 @@ public class ZcpKubeConfig {
 		clusters = new ArrayList<>();
 		contexts = new ArrayList<>();
 		users = new ArrayList<>();
-		preferences = new ArrayList<>();
+//		preferences = new ArrayList<>();
 	}
 
 	public class ContextInfo {
@@ -155,6 +155,19 @@ public class ZcpKubeConfig {
 		}
 
 	}
+	
+	public class PreferenceInfo {
+		private String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+		
+	}
 
 	public String getApiVersion() {
 		return apiVersion;
@@ -204,11 +217,11 @@ public class ZcpKubeConfig {
 		this.currentContext = currentContext;
 	}
 
-	public List<String> getPreferences() {
+	public List<PreferenceInfo> getPreferences() {
 		return preferences;
 	}
 
-	public void setPreferences(List<String> preferences) {
+	public void setPreferences(List<PreferenceInfo> preferences) {
 		this.preferences = preferences;
 	}
 
