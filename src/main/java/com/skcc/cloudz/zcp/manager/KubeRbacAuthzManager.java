@@ -97,7 +97,7 @@ public class KubeRbacAuthzManager {
 			throws ApiException {
 		return api.deleteNamespacedRoleBinding(roleBindingName, namespace, deleteOptions, pretty, null, null, null);
 	}
-
+	
 	public V1Status deleteRoleBindingListByUsername(String namespace, String username) throws ApiException {
 		return api.deleteCollectionNamespacedRoleBinding(namespace, pretty, null, null, null,
 				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);

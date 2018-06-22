@@ -27,9 +27,9 @@ import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.manager.ResourcesLabelManager;
 import com.skcc.cloudz.zcp.manager.ResourcesNameManager;
 import com.skcc.cloudz.zcp.namespace.vo.EnquryNamespaceVO;
+import com.skcc.cloudz.zcp.namespace.vo.ItemList;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
-import com.skcc.cloudz.zcp.namespace.vo.ItemList;
 import com.skcc.cloudz.zcp.namespace.vo.QuotaVO;
 import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
@@ -37,6 +37,7 @@ import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
 import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
+import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1LimitRangeList;
 import io.kubernetes.client.models.V1Namespace;
@@ -132,10 +133,10 @@ public class NamespaceService {
 			vo.setLabels((List<String>)obj[1]);
 			vo.setStatus(q.getStatus());
 			if(q.getStatus().getUsed() != null) {
-				vo.setUsedCpuRate(getUsedCpuRate(q.getStatus().getUsed().get("limits.cpu") == null ? "0" : q.getStatus().getUsed().get("limits.cpu") 
+				vo.setUsedCpuRate(getUsedCpuRate(q.getStatus().getUsed().get("requests.cpu") == null ? "0" : q.getStatus().getUsed().get("requests.cpu") 
 						, q.getStatus().getHard().get("limits.cpu") == null ? "0" : q.getStatus().getHard().get("limits.cpu")));
 			
-				vo.setUsedMemoryRate(getUsedMemoryRate(q.getStatus().getUsed().get("limits.memory") == null ? "0" : q.getStatus().getUsed().get("limits.memory")
+				vo.setUsedMemoryRate(getUsedMemoryRate(q.getStatus().getUsed().get("requests.memory") == null ? "0" : q.getStatus().getUsed().get("requests.memory")
 						, q.getStatus().getHard().get("limits.memory") ==  null ? "0" : q.getStatus().getHard().get("limits.memory") ));
 			}
 			vo.setCreationTimestamp(new DateTime(q.getMetadata().getCreationTimestamp()));
@@ -254,7 +255,7 @@ public class NamespaceService {
 				iHard = Integer.parseInt(hard.replace("Gi", ""));
 			}
 		
-		return iHard == 0 ? 0 : Math.round(iUsed/iHard*100);
+		return iHard == 0 ? 0 : Math.round((double)iUsed/(double)iHard*100);
 	}
 	
 	private double getUsedCpuRate(String used, String hard) {
@@ -274,8 +275,7 @@ public class NamespaceService {
 				iHard = Integer.parseInt(hard.replace("m", ""));
 				iHard *= 1000;
 			}
-		
-		return iHard == 0 ? 0 : Math.round(iUsed/iHard*100);
+		return iHard == 0 ? 0 : Math.round((double)iUsed/(double)iHard*100.0);
 	}
 	
 	private int getNamespaceUserCount(String namespaceName) throws ApiException {
@@ -455,6 +455,14 @@ public class NamespaceService {
 			}
 		}
 		
+	}
+	
+	public void deleteNamespace(String namespace) throws IOException, ApiException{
+		try {
+			kubeCoreManager.deleteNamespace(namespace, new V1DeleteOptions());
+		}catch(ApiException e) {
+				throw e;
+		}
 	}
 	
 

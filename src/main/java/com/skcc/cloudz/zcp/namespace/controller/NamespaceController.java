@@ -289,4 +289,22 @@ public class NamespaceController {
 	}
 	
 	
+	/**
+	 * delete rolebinding by namespace
+	 * 
+	 * @param httpServletRequest
+	 * @param data
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 */
+	@RequestMapping(value="/namespace/{namespace}", method=RequestMethod.DELETE)
+	Response<Object> deleteNamespace(HttpServletRequest httpServletRequest
+			, @PathVariable("namespace") String namespace) throws IOException, ApiException{
+		Response<Object> vo = new Response<Object>();
+		namespaceSvc.deleteNamespace(namespace);	
+		return vo;
+	}
+	
+	
 }
