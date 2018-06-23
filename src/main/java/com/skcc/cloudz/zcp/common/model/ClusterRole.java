@@ -4,7 +4,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ClusterRole {
-	NONE("none"), VIEW("view"), EDIT("edit"), ADMIN("admin"), CLUSTER_ADMIN("cluster-admin");
+	NONE("none"), 
+	VIEW("view"), 
+	EDIT("edit"), 
+	ADMIN("admin"), 
+	CLUSTER_ADMIN("cluster-admin");
 
 	private String role;
 

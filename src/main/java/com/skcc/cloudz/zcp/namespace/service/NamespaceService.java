@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,9 +33,8 @@ import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.namespace.vo.QuotaVO;
 import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
-import com.skcc.cloudz.zcp.user.vo.ServiceAccountVO;
+import com.skcc.cloudz.zcp.namespace.vo.ServiceAccountVO;
 
-import ch.qos.logback.classic.Logger;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1DeleteOptions;
@@ -53,8 +53,9 @@ import io.kubernetes.client.models.V1Subject;
 @Service
 public class NamespaceService {
 
-	private final Logger LOG = (Logger) LoggerFactory.getLogger(NamespaceService.class);
+	private final Logger log = LoggerFactory.getLogger(NamespaceService.class);
 	
+	@SuppressWarnings("unused")
 	@Autowired
 	private KeyCloakManager keyCloakManager;
 	
@@ -393,7 +394,7 @@ public class NamespaceService {
 			kubeRbacAuthzManager.createRoleBinding(binding.getNamespace(), binding);
 		} catch (ApiException e) {
 			if(e.getMessage().equals("Conflict")) {
-				LOG.debug("Conflict...");
+				log.debug("Conflict...");
 			}else {
 				throw e;	
 			}
@@ -493,7 +494,7 @@ public class NamespaceService {
 	public void createNamespaceLabel(String namespaceName, Map<String, String> label) throws ApiException, ParseException, ZcpException {
 		V1Namespace namespace = getNamespace(namespaceName);
 		if(namespace == null) {
-			LOG.debug("namespace : " + namespace + "don't exist");
+			log.debug("namespace : " + namespace + "don't exist");
 			throw new ZcpException("E00004");
 		}else {
 			namespace.getMetadata().setLabels(label);

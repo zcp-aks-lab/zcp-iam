@@ -19,6 +19,7 @@ public class ZcpUser {
 	private Date createdDate;
 	private Boolean enabled;
 	private Boolean emailVerified;
+	private Boolean totp;
 	private ClusterRole clusterRole;
 	private List<String> namespaces;
 	private String defaultNamespace;
@@ -130,6 +131,49 @@ public class ZcpUser {
 
 	public void setEmailVerified(Boolean emailVerified) {
 		this.emailVerified = emailVerified;
+	}
+
+	public Boolean getTotp() {
+		return totp;
+	}
+
+	public void setTotp(Boolean totp) {
+		this.totp = totp;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ZcpUser [id=");
+		builder.append(id);
+		builder.append(", username=");
+		builder.append(username);
+		builder.append(", email=");
+		builder.append(email);
+		builder.append(", password=");
+		builder.append(password);
+		builder.append(", firstName=");
+		builder.append(firstName);
+		builder.append(", lastName=");
+		builder.append(lastName);
+		builder.append(", createdDate=");
+		builder.append(createdDate);
+		builder.append(", enabled=");
+		builder.append(enabled);
+		builder.append(", emailVerified=");
+		builder.append(emailVerified);
+		builder.append(", totp=");
+		builder.append(totp);
+		builder.append(", clusterRole=");
+		builder.append(clusterRole);
+		builder.append(", namespaces=");
+		builder.append(namespaces);
+		builder.append(", defaultNamespace=");
+		builder.append(defaultNamespace);
+		builder.append(", usedNamespace=");
+		builder.append(usedNamespace);
+		builder.append("]");
+		return builder.toString();
 	}
 
 }

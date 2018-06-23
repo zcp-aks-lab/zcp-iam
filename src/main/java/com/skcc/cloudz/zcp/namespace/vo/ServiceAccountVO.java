@@ -1,4 +1,4 @@
-package com.skcc.cloudz.zcp.user.vo;
+package com.skcc.cloudz.zcp.namespace.vo;
 
 import com.skcc.cloudz.zcp.common.vo.Ivo;
 

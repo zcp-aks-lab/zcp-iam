@@ -27,6 +27,7 @@ import com.skcc.cloudz.zcp.user.vo.UpdateClusterRoleVO;
 import com.skcc.cloudz.zcp.user.vo.UpdatePasswordVO;
 
 import io.kubernetes.client.models.V1ClusterRoleList;
+import io.kubernetes.client.models.V1RoleBindingList;
 
 @Configuration
 @RestController
@@ -136,6 +137,13 @@ public class UserController {
 			@RequestParam("namespace") String namespace) throws Exception {
 		Response<ZcpKubeConfig> response = new Response<>();
 		response.setData(userService.getKubeConfig(id, namespace));
+		return response;
+	}
+
+	@RequestMapping(value = "/user/{id}/roleBindings", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public Response<V1RoleBindingList> getRoleBindings(@PathVariable("id") String id) throws Exception {
+		Response<V1RoleBindingList> response = new Response<>();
+		response.setData(userService.getUserRoleBindings(id));
 		return response;
 	}
 

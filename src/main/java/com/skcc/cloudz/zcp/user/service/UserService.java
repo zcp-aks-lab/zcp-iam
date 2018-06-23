@@ -263,6 +263,8 @@ public class UserService {
 			throw new ZcpException("ZCP-0001", e.getMessage());
 		}
 
+		logger.debug("keyclock user info - {}", userRepresentation);
+
 		zcpUser = convertUser(userRepresentation);
 		String username = zcpUser.getUsername();
 
@@ -296,6 +298,7 @@ public class UserService {
 
 	}
 
+	@SuppressWarnings("deprecation")
 	private ZcpUser convertUser(UserRepresentation userRepresentation) {
 		ZcpUser user = new ZcpUser();
 		user.setId(userRepresentation.getId());
@@ -306,6 +309,7 @@ public class UserService {
 		user.setUsername(userRepresentation.getUsername());
 		user.setCreatedDate(new Date(userRepresentation.getCreatedTimestamp()));
 		user.setEmailVerified(userRepresentation.isEmailVerified());
+		user.setTotp(userRepresentation.isTotp());
 		Map<String, List<String>> attributes = userRepresentation.getAttributes();
 		if (attributes != null) {
 			List<String> defaultNamespaces = attributes.get(KeyCloakManager.DEFAULT_NAMESPACE_ATTRIBUTE_KEY);
@@ -479,14 +483,6 @@ public class UserService {
 	}
 
 	public void deleteUser(String id) throws ZcpException {
-//		UserRepresentation userRepresentation = null;
-//		try {
-//			userRepresentation = keyCloakManager.getUser(id);
-//		} catch (KeyCloakException e) {
-//			e.printStackTrace();
-//			throw new ZcpException("ZCP-000", e.getMessage());
-//		}
-		
 		ZcpUser zcpUser = getUser(id);
 
 		String username = zcpUser.getUsername();
@@ -580,7 +576,7 @@ public class UserService {
 		}
 	}
 
-	public void logout(String id) throws ZcpException  {
+	public void logout(String id) throws ZcpException {
 		try {
 			keyCloakManager.logout(id);
 		} catch (KeyCloakException e) {
@@ -711,7 +707,20 @@ public class UserService {
 			e.printStackTrace();
 			throw new ZcpException("ZCP-008", e.getMessage());
 		}
+
+	}
+
+	public V1RoleBindingList getUserRoleBindings(String id) throws ZcpException {
+		ZcpUser zcpUser = getUser(id);
+		V1RoleBindingList roleBindingList = null;
+		try {
+			roleBindingList = kubeRbacAuthzManager.getRoleBindingListByUsername(zcpUser.getUsername());
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-000", e.getMessage());
+		}
 		
+		return roleBindingList;
 	}
 
 }

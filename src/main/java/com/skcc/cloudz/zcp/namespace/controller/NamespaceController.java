@@ -39,6 +39,7 @@ import io.kubernetes.client.models.V1NamespaceList;
 @RequestMapping("/iam")
 public class NamespaceController {
 
+	@SuppressWarnings("unused")
 	private static final Logger log = LoggerFactory.getLogger(NamespaceController.class);    
 	
 	@Autowired
