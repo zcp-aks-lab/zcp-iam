@@ -3,6 +3,7 @@ package com.skcc.cloudz.zcp.namespace.service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,8 +20,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.common.model.UserList;
@@ -31,7 +30,7 @@ import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.manager.ResourcesLabelManager;
 import com.skcc.cloudz.zcp.manager.ResourcesNameManager;
-import com.skcc.cloudz.zcp.namespace.vo.EnquryNamespaceVO;
+import com.skcc.cloudz.zcp.namespace.vo.InquiryNamespaceVO;
 import com.skcc.cloudz.zcp.namespace.vo.ItemList;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
@@ -118,7 +117,7 @@ public class NamespaceService {
 	}
 
 	@SuppressWarnings("unchecked")
-	private List<QuotaVO> getResourceQuota() throws ZcpException {
+	private List<QuotaVO> getResourceQuotaList() throws ZcpException {
 		V1ResourceQuotaList quota = null;
 		try {
 			quota = kubeCoreManager.getAllResourceQuotaList();
@@ -156,13 +155,13 @@ public class NamespaceService {
 		return listQuota;
 	}
 
-	public ItemList<QuotaVO> getResourceQuota(EnquryNamespaceVO vo) throws ZcpException {
+	public ItemList<QuotaVO> getResourceQuotaList(InquiryNamespaceVO vo) throws ZcpException {
 		// sortOrder = true asc;
 		// sortOrder = false desc;
-		List<QuotaVO> listQuota = getResourceQuota();
+		List<QuotaVO> listQuotas = getResourceQuotaList();
 		ItemList<QuotaVO> list = new ItemList<>();
 
-		Stream<QuotaVO> stream = listQuota.stream();
+		Stream<QuotaVO> stream = listQuotas.stream();
 		if (!StringUtils.isEmpty(vo.getSortItem()))
 			switch (vo.getSortItem()) {
 			case "namespace":
@@ -214,9 +213,9 @@ public class NamespaceService {
 		}
 
 		if (stream != null)
-			listQuota = stream.collect(Collectors.toList());
+			listQuotas = stream.collect(Collectors.toList());
 
-		list.setItems(listQuota);
+		list.setItems(listQuotas);
 		return list;
 	}
 
@@ -509,23 +508,78 @@ public class NamespaceService {
 
 	}
 
-	public void createNamespaceLabel(String namespaceName, Map<String, String> label)
-			throws ApiException, ParseException, ZcpException {
+	public void deleteNamespaceLabel(String namespaceName, String label) throws ZcpException {
 		V1Namespace namespace = getNamespace(namespaceName);
-		if (namespace == null) {
-			log.debug("namespace : " + namespace + "don't exist");
-			throw new ZcpException("E00004");
-		} else {
-			namespace.getMetadata().setLabels(label);
-			V1ObjectMeta meta = new V1ObjectMeta();
-			meta.setLabels(label);
-			String json = String.format("{\r\n" + "	\"op\" : \"replace\",\r\n"
-					+ "	\"path\" : \"/metadata/labels\",\r\n" + "	\"labels\": {\"%s\" : \"%s\"}\r\n" + "}", "test2",
-					"1234");
-			ArrayList<JsonObject> arr = new ArrayList<>();
-			arr.add(((JsonElement) deserialize(json, JsonElement.class)).getAsJsonObject());
-			kubeCoreManager.editNamespaceLabel(namespaceName, arr);
+		Map<String, String> labels = namespace.getMetadata().getLabels();
+		namespace.getMetadata().setLabels(removeLabel(labels, label));
+
+		try {
+			kubeCoreManager.replaceNamespace(namespaceName, namespace);
+		} catch (ApiException e) {
+			throw new ZcpException("N0009", e.getMessage());
 		}
+
+	}
+	
+	private Map<String, String> removeLabel(Map<String, String> labels, String label) {
+		if (labels == null || labels.isEmpty()) {
+			return labels;
+		}
+		
+		if (StringUtils.isEmpty(label)) {
+			return labels;
+		}
+
+		String[] map = label.split("=");
+		if (map == null || map.length != 2) {
+			log.debug("label is invalid - {}", label);
+			return labels;
+		}
+
+		String key = map[0];
+		String value = map[1];
+
+		if (StringUtils.equals(value, labels.get(key))) {
+			labels.remove(key);
+		}
+
+		return labels;
+	}
+	
+	public void createNamespaceLabel(String namespaceName, String newLabel) throws ZcpException {
+		V1Namespace namespace = getNamespace(namespaceName);
+		Map<String, String> labels = namespace.getMetadata().getLabels();
+		namespace.getMetadata().setLabels(addLabel(labels, newLabel));
+
+		try {
+			kubeCoreManager.replaceNamespace(namespaceName, namespace);
+		} catch (ApiException e) {
+			throw new ZcpException("N0009", e.getMessage());
+		}
+
+	}
+
+	private Map<String, String> addLabel(Map<String, String> labels, String newLabel) {
+		if (StringUtils.isEmpty(newLabel)) {
+			return labels;
+		}
+
+		String[] map = newLabel.split("=");
+		if (map == null || map.length != 2) {
+			log.debug("label is invalid - {}", newLabel);
+			return labels;
+		}
+
+		String key = map[0];
+		String value = map[1];
+
+		if (labels == null) {
+			labels = new HashMap<>();
+		}
+
+		labels.put(key, value);
+
+		return labels;
 	}
 
 	public Object deserialize(String jsonStr, Class<?> targetClass) {

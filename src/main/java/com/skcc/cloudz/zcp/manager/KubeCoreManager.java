@@ -101,8 +101,8 @@ public class KubeCoreManager {
 		return api.replaceNamespace(quotaName, namespace, pretty);
 	}
 
-	public V1Namespace editNamespaceLabel(String namespaceName, Object namespace) throws ApiException {
-		return api.patchNamespace(namespaceName, namespace, pretty);
+	public V1Namespace replaceNamespace(String namespaceName, V1Namespace namespace) throws ApiException {
+		return api.replaceNamespace(namespaceName, namespace, pretty);
 	}
 
 	public V1LimitRange createLimitRange(String namespace, V1LimitRange limitRange) throws ApiException {

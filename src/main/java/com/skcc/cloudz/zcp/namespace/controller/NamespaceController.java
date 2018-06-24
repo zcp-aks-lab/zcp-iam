@@ -1,7 +1,6 @@
 package com.skcc.cloudz.zcp.namespace.controller;
 
 import java.io.IOException;
-import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skcc.cloudz.zcp.common.annotation.NullProperty;
@@ -23,8 +23,9 @@ import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.model.UserList;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.namespace.service.NamespaceService;
-import com.skcc.cloudz.zcp.namespace.vo.EnquryNamespaceVO;
+import com.skcc.cloudz.zcp.namespace.vo.InquiryNamespaceVO;
 import com.skcc.cloudz.zcp.namespace.vo.ItemList;
+import com.skcc.cloudz.zcp.namespace.vo.LabelVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
 import com.skcc.cloudz.zcp.namespace.vo.QuotaVO;
 import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
@@ -46,7 +47,7 @@ public class NamespaceController {
 
 	@RequestMapping(value = "/namespaces", method = RequestMethod.GET)
 	@NullProperty(field = { "items.metadata.creationTimestamp", "items.spec" })
-	public Response<V1NamespaceList> getNamespaces(HttpServletRequest httpServletRequest) throws Exception {
+	public Response<V1NamespaceList> getNamespaces() throws Exception {
 		Response<V1NamespaceList> response = new Response<V1NamespaceList>();
 		response.setData(namespaceService.getNamespaceList());
 
@@ -55,8 +56,7 @@ public class NamespaceController {
 
 	@RequestMapping(value = "/namespace/{namespace}", method = RequestMethod.GET)
 	@NullProperty(field = { "metadata.creationTimestamp", "spec" })
-	public Response<V1Namespace> getNamespace(HttpServletRequest httpServletRequest,
-			@PathVariable("namespace") String namespace) throws Exception {
+	public Response<V1Namespace> getNamespace(@PathVariable("namespace") String namespace) throws Exception {
 		Response<V1Namespace> response = new Response<V1Namespace>();
 		response.setData(namespaceService.getNamespace(namespace));
 
@@ -64,8 +64,7 @@ public class NamespaceController {
 	}
 
 	@RequestMapping(value = "/namespace/{namespace}/users", method = RequestMethod.GET)
-	public Response<UserList> getUserListByNamespace(HttpServletRequest httpServletRequest,
-			@PathVariable("namespace") String namespace) throws Exception {
+	public Response<UserList> getUserListByNamespace(@PathVariable("namespace") String namespace) throws Exception {
 		Response<UserList> vo = new Response<UserList>();
 		vo.setData(namespaceService.getUserListByNamespace(namespace));
 		return vo;
@@ -97,29 +96,24 @@ public class NamespaceController {
 	 * @throws IOException
 	 * @throws ApiException
 	 */
-	@RequestMapping(value = "/resourceQuota", method = RequestMethod.GET)
-	Response<ItemList<QuotaVO>> getResourceQuota(HttpServletRequest httpServletRequest,
-			@ModelAttribute EnquryNamespaceVO enquery) throws Exception {
-		Response<ItemList<QuotaVO>> vo = new Response<>();
-		vo.setData(namespaceService.getResourceQuota(enquery));
-		return vo;
+	@RequestMapping(value = "/resourceQuotas", method = RequestMethod.GET)
+	Response<ItemList<QuotaVO>> getResourceQuotas(@ModelAttribute InquiryNamespaceVO inquiry) throws Exception {
+		Response<ItemList<QuotaVO>> response = new Response<>();
+		response.setData(namespaceService.getResourceQuotaList(inquiry));
+		return response;
 	}
 
-	/**
-	 * create Namespace Label
-	 * 
-	 * @param httpServletRequest
-	 * @param map
-	 * @return
-	 * @throws IOException
-	 * @throws ApiException
-	 * @throws ZcpException
-	 */
 	@RequestMapping(value = "/namespace/{namespace}/label", method = RequestMethod.POST)
-	Response<Object> createNamespaceLabel(HttpServletRequest httpServletRequest,
-			@PathVariable("namespace") String namespace, HashMap<String, String> label)
-			throws ApiException, ParseException, ZcpException {
-		namespaceService.createNamespaceLabel(namespace, label);
+	public Response<Object> createNamespaceLabel(@PathVariable("namespace") String namespace,
+			@RequestBody @Valid LabelVO label) throws ZcpException {
+		namespaceService.createNamespaceLabel(namespace, label.getLabel());
+		return new Response<Object>();
+	}
+
+	@RequestMapping(value = "/namespace/{namespace}/label", method = RequestMethod.DELETE)
+	public Response<Object> deleteNamespaceLabel(@PathVariable("namespace") String namespace,
+			@RequestBody @Valid LabelVO label) throws ZcpException {
+		namespaceService.deleteNamespaceLabel(namespace, label.getLabel());
 		return new Response<Object>();
 	}
 
