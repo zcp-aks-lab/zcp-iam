@@ -4,18 +4,18 @@ import com.skcc.cloudz.zcp.common.vo.Ivo;
 
 import io.kubernetes.client.models.V1DeleteOptions;
 
-public class KubeDeleteOptionsVO extends V1DeleteOptions implements Ivo{
+public class KubeDeleteOptionsVO extends V1DeleteOptions implements Ivo {
 
-	String name;
-	String namespace;
-	String userName;
-	
-	public String getUserName() {
-		return userName;
+	private String name;
+	private String namespace;
+	private String username;
+
+	public String getUsername() {
+		return username;
 	}
 
-	public void setUserName(String userName) {
-		this.userName = userName;
+	public void setUsername(String userName) {
+		this.username = userName;
 	}
 
 	public String getName() {
@@ -33,6 +33,5 @@ public class KubeDeleteOptionsVO extends V1DeleteOptions implements Ivo{
 	public void setNamespace(String namespace) {
 		this.namespace = namespace;
 	}
-	
-	
+
 }

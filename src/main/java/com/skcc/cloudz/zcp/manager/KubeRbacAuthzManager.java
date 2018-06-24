@@ -86,11 +86,14 @@ public class KubeRbacAuthzManager {
 
 	public V1RoleBindingList getRoleBindingListByUsername(String username) throws ApiException {
 		return api.listRoleBindingForAllNamespaces(null, null, null,ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, pretty, null, null, null);
-//		return api.listRoleBindingForAllNamespaces(null, null, null, null, null, pretty, null, null, null);
 	}
 
 	public V1RoleBinding createRoleBinding(String namespace, V1RoleBinding rolebinding) throws ApiException {
 		return api.createNamespacedRoleBinding(namespace, rolebinding, pretty);
+	}
+
+	public V1RoleBinding replaceRoleBinding(String namespace, String roleBindingName, V1RoleBinding rolebinding) throws ApiException {
+		return api.replaceNamespacedRoleBinding(roleBindingName, namespace, rolebinding, pretty);
 	}
 
 	public V1Status deleteRoleBinding(String namespace, String roleBindingName, V1DeleteOptions deleteOptions)

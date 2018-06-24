@@ -14,30 +14,30 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class KeycloakConfig{
 	
-	final Logger LOG = LoggerFactory.getLogger(KeycloakConfig.class);
+	private final Logger log = LoggerFactory.getLogger(KeycloakConfig.class);
 	
 	@Value("${keycloak.serverUrl}")
-	String serverUrl; 
+	private String serverUrl; 
 	
 	@Value("${keycloak.realm}")
-	String realm; 
+	private String realm; 
 	
 	@Value("${keycloak.clientId}")
-	String clientId; 
+	private String clientId; 
 	
 	@Value("${keycloak.clientSecret}")
-	String clientSecret; 
+	private String clientSecret; 
 	
 	@Value("${keycloak.username}")
-	String username;
+	private String username;
 	
 	@Value("${keycloak.password}")
-	String password;
+	private String password;
 	
 	@Bean
 	@Qualifier("keycloak")
 	public Keycloak getInstance() {
-		LOG.debug("Keycloak init...!!!!!!!!!!!!!!!!!!!!!");
+		log.debug("Keycloak init...!!!!!!!!!!!!!!!!!!!!!");
 		return KeycloakBuilder.builder() //
 				.serverUrl(serverUrl) //
 				.realm(realm) //

@@ -152,45 +152,6 @@ public class UserService {
 		return map;
 	}
 
-	@Deprecated
-	public UserList getUserListByNamespace(String namespace) throws ApiException {
-
-		List<ZcpUser> users = new ArrayList<ZcpUser>();
-		V1RoleBindingList rolebindingList = kubeRbacAuthzManager.getRoleBindingListByNamespace(namespace);
-		List<V1RoleBinding> rolebindings = rolebindingList.getItems();
-		List<UserRepresentation> keyCloakUsers = keyCloakManager.getUserList();
-
-		for (V1RoleBinding binding : rolebindings) {
-			String name = binding.getMetadata().getName();
-			for (UserRepresentation cloakUser : keyCloakUsers) {
-				if (name.equals(ResourcesNameManager.getRoleBindingName(cloakUser.getUsername()))) {
-					ZcpUser user = new ZcpUser();
-					user.setUsername(cloakUser.getUsername());
-					user.setEmail(cloakUser.getEmail());
-					user.setLastName(cloakUser.getLastName());
-					user.setFirstName(cloakUser.getFirstName());
-					user.setCreatedDate(new Date(cloakUser.getCreatedTimestamp()));
-					user.setEnabled(cloakUser.isEnabled());
-
-					users.add(user);
-				}
-			}
-		}
-		// TODO
-		// for (ZcpUser user : users) {
-		// V1RoleBindingList mapUser =
-		// kubeRbacAuthzManager.getRoleBindingList(user.getUsername());
-		// int count = mapUser.getItems().size();
-		// user.setUsedNamespace(count);
-		// }
-
-		UserList userlist = new UserList();
-		userlist.setItems(users);
-
-		return userlist;
-
-	}
-
 	public void createUser(MemberVO user) throws ZcpException {
 		// 1. create service account
 		V1ServiceAccountList serviceAccountList = null;
@@ -318,12 +279,12 @@ public class UserService {
 				user.setDefaultNamespace(defaultNamespaces.get(0));
 			}
 		}
-		
+
 		List<String> requiredActions = userRepresentation.getRequiredActions();
 		if (requiredActions != null && !requiredActions.isEmpty()) {
 			List<CredentialActionType> zcpUserRequiredActions = new ArrayList<>();
 			for (String action : requiredActions) {
-				zcpUserRequiredActions.add(CredentialActionType.getActionType(action));
+				zcpUserRequiredActions.add(CredentialActionType.valueOf(action));
 			}
 			user.setRequiredActions(zcpUserRequiredActions);
 		}
@@ -336,7 +297,6 @@ public class UserService {
 		try {
 			keyCloakManager.editUser(getKeyCloakUser(id, user));
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 	}
@@ -410,7 +370,6 @@ public class UserService {
 		try {
 			userRepresentation = keyCloakManager.getUser(id);
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 
@@ -423,7 +382,6 @@ public class UserService {
 		try {
 			serviceAccounts = kubeCoreManager.getServiceAccountListByUsername(zcpSystemNamespace, username);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 
@@ -470,7 +428,6 @@ public class UserService {
 		try {
 			keyCloakManager.editUserPassword(id, getCredentialRepresentation(vo.getNewPassword(), Boolean.FALSE));
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 	}
@@ -479,7 +436,6 @@ public class UserService {
 		try {
 			keyCloakManager.editUserPassword(id, getCredentialRepresentation(vo.getPassword(), vo.getTemporary()));
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 	}
@@ -563,7 +519,6 @@ public class UserService {
 		try {
 			keyCloakManager.resetUserCredentials(id, resetCredentialVO.getActions());
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 	}
@@ -572,7 +527,6 @@ public class UserService {
 		try {
 			keyCloakManager.deleteUserOtpPassword(id);
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 	}
@@ -581,7 +535,6 @@ public class UserService {
 		try {
 			return kubeRbacAuthzManager.getClusterRoleList();
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 	}
@@ -590,7 +543,6 @@ public class UserService {
 		try {
 			keyCloakManager.logout(id);
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 	}
@@ -600,7 +552,6 @@ public class UserService {
 		try {
 			userRepresentation = keyCloakManager.getUser(id);
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 
@@ -610,7 +561,6 @@ public class UserService {
 		try {
 			serviceAccount = kubeCoreManager.getServiceAccount(zcpSystemNamespace, serviceAccountName);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 
@@ -621,7 +571,6 @@ public class UserService {
 			// objectReference.getNamespace() is null, so shoud use zcpSystemNamespace
 			secret = kubeCoreManager.getSecret(zcpSystemNamespace, objectReference.getName());
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 
@@ -676,7 +625,6 @@ public class UserService {
 		try {
 			userRepresentation = keyCloakManager.getUser(id);
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
 
@@ -714,7 +662,6 @@ public class UserService {
 		try {
 			keyCloakManager.enableUserOtpPassword(id);
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-008", e.getMessage());
 		}
 
@@ -726,10 +673,9 @@ public class UserService {
 		try {
 			roleBindingList = kubeRbacAuthzManager.getRoleBindingListByUsername(zcpUser.getUsername());
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException("ZCP-000", e.getMessage());
 		}
-		
+
 		return roleBindingList;
 	}
 

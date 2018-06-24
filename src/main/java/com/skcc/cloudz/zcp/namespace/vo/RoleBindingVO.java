@@ -1,23 +1,24 @@
 package com.skcc.cloudz.zcp.namespace.vo;
 
+import javax.validation.constraints.NotNull;
+
 import com.skcc.cloudz.zcp.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.common.vo.Ivo;
 
-import io.kubernetes.client.models.V1RoleBinding;
+public class RoleBindingVO implements Ivo {
+	@NotNull
+	private String username;
+	@NotNull
+	private ClusterRole clusterRole;
 
-public class RoleBindingVO extends V1RoleBinding implements Ivo{
-	String namespace;
-	String userName;
-	ClusterRole clusterRole;
-	
-	public String getUserName() {
-		return userName;
+	public String getUsername() {
+		return username;
 	}
 
-	public void setUserName(String userName) {
-		this.userName = userName;
+	public void setUsername(String username) {
+		this.username = username;
 	}
-	
+
 	public ClusterRole getClusterRole() {
 		return clusterRole;
 	}
@@ -26,11 +27,4 @@ public class RoleBindingVO extends V1RoleBinding implements Ivo{
 		this.clusterRole = clusterRole;
 	}
 
-	public String getNamespace() {
-		return namespace;
-	}
-
-	public void setNamespace(String namespace) {
-		this.namespace = namespace;
-	}	
 }
