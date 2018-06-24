@@ -24,6 +24,7 @@ public class ZcpUser {
 	private List<String> namespaces;
 	private String defaultNamespace;
 	private int usedNamespace;
+	private List<CredentialActionType> requiredActions;
 
 	public ZcpUser() {
 		super();
@@ -141,6 +142,14 @@ public class ZcpUser {
 		this.totp = totp;
 	}
 
+	public List<CredentialActionType> getRequiredActions() {
+		return requiredActions;
+	}
+
+	public void setRequiredActions(List<CredentialActionType> requiredActions) {
+		this.requiredActions = requiredActions;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
@@ -172,6 +181,8 @@ public class ZcpUser {
 		builder.append(defaultNamespace);
 		builder.append(", usedNamespace=");
 		builder.append(usedNamespace);
+		builder.append(", requiredActions=");
+		builder.append(requiredActions);
 		builder.append("]");
 		return builder.toString();
 	}

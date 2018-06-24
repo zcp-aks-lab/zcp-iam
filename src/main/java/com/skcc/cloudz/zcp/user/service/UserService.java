@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import com.skcc.cloudz.zcp.common.exception.KeyCloakException;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.model.ClusterRole;
+import com.skcc.cloudz.zcp.common.model.CredentialActionType;
 import com.skcc.cloudz.zcp.common.model.UserList;
 import com.skcc.cloudz.zcp.common.model.ZcpKubeConfig;
 import com.skcc.cloudz.zcp.common.model.ZcpKubeConfig.ClusterInfo;
@@ -316,6 +317,15 @@ public class UserService {
 			if (defaultNamespaces != null && !defaultNamespaces.isEmpty()) {
 				user.setDefaultNamespace(defaultNamespaces.get(0));
 			}
+		}
+		
+		List<String> requiredActions = userRepresentation.getRequiredActions();
+		if (requiredActions != null && !requiredActions.isEmpty()) {
+			List<CredentialActionType> zcpUserRequiredActions = new ArrayList<>();
+			for (String action : requiredActions) {
+				zcpUserRequiredActions.add(CredentialActionType.getActionType(action));
+			}
+			user.setRequiredActions(zcpUserRequiredActions);
 		}
 
 		return user;

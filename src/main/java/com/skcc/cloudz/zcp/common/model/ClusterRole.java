@@ -37,7 +37,7 @@ public enum ClusterRole {
 			}
 		}
 
-		return null;
+		throw new IllegalArgumentException("[" +role + "] is invalid");
 	}
 
 }
