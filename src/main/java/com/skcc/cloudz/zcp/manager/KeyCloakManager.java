@@ -27,6 +27,8 @@ public class KeyCloakManager {
 	private final Logger logger = LoggerFactory.getLogger(KeyCloakManager.class);
 
 	public static final String DEFAULT_NAMESPACE_ATTRIBUTE_KEY = "defaultNamespace";
+	
+	public static final String NAMESPACES_ATTRIBUTE_KEY = "namespaces";
 
 	@Autowired
 	@Qualifier("keycloak")
@@ -177,3 +179,4 @@ public class KeyCloakManager {
 	}
 
 }
+

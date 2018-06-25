@@ -1,5 +1,7 @@
 package com.skcc.cloudz.zcp.user.vo;
 
+import java.util.List;
+
 import javax.validation.constraints.NotNull;
 
 import com.skcc.cloudz.zcp.common.model.ClusterRole;
@@ -13,7 +15,7 @@ public class MemberVO implements Ivo {
 	private String lastName;
 	@NotNull
 	private String email;
-	private String defaultNamespace;
+	private List<String> defaultNamespace;
 	private ClusterRole clusterRole = ClusterRole.NONE;
 	private Boolean enabled;
 
@@ -65,11 +67,11 @@ public class MemberVO implements Ivo {
 		this.enabled = enabled;
 	}
 
-	public String getDefaultNamespace() {
+	public List<String> getDefaultNamespace() {
 		return defaultNamespace;
 	}
 
-	public void setDefaultNamespace(String defaultNamespace) {
+	public void setDefaultNamespace(List<String> defaultNamespace) {
 		this.defaultNamespace = defaultNamespace;
 	}
 
