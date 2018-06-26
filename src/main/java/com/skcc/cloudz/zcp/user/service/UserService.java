@@ -88,13 +88,7 @@ public class UserService {
 			user.setFirstName(cloakUser.getFirstName());
 			user.setCreatedDate(new Date(cloakUser.getCreatedTimestamp()));
 			user.setEnabled(cloakUser.isEnabled());
-			Map<String, List<String>> attributes = cloakUser.getAttributes();
-			if (attributes != null) {
-				List<String> defaultNamespaces = attributes.get(KeyCloakManager.DEFAULT_NAMESPACE_ATTRIBUTE_KEY);
-				if (defaultNamespaces != null && !defaultNamespaces.isEmpty()) {
-					user.setDefaultNamespace(defaultNamespaces.get(0));
-				}
-			}
+
 			users.add(user);
 		}
 
@@ -315,10 +309,12 @@ public class UserService {
 		userRepresentation.setEmail(user.getEmail());
 		userRepresentation.setUsername(user.getUsername());
 		userRepresentation.setEnabled(user.getEnabled());
-		
-		if (user.getDefaultNamespace() != null && user.getDefaultNamespace().size() > 0) {
+		if (StringUtils.isNoneEmpty(user.getDefaultNamespace())) {
+			List<String> defaultNamespaces = new ArrayList<>();
+			defaultNamespaces.add(user.getDefaultNamespace());
+
 			Map<String, List<String>> attributes = new HashMap<>();
-			attributes.put(KeyCloakManager.DEFAULT_NAMESPACE_ATTRIBUTE_KEY, user.getDefaultNamespace());
+			attributes.put(KeyCloakManager.DEFAULT_NAMESPACE_ATTRIBUTE_KEY, defaultNamespaces);
 
 			userRepresentation.setAttributes(attributes);
 		}
