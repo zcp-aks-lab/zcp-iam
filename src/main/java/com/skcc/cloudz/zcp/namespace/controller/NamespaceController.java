@@ -134,6 +134,24 @@ public class NamespaceController {
 		vo.setData(namespaceService.getLabelsOfNamespaces());
 		return vo;
 	}
+	
+	/**
+	 * specific Namespace Label
+	 * 
+	 * @param httpServletRequest
+	 * @param map
+	 * @return
+	 * @throws IOException
+	 * @throws ApiException
+	 * @throws ZcpException
+	 */
+	@RequestMapping(value = "/namespace/{namespace}/labels", method = RequestMethod.GET)
+	Response<ItemList<String>> getNamespaceLabel(@PathVariable("namespace") String namespace)
+			throws ApiException, ParseException, ZcpException {
+		Response<ItemList<String>> vo = new Response<ItemList<String>>();
+		vo.setData(namespaceService.getLabelsOfNamespaces(namespace));
+		return vo;
+	}
 
 	/**
 	 * all namespace resource info

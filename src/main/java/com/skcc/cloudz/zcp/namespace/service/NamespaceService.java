@@ -241,6 +241,21 @@ public class NamespaceService {
 		item.setItems(items);
 		return item;
 	}
+	
+	public ItemList<String> getLabelsOfNamespaces(String namespaceName) throws ZcpException {
+		List<String> listLabel = new ArrayList<>();
+		for (V1Namespace namespace : this.getNamespaceList().getItems()) {
+			if(namespace.getMetadata().getName().equals(namespaceName)) {
+				List<String> labels = Util.MapToList(namespace.getMetadata().getLabels());
+				listLabel.addAll(labels);
+			}
+		}
+
+		List<String> items = listLabel.stream().distinct().collect(Collectors.toList());
+		ItemList<String> item = new ItemList<>();
+		item.setItems(items);
+		return item;
+	}
 
 	private double getUsedMemoryRate(String used, String hard) {
 		int iUsed = 0;
