@@ -264,16 +264,20 @@ public class NamespaceService {
 			if (used.indexOf("Gi") > -1) {
 				iUsed = Integer.parseInt(used.replace("Gi", ""));
 				iUsed *= 1000;
-			} else {
-				iUsed = Integer.parseInt(used.replace("Gi", ""));
-			}
+			} else if(used.indexOf("Mi") > -1) {
+				iUsed = Integer.parseInt(used.replace("Mi", ""));
+			}else
+				iUsed = Integer.parseInt(used);
+			
 
 		if (hard != null)
 			if (hard.indexOf("Gi") > -1) {
 				iHard = Integer.parseInt(hard.replace("Gi", ""));
 				iHard *= 1000;
+			} else if(hard.indexOf("Mi") > -1) {
+				iHard = Integer.parseInt(hard.replace("Mi", ""));
 			} else {
-				iHard = Integer.parseInt(hard.replace("Gi", ""));
+				iHard = Integer.parseInt(hard);
 			}
 
 		return iHard == 0 ? 0 : Math.round((double) iUsed / (double) iHard * 100);
