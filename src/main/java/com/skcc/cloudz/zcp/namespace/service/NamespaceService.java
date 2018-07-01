@@ -11,7 +11,6 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
-import org.json.simple.parser.ParseException;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,29 +87,43 @@ public class NamespaceService {
 		}
 	}
 
-	public NamespaceVO getNamespaceResource(String namespace) throws ApiException, ParseException {
+	public NamespaceVO getNamespaceResource(String namespace) throws ZcpException {
 		NamespaceVO vo = new NamespaceVO();
-		try {
-			V1ResourceQuotaList quota = kubeCoreManager.getResourceQuotaList(namespace);
-			if (quota.getItems().size() > 0)
-				vo.setResourceQuota(quota.getItems().get(0));
-		} catch (ApiException e) {
-			if (!e.getMessage().equals("Not Found")) {
-				throw e;
-			}
-		}
-
-		try {
-			V1LimitRangeList limitRanges = kubeCoreManager.getLimitRanges(namespace);
-			if (limitRanges.getItems().size() > 0)
-				vo.setLimitRange(limitRanges.getItems().get(0));
-		} catch (ApiException e) {
-			if (!e.getMessage().equals("Not Found")) {
-				throw e;
-			}
-		}
-
 		vo.setNamespace(namespace);
+
+		V1ResourceQuotaList quotaList = null;
+		try {
+			quotaList = kubeCoreManager.getResourceQuotaList(namespace);
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("N003", e.getMessage());
+		}
+
+		if (quotaList != null) {
+			if (quotaList.getItems() != null && !quotaList.getItems().isEmpty()) {
+				if (quotaList.getItems().size() > 1) {
+					throw new ZcpException("N003", "The resource quotas is more than 1");
+				}
+				vo.setResourceQuota(quotaList.getItems().get(0));
+			}
+		}
+
+		V1LimitRangeList limitRangeList = null;
+		try {
+			limitRangeList = kubeCoreManager.getLimitRanges(namespace);
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("N003", e.getMessage());
+		}
+
+		if (limitRangeList != null) {
+			if (limitRangeList.getItems() != null && !limitRangeList.getItems().isEmpty()) {
+				if (limitRangeList.getItems().size() > 1) {
+					throw new ZcpException("N003", "The limit range is more than 1");
+				}
+				vo.setLimitRange(limitRangeList.getItems().get(0));
+			}
+		}
 
 		return vo;
 
@@ -228,33 +241,29 @@ public class NamespaceService {
 		return obj;
 	}
 
-	public ItemList<String> getLabelsOfNamespaces() throws ZcpException {
+	public ItemList<String> getAllLabelList() throws ZcpException {
 		List<String> listLabel = new ArrayList<>();
 		for (V1Namespace namespace : this.getNamespaceList().getItems()) {
 			List<String> labels = Util.MapToList(namespace.getMetadata().getLabels());
 			listLabel.addAll(labels);
 		}
-		;
 
 		List<String> items = listLabel.stream().distinct().collect(Collectors.toList());
 		ItemList<String> item = new ItemList<>();
 		item.setItems(items);
 		return item;
 	}
-	
-	public ItemList<String> getLabelsOfNamespaces(String namespaceName) throws ZcpException {
-		List<String> listLabel = new ArrayList<>();
-		for (V1Namespace namespace : this.getNamespaceList().getItems()) {
-			if(namespace.getMetadata().getName().equals(namespaceName)) {
-				List<String> labels = Util.MapToList(namespace.getMetadata().getLabels());
-				listLabel.addAll(labels);
-			}
+
+	public ItemList<String> getLabelsByNamespace(String namespaceName) throws ZcpException {
+		V1Namespace namespace = getNamespace(namespaceName);
+		Map<String, String> labels = namespace.getMetadata().getLabels();
+		if (labels != null && !labels.isEmpty()) {
+			ItemList<String> labelList = new ItemList<>();
+			labelList.setItems(Util.MapToList(namespace.getMetadata().getLabels()));
+			return labelList;
 		}
 
-		List<String> items = listLabel.stream().distinct().collect(Collectors.toList());
-		ItemList<String> item = new ItemList<>();
-		item.setItems(items);
-		return item;
+		return null;
 	}
 
 	private double getUsedMemoryRate(String used, String hard) {
@@ -264,17 +273,16 @@ public class NamespaceService {
 			if (used.indexOf("Gi") > -1) {
 				iUsed = Integer.parseInt(used.replace("Gi", ""));
 				iUsed *= 1000;
-			} else if(used.indexOf("Mi") > -1) {
+			} else if (used.indexOf("Mi") > -1) {
 				iUsed = Integer.parseInt(used.replace("Mi", ""));
-			}else
+			} else
 				iUsed = Integer.parseInt(used);
-			
 
 		if (hard != null)
 			if (hard.indexOf("Gi") > -1) {
 				iHard = Integer.parseInt(hard.replace("Gi", ""));
 				iHard *= 1000;
-			} else if(hard.indexOf("Mi") > -1) {
+			} else if (hard.indexOf("Mi") > -1) {
 				iHard = Integer.parseInt(hard.replace("Mi", ""));
 			} else {
 				iHard = Integer.parseInt(hard);
@@ -313,70 +321,107 @@ public class NamespaceService {
 		return list.getItems().size();
 	}
 
-	/**
-	 * 네임스페이스 생성 또는 변경
-	 * 
-	 * @param namespacevo
-	 * @param quotavo
-	 * @param limitvo
-	 * @throws ApiException
-	 */
-	public void createAndEditNamespace(NamespaceVO data) throws ApiException {
-		V1ObjectMeta namespace_meta = new V1ObjectMeta();
-		V1ObjectMeta quota_meta = new V1ObjectMeta();
-		V1ObjectMeta limit_meta = new V1ObjectMeta();
+	public void saveNamespace(NamespaceVO vo) throws ZcpException {
 
-		namespace_meta.setName(data.getNamespace());
-		quota_meta.setName(data.getNamespace());
-		limit_meta.setName(data.getNamespace());
+		String namespaceName = vo.getNamespace();
 
-		V1Namespace namespacevo = new V1Namespace();
-		V1ResourceQuota quotavo = data.getResourceQuota();
-		V1LimitRange limitvo = data.getLimitRange();
-		namespacevo.setApiVersion("v1");
-		namespacevo.setKind("Namespace");
-		namespacevo.setSpec(new V1NamespaceSpec().addFinalizersItem("kubernetes"));
-		namespacevo.setMetadata(namespace_meta);
-		quotavo.setApiVersion("v1");
-		quotavo.setKind("ResourceQuota");
-		quotavo.setMetadata(quota_meta);
-		limitvo.setApiVersion("v1");
-		limitvo.setKind("LimitRange");
-		limitvo.setMetadata(quota_meta);
+		V1Namespace namespace = new V1Namespace();
+		namespace.setApiVersion("v1");
+		namespace.setKind("Namespace");
+		namespace.setSpec(new V1NamespaceSpec().addFinalizersItem("kubernetes"));
+		V1ObjectMeta namespaceMetadata = new V1ObjectMeta();
+		namespaceMetadata.setName(vo.getNamespace());
+		namespace.setMetadata(namespaceMetadata);
+		namespace.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
 
-		namespacevo.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
-		quotavo.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
-		limitvo.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
-		String namespace = data.getNamespace();
+		V1Namespace v1Namespace = null;
 		try {
-			kubeCoreManager.createNamespace(namespace, namespacevo);
+			v1Namespace = kubeCoreManager.getNamespace(namespaceName);
 		} catch (ApiException e) {
-			if (e.getMessage().equals("Conflict")) {
-				kubeCoreManager.editNamespace(namespace, namespacevo);
-			} else {
-				throw e;
+			// this case is create case
+		}
+
+		if (v1Namespace == null) {
+			try {
+				kubeCoreManager.createNamespace(namespaceName, namespace);
+			} catch (ApiException e) {
+				e.printStackTrace();
+				throw new ZcpException("N002", e.getMessage());
+			}
+		} else {
+			try {
+				kubeCoreManager.editNamespace(namespaceName, namespace);
+			} catch (ApiException e) {
+				e.printStackTrace();
+				throw new ZcpException("N002", e.getMessage());
 			}
 		}
 
+		saveNamespaceResoruceQuota(vo.getResourceQuota(), namespaceName);
+
+		saveNamespaceLimitRange(vo.getLimitRange(), namespaceName);
+	}
+
+	private void saveNamespaceLimitRange(V1LimitRange limitRange, String namespaceName) throws ZcpException {
+		limitRange.setApiVersion("v1");
+		limitRange.setKind("LimitRange");
+		V1ObjectMeta limitRangeMetadata = new V1ObjectMeta();
+		limitRangeMetadata.setName(ResourcesNameManager.getLimtRangeName(namespaceName));
+		limitRangeMetadata.setLabels(ResourcesLabelManager.getSystemNamespaceLabels(namespaceName));
+		limitRange.setMetadata(limitRangeMetadata);
+
+		V1LimitRange v1LimitRange = null;
 		try {
-			kubeCoreManager.createLimitRange(namespace, limitvo);
-		} catch (ApiException e) {
-			if (e.getMessage().equals("Conflict")) {
-				String name = limitvo.getMetadata().getName();
-				kubeCoreManager.editLimitRange(namespace, name, limitvo);
-			} else {
-				throw e;
-			}
+			v1LimitRange = kubeCoreManager.getLimitRange(namespaceName, limitRangeMetadata.getName());
+		} catch (ApiException e1) {
+			//
 		}
 
+		if (v1LimitRange == null) {
+			try {
+				kubeCoreManager.createLimitRange(namespaceName, limitRange);
+			} catch (ApiException e) {
+				e.printStackTrace();
+				throw new ZcpException("N002", e.getMessage());
+			}
+		} else {
+			try {
+				kubeCoreManager.editLimitRange(namespaceName, limitRangeMetadata.getName(), limitRange);
+			} catch (ApiException e) {
+				e.printStackTrace();
+				throw new ZcpException("N002", e.getMessage());
+			}
+		}
+	}
+
+	private void saveNamespaceResoruceQuota(V1ResourceQuota resourceQuota, String namespaceName) throws ZcpException {
+		resourceQuota.setApiVersion("v1");
+		resourceQuota.setKind("ResourceQuota");
+		V1ObjectMeta resourceQuotaMetadata = new V1ObjectMeta();
+		resourceQuotaMetadata.setName(ResourcesNameManager.getResouceQuotaName(namespaceName));
+		resourceQuotaMetadata.setLabels(ResourcesLabelManager.getSystemNamespaceLabels(namespaceName));
+		resourceQuota.setMetadata(resourceQuotaMetadata);
+
+		V1ResourceQuota v1ResourceQuota = null;
 		try {
-			kubeCoreManager.createResourceQuota(namespace, quotavo);
-		} catch (ApiException e) {
-			if (e.getMessage().equals("Conflict")) {
-				String name = limitvo.getMetadata().getName();
-				kubeCoreManager.editResourceQuota(namespace, name, quotavo);
-			} else {
-				throw e;
+			v1ResourceQuota = kubeCoreManager.getResourceQuota(namespaceName, resourceQuotaMetadata.getName());
+		} catch (ApiException e1) {
+			//
+		}
+
+		if (v1ResourceQuota == null) {
+			try {
+				kubeCoreManager.createResourceQuota(namespaceName, resourceQuota);
+			} catch (ApiException e) {
+				e.printStackTrace();
+				throw new ZcpException("N002", e.getMessage());
+			}
+		} else {
+			try {
+				kubeCoreManager.editResourceQuota(namespaceName, resourceQuotaMetadata.getName(), resourceQuota);
+			} catch (ApiException e) {
+				e.printStackTrace();
+				throw new ZcpException("N002", e.getMessage());
 			}
 		}
 	}
@@ -539,12 +584,12 @@ public class NamespaceService {
 		}
 
 	}
-	
+
 	private Map<String, String> removeLabel(Map<String, String> labels, String label) {
 		if (labels == null || labels.isEmpty()) {
 			return labels;
 		}
-		
+
 		if (StringUtils.isEmpty(label)) {
 			return labels;
 		}
@@ -564,7 +609,7 @@ public class NamespaceService {
 
 		return labels;
 	}
-	
+
 	public void createNamespaceLabel(String namespaceName, String newLabel) throws ZcpException {
 		V1Namespace namespace = getNamespace(namespaceName);
 		Map<String, String> labels = namespace.getMetadata().getLabels();

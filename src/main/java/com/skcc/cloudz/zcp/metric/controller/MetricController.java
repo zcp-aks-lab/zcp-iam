@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skcc.cloudz.zcp.common.model.V1alpha1NodeMetricList;
+import com.skcc.cloudz.zcp.common.model.ZcpNamespaceList;
 import com.skcc.cloudz.zcp.common.model.ZcpNodeList;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.metric.service.MetricService;
@@ -30,6 +31,14 @@ public class MetricController {
 		response.setData(metricService.getNodeMetrics());
 		
 		logger.debug(response.getData().getItems().toString());
+		
+		return response;
+	}
+
+	@RequestMapping(value = "/metrics/namespaces", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public Response<ZcpNamespaceList> getNamespaceList() throws Exception {
+		Response<ZcpNamespaceList> response = new Response<>();
+		response.setData(metricService.getNamespaceList());
 		
 		return response;
 	}

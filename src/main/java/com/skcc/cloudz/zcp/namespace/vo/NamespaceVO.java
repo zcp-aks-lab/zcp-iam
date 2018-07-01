@@ -5,11 +5,11 @@ import com.skcc.cloudz.zcp.common.vo.Ivo;
 import io.kubernetes.client.models.V1LimitRange;
 import io.kubernetes.client.models.V1ResourceQuota;
 
-public class NamespaceVO  implements Ivo{
-	String namespace;
-	V1ResourceQuota resourceQuota;
-	V1LimitRange limitRange;
-	
+public class NamespaceVO implements Ivo {
+	private String namespace;
+	private V1ResourceQuota resourceQuota;
+	private V1LimitRange limitRange;
+
 	public String getNamespace() {
 		return namespace;
 	}
@@ -33,30 +33,4 @@ public class NamespaceVO  implements Ivo{
 	public void setLimitRange(V1LimitRange limitRange) {
 		this.limitRange = limitRange;
 	}
-	
-//	public class ResourceQuotaVO extends V1ResourceQuota{
-//		String name;
-//
-//		public String getName() {
-//			return name;
-//		}
-//
-//		public void setName(String name) {
-//			this.name = name;
-//		}
-//		
-//	}
-//	
-//	public class LimitRangeVO extends V1LimitRange{
-//		String name;
-//
-//		public String getName() {
-//			return name;
-//		}
-//
-//		public void setName(String name) {
-//			this.name = name;
-//		}
-//		
-//	}
 }
