@@ -96,6 +96,7 @@ public class KeyCloakManager {
 		userResource.remove();
 	}
 
+	@SuppressWarnings("unused")
 	@Deprecated
 	private UserRepresentation getUser(UsersResource usersResource, String username) throws KeyCloakException {
 		List<UserRepresentation> users = usersResource.search(username);
