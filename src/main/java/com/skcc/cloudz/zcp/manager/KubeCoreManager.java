@@ -70,8 +70,8 @@ public class KubeCoreManager {
 		return api.deleteCollectionNamespacedServiceAccount(namespace, pretty, null, null, null,
 				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);
 	}
-	
-	public V1Status deleteNamespace(String namespace, V1DeleteOptions deleteOptions) throws ApiException{
+
+	public V1Status deleteNamespace(String namespace, V1DeleteOptions deleteOptions) throws ApiException {
 		return api.deleteNamespace(namespace, deleteOptions, pretty, null, null, null);
 	}
 
@@ -109,6 +109,12 @@ public class KubeCoreManager {
 		return api.createNamespacedLimitRange(namespace, limitRange, pretty);
 	}
 
+	public V1Status deleteLimitRange(String namespace, String limitRangeName) throws ApiException {
+		V1DeleteOptions deleteOptions = new V1DeleteOptions();
+		deleteOptions.setGracePeriodSeconds(0l);
+		return api.deleteNamespacedLimitRange(limitRangeName, namespace, deleteOptions, pretty, null, null, null);
+	}
+
 	public V1LimitRange editLimitRange(String namespace, String limitRangeName, V1LimitRange limitRange)
 			throws ApiException {
 		return api.replaceNamespacedLimitRange(limitRangeName, namespace, limitRange, pretty);
@@ -140,10 +146,7 @@ public class KubeCoreManager {
 	}
 
 	public V1ResourceQuotaList getAllResourceQuotaList() throws ApiException {
-//		return api.listResourceQuotaForAllNamespaces(null, null, null
-//				, ResourcesLabelManager.getSystemLabelSelector(), null, pretty, null, null, null);
-		return api.listResourceQuotaForAllNamespaces(null, null, null
-				, null, null, pretty, null, null, null);
+		return api.listResourceQuotaForAllNamespaces(null, null, null, null, null, pretty, null, null, null);
 	}
 
 	public V1NodeList getNodeList() throws ApiException {
@@ -155,8 +158,14 @@ public class KubeCoreManager {
 		fieldSelector.append("spec.nodeName=");
 		fieldSelector.append(nodeName);
 		fieldSelector.append(",status.phase!=Failed,status.phase!=Succeeded");
-		
+
 		return api.listPodForAllNamespaces(null, fieldSelector.toString(), null, null, null, pretty, null, null, null);
+	}
+
+	public V1Status deleteResourceQuota(String namespace, String resourceQuotaName) throws ApiException {
+		V1DeleteOptions deleteOptions = new V1DeleteOptions();
+		deleteOptions.setGracePeriodSeconds(0l);
+		return api.deleteNamespacedResourceQuota(resourceQuotaName, namespace, deleteOptions, pretty, null, null, null);
 	}
 
 }

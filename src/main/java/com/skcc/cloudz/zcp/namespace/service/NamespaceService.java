@@ -18,10 +18,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.google.gson.Gson;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
+import com.skcc.cloudz.zcp.common.model.CPUUnit;
 import com.skcc.cloudz.zcp.common.model.ClusterRole;
+import com.skcc.cloudz.zcp.common.model.MemoryUnit;
 import com.skcc.cloudz.zcp.common.model.UserList;
+import com.skcc.cloudz.zcp.common.model.ZcpLimitRange;
+import com.skcc.cloudz.zcp.common.model.ZcpResourceQuota;
 import com.skcc.cloudz.zcp.common.model.ZcpUser;
 import com.skcc.cloudz.zcp.common.util.Util;
 import com.skcc.cloudz.zcp.manager.KeyCloakManager;
@@ -32,22 +35,26 @@ import com.skcc.cloudz.zcp.manager.ResourcesNameManager;
 import com.skcc.cloudz.zcp.namespace.vo.InquiryNamespaceVO;
 import com.skcc.cloudz.zcp.namespace.vo.ItemList;
 import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
-import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
+import com.skcc.cloudz.zcp.namespace.vo.NamespaceResourceDetailVO;
+import com.skcc.cloudz.zcp.namespace.vo.NamespaceResourceVO;
 import com.skcc.cloudz.zcp.namespace.vo.QuotaVO;
 import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.namespace.vo.ServiceAccountVO;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1LimitRange;
-import io.kubernetes.client.models.V1LimitRangeList;
+import io.kubernetes.client.models.V1LimitRangeItem;
+import io.kubernetes.client.models.V1LimitRangeSpec;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1NamespaceSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1ResourceQuotaList;
+import io.kubernetes.client.models.V1ResourceQuotaSpec;
 import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1RoleRef;
@@ -87,49 +94,259 @@ public class NamespaceService {
 		}
 	}
 
-	public NamespaceVO getNamespaceResource(String namespace) throws ZcpException {
-		NamespaceVO vo = new NamespaceVO();
-		vo.setNamespace(namespace);
+	public NamespaceResourceDetailVO getNamespaceResource(String namespace) throws ZcpException {
+		NamespaceResourceDetailVO namespaceDetail = new NamespaceResourceDetailVO();
+		namespaceDetail.setNamespace(namespace);
 
-		V1ResourceQuotaList quotaList = null;
+		V1ResourceQuota v1ResourceQuota = null;
 		try {
-			quotaList = kubeCoreManager.getResourceQuotaList(namespace);
+			v1ResourceQuota = kubeCoreManager.getResourceQuota(namespace,
+					ResourcesNameManager.getResouceQuotaName(namespace));
 		} catch (ApiException e) {
-			e.printStackTrace();
-			throw new ZcpException("N003", e.getMessage());
+			// we can ignore this case
+			log.debug("The resouece quota of " + namespace + " does not exist");
 		}
 
-		if (quotaList != null) {
-			if (quotaList.getItems() != null && !quotaList.getItems().isEmpty()) {
-				if (quotaList.getItems().size() > 1) {
-					throw new ZcpException("N003", "The resource quotas is more than 1");
-				}
-				vo.setResourceQuota(quotaList.getItems().get(0));
+		if (v1ResourceQuota != null) {
+			Map<String, String> hard = v1ResourceQuota.getStatus().getHard();
+			Map<String, String> used = v1ResourceQuota.getStatus().getUsed();
+			if (hard != null && !hard.isEmpty()) {
+				namespaceDetail.setHard(generateResourceQuota(hard));
+				namespaceDetail.setUsed(generateResourceQuota(used));
 			}
 		}
 
-		V1LimitRangeList limitRangeList = null;
+		V1LimitRange v1LimitRange = null;
 		try {
-			limitRangeList = kubeCoreManager.getLimitRanges(namespace);
+			v1LimitRange = kubeCoreManager.getLimitRange(namespace, ResourcesNameManager.getLimtRangeName(namespace));
 		} catch (ApiException e) {
-			e.printStackTrace();
-			throw new ZcpException("N003", e.getMessage());
+			// we can ignore this case
+			log.debug("The limit range of " + namespace + " does not exist");
 		}
 
-		if (limitRangeList != null) {
-			if (limitRangeList.getItems() != null && !limitRangeList.getItems().isEmpty()) {
-				if (limitRangeList.getItems().size() > 1) {
-					throw new ZcpException("N003", "The limit range is more than 1");
-				}
-				vo.setLimitRange(limitRangeList.getItems().get(0));
+		if (v1LimitRange != null) {
+			namespaceDetail.setLimitRange(generateLimitRange(v1LimitRange));
+		}
+
+		return namespaceDetail;
+	}
+
+	private ZcpResourceQuota generateResourceQuota(Map<String, String> data) {
+		ZcpResourceQuota resourceQuota = new ZcpResourceQuota();
+
+		String value = data.get("limits.cpu");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setCpuLimits(getResourceValue(value));
+			resourceQuota.setCpuLimitsUnit(getCPUUnitFormat(value));
+		}
+		value = data.get("limits.memory");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setMemoryLimits(getResourceValue(value));
+			resourceQuota.setMemoryLimitsUnit(getMemoryUnitFormat(value));
+		}
+		value = data.get("requests.cpu");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setCpuRequests(getResourceValue(value));
+			resourceQuota.setCpuRequestsUnit(getCPUUnitFormat(value));
+		}
+		value = data.get("requests.memory");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setMemoryRequests(getResourceValue(value));
+			resourceQuota.setMemoryRequestsUnit(getMemoryUnitFormat(value));
+		}
+
+		value = data.get("configmaps");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setConfigmaps(getResourceValue(value));
+		}
+		value = data.get("persistentvolumeclaims");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setPersistentvolumeclaims(getResourceValue(value));
+		}
+		value = data.get("pods");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setPods(getResourceValue(value));
+		}
+		value = data.get("resourcequotas");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setResourcequotas(getResourceValue(value));
+		}
+		value = data.get("secrets");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setSecrets(getResourceValue(value));
+		}
+		value = data.get("services");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setServices(getResourceValue(value));
+		}
+		value = data.get("services.loadbalancers");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setServicesLoadbalancers(getResourceValue(value));
+		}
+		value = data.get("services.nodeports");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setServicesNodeports(getResourceValue(value));
+		}
+		value = data.get("replicationcontrollers");
+		if (StringUtils.isNotEmpty(value)) {
+			resourceQuota.setReplicationcontrollers(getResourceValue(value));
+		}
+
+		return resourceQuota;
+	}
+
+	private Integer getResourceValue(String value) {
+		if (value == null)
+			return null;
+
+		Quantity quantity = new Quantity(value);
+		if (quantity.getFormat() == Quantity.Format.BINARY_SI) {
+			if (StringUtils.contains(value, "Gi"))
+				return Integer.valueOf(StringUtils.substringBefore(value, "Gi"));
+			if (StringUtils.contains(value, "Mi"))
+				return Integer.valueOf(StringUtils.substringBefore(value, "Mi"));
+			return null;
+		} else {
+			if (StringUtils.contains(value, "m"))
+				return Integer.valueOf(StringUtils.substringBefore(value, "m"));
+			return Integer.valueOf(value);
+		}
+	}
+
+	private CPUUnit getCPUUnitFormat(String value) {
+		if (value == null)
+			return null;
+
+		Quantity quantity = new Quantity(value);
+		if (quantity.getFormat() == Quantity.Format.BINARY_SI) {
+			return null;
+		} else {
+			if (StringUtils.contains(value, "m"))
+				return CPUUnit.MilliCore;
+			return CPUUnit.Core;
+		}
+	}
+
+	private MemoryUnit getMemoryUnitFormat(String value) {
+		if (value == null)
+			return null;
+
+		Quantity quantity = new Quantity(value);
+		if (quantity.getFormat() == Quantity.Format.BINARY_SI) {
+			if (StringUtils.contains(value, "Gi"))
+				return MemoryUnit.Gi;
+			if (StringUtils.contains(value, "Mi"))
+				return MemoryUnit.Mi;
+			return null;
+		} else {
+			return null;
+		}
+	}
+
+	private ZcpLimitRange generateLimitRange(V1LimitRange v1LimitRange) {
+		if (v1LimitRange == null)
+			return null;
+		List<V1LimitRangeItem> limitRangeItems = v1LimitRange.getSpec().getLimits();
+		V1LimitRangeItem item = null;
+		for (V1LimitRangeItem v1LimitRangeItem : limitRangeItems) {
+			if (v1LimitRangeItem.getType().equals("Container")) {
+				item = v1LimitRangeItem;
+				break;
 			}
 		}
 
-		return vo;
+		Map<String, Quantity> defaultLimits = item.getDefault();
+		Map<String, Quantity> defaultRequests = item.getDefaultRequest();
 
+		ZcpLimitRange limitRange = new ZcpLimitRange();
+		limitRange.setCpuLimits(getResourceValue(defaultLimits.get("cpu")));
+		limitRange.setCpuLimitsUnit(getCPUUnitFormat(defaultLimits.get("cpu")));
+		limitRange.setMemoryLimits(getResourceValue(defaultLimits.get("memory")));
+		limitRange.setMemoryLimitsUnit(getMemoryUnitFormat(defaultLimits.get("memory")));
+		limitRange.setCpuRequests(getResourceValue(defaultRequests.get("cpu")));
+		limitRange.setCpuRequestsUnit(getCPUUnitFormat(defaultRequests.get("cpu")));
+		limitRange.setMemoryRequests(getResourceValue(defaultRequests.get("memory")));
+		limitRange.setMemoryRequestsUnit(getMemoryUnitFormat(defaultRequests.get("memory")));
+
+		return limitRange;
+	}
+
+	private Integer getResourceValue(Quantity quantity) {
+		if (quantity == null)
+			return null;
+
+		double value = quantity.getNumber().doubleValue();
+		if (quantity.getFormat() == Quantity.Format.BINARY_SI) {
+			if (value == 0) {
+				return Integer.valueOf(StringUtils.substringBefore(String.valueOf(value), "."));
+			}
+
+			double formattedValue = value / 1024 / 1024;
+			if (formattedValue < 1024) {
+				return Integer.valueOf(StringUtils.substringBefore(String.valueOf(formattedValue), "."));
+			} else {
+				formattedValue = formattedValue / 1024;
+				return Integer.valueOf(StringUtils.substringBefore(String.valueOf(formattedValue), "."));
+			}
+		} else {
+			if (value == 0) {
+				return Integer.valueOf(StringUtils.substringBefore(String.valueOf(value), "."));
+			}
+
+			if (value < 1) {
+				double formattedValue = value * 1000;
+				return Integer.valueOf(StringUtils.substringBefore(String.valueOf(formattedValue), "."));
+			} else {
+				return Integer.valueOf(StringUtils.substringBefore(String.valueOf(value), "."));
+			}
+		}
+	}
+
+	private CPUUnit getCPUUnitFormat(Quantity quantity) {
+		if (quantity == null)
+			return null;
+
+		double value = quantity.getNumber().doubleValue();
+
+		if (quantity.getFormat() == Quantity.Format.BINARY_SI) {
+			return null;
+		} else {
+			if (value == 0) {
+				return CPUUnit.Core;
+			}
+
+			if (value < 1) {
+				return CPUUnit.MilliCore;
+			} else {
+				return CPUUnit.Core;
+			}
+		}
+	}
+
+	private MemoryUnit getMemoryUnitFormat(Quantity quantity) {
+		if (quantity == null)
+			return null;
+
+		double value = quantity.getNumber().doubleValue();
+
+		if (quantity.getFormat() != Quantity.Format.BINARY_SI) {
+			return null;
+		} else {
+			if (value == 0) {
+				return MemoryUnit.Gi;
+			}
+
+			double formattedValue = value / 1024 / 1024;
+			if (formattedValue < 1024) {
+				return MemoryUnit.Mi;
+			} else {
+				return MemoryUnit.Gi;
+			}
+		}
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	private List<QuotaVO> getResourceQuotaList() throws ZcpException {
 		V1ResourceQuotaList quota = null;
 		try {
@@ -168,6 +385,7 @@ public class NamespaceService {
 		return listQuota;
 	}
 
+	@Deprecated
 	public ItemList<QuotaVO> getResourceQuotaList(InquiryNamespaceVO vo) throws ZcpException {
 		// sortOrder = true asc;
 		// sortOrder = false desc;
@@ -232,6 +450,7 @@ public class NamespaceService {
 		return list;
 	}
 
+	@Deprecated
 	public Object[] getInfoOfNamespace(String namespaceName) throws ZcpException {
 		V1Namespace namespace = getNamespace(namespaceName);
 		String active = namespace.getStatus().getPhase().equals("Active") ? "active" : "inactive";
@@ -266,6 +485,7 @@ public class NamespaceService {
 		return null;
 	}
 
+	@Deprecated
 	private double getUsedMemoryRate(String used, String hard) {
 		int iUsed = 0;
 		int iHard = 0;
@@ -291,6 +511,7 @@ public class NamespaceService {
 		return iHard == 0 ? 0 : Math.round((double) iUsed / (double) iHard * 100);
 	}
 
+	@Deprecated
 	private double getUsedCpuRate(String used, String hard) {
 		int iUsed = 0;
 		int iHard = 0;
@@ -311,6 +532,7 @@ public class NamespaceService {
 		return iHard == 0 ? 0 : Math.round((double) iUsed / (double) iHard * 100.0);
 	}
 
+	@Deprecated
 	private int getNamespaceUserCount(String namespaceName) throws ZcpException {
 		V1RoleBindingList list = null;
 		try {
@@ -321,36 +543,31 @@ public class NamespaceService {
 		return list.getItems().size();
 	}
 
-	public void saveNamespace(NamespaceVO vo) throws ZcpException {
+	public void saveNamespace(NamespaceResourceVO vo) throws ZcpException {
 
 		String namespaceName = vo.getNamespace();
 
-		V1Namespace namespace = new V1Namespace();
-		namespace.setApiVersion("v1");
-		namespace.setKind("Namespace");
-		namespace.setSpec(new V1NamespaceSpec().addFinalizersItem("kubernetes"));
-		V1ObjectMeta namespaceMetadata = new V1ObjectMeta();
-		namespaceMetadata.setName(vo.getNamespace());
-		namespace.setMetadata(namespaceMetadata);
-		namespace.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
-
-		V1Namespace v1Namespace = null;
+		V1Namespace currentV1Namespace = null;
 		try {
-			v1Namespace = kubeCoreManager.getNamespace(namespaceName);
+			currentV1Namespace = kubeCoreManager.getNamespace(namespaceName);
 		} catch (ApiException e) {
 			// this case is create case
+			// we can ignore this case
+			log.debug("This case is a creating namespace case");
 		}
 
-		if (v1Namespace == null) {
+		if (currentV1Namespace == null) {
+			V1Namespace v1Namespace = new V1Namespace();
+			v1Namespace.setApiVersion("v1");
+			v1Namespace.setKind("Namespace");
+			v1Namespace.setSpec(new V1NamespaceSpec().addFinalizersItem("kubernetes"));
+			V1ObjectMeta namespaceMetadata = new V1ObjectMeta();
+			namespaceMetadata.setName(vo.getNamespace());
+			v1Namespace.setMetadata(namespaceMetadata);
+			v1Namespace.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
+
 			try {
-				kubeCoreManager.createNamespace(namespaceName, namespace);
-			} catch (ApiException e) {
-				e.printStackTrace();
-				throw new ZcpException("N002", e.getMessage());
-			}
-		} else {
-			try {
-				kubeCoreManager.editNamespace(namespaceName, namespace);
+				kubeCoreManager.createNamespace(namespaceName, v1Namespace);
 			} catch (ApiException e) {
 				e.printStackTrace();
 				throw new ZcpException("N002", e.getMessage());
@@ -362,68 +579,177 @@ public class NamespaceService {
 		saveNamespaceLimitRange(vo.getLimitRange(), namespaceName);
 	}
 
-	private void saveNamespaceLimitRange(V1LimitRange limitRange, String namespaceName) throws ZcpException {
-		limitRange.setApiVersion("v1");
-		limitRange.setKind("LimitRange");
-		V1ObjectMeta limitRangeMetadata = new V1ObjectMeta();
-		limitRangeMetadata.setName(ResourcesNameManager.getLimtRangeName(namespaceName));
-		limitRangeMetadata.setLabels(ResourcesLabelManager.getSystemNamespaceLabels(namespaceName));
-		limitRange.setMetadata(limitRangeMetadata);
-
-		V1LimitRange v1LimitRange = null;
+	private void saveNamespaceLimitRange(ZcpLimitRange limitRange, String namespaceName) throws ZcpException {
+		V1LimitRange currentV1LimitRange = null;
 		try {
-			v1LimitRange = kubeCoreManager.getLimitRange(namespaceName, limitRangeMetadata.getName());
+			currentV1LimitRange = kubeCoreManager.getLimitRange(namespaceName,
+					ResourcesNameManager.getLimtRangeName(namespaceName));
 		} catch (ApiException e1) {
-			//
+			// this case is create case
+			// we can ignore this case
+			log.debug("This case is a creating limit range of namespace case");
 		}
 
-		if (v1LimitRange == null) {
-			try {
-				kubeCoreManager.createLimitRange(namespaceName, limitRange);
-			} catch (ApiException e) {
-				e.printStackTrace();
-				throw new ZcpException("N002", e.getMessage());
+		if (limitRange.isEmpty()) {
+			if (currentV1LimitRange != null) {
+				try {
+					kubeCoreManager.deleteLimitRange(namespaceName,
+							ResourcesNameManager.getLimtRangeName(namespaceName));
+				} catch (ApiException e) {
+					e.printStackTrace();
+					throw new ZcpException("N002", e.getMessage());
+				}
 			}
 		} else {
-			try {
-				kubeCoreManager.editLimitRange(namespaceName, limitRangeMetadata.getName(), limitRange);
-			} catch (ApiException e) {
-				e.printStackTrace();
-				throw new ZcpException("N002", e.getMessage());
+			if (currentV1LimitRange == null) {
+				V1LimitRange newV1LimitRange = generateV1LimitRange(limitRange, namespaceName);
+				try {
+					kubeCoreManager.createLimitRange(namespaceName, newV1LimitRange);
+				} catch (ApiException e) {
+					e.printStackTrace();
+					throw new ZcpException("N002", e.getMessage());
+				}
+			} else {
+				currentV1LimitRange = generateV1LimitRange(limitRange, namespaceName);
+				try {
+					kubeCoreManager.editLimitRange(namespaceName, ResourcesNameManager.getLimtRangeName(namespaceName),
+							currentV1LimitRange);
+				} catch (ApiException e) {
+					e.printStackTrace();
+					throw new ZcpException("N002", e.getMessage());
+				}
+			}
+		}
+
+	}
+
+	private void saveNamespaceResoruceQuota(ZcpResourceQuota resourceQuota, String namespaceName) throws ZcpException {
+		V1ResourceQuota currentV1ResourceQuota = null;
+		try {
+			currentV1ResourceQuota = kubeCoreManager.getResourceQuota(namespaceName,
+					ResourcesNameManager.getResouceQuotaName(namespaceName));
+		} catch (ApiException e1) {
+			// this case is create case
+			// we can ignore this case
+			log.debug("This case is a creating resource quota of namespace case");
+		}
+
+		if (resourceQuota.isEmpty()) {
+			if (currentV1ResourceQuota != null) {
+				try {
+					kubeCoreManager.deleteResourceQuota(namespaceName,
+							ResourcesNameManager.getResouceQuotaName(namespaceName));
+				} catch (ApiException e) {
+					e.printStackTrace();
+					throw new ZcpException("N002", e.getMessage());
+				}
+			}
+		} else {
+			if (currentV1ResourceQuota == null) {
+				V1ResourceQuota newV1ResourceQuota = gerneateV1ResourceQuota(resourceQuota, namespaceName);
+				try {
+					kubeCoreManager.createResourceQuota(namespaceName, newV1ResourceQuota);
+				} catch (ApiException e) {
+					e.printStackTrace();
+					throw new ZcpException("N002", e.getMessage());
+				}
+			} else {
+				currentV1ResourceQuota = gerneateV1ResourceQuota(resourceQuota, namespaceName);
+				try {
+					kubeCoreManager.editResourceQuota(namespaceName,
+							ResourcesNameManager.getResouceQuotaName(namespaceName), currentV1ResourceQuota);
+				} catch (ApiException e) {
+					e.printStackTrace();
+					throw new ZcpException("N002", e.getMessage());
+				}
 			}
 		}
 	}
 
-	private void saveNamespaceResoruceQuota(V1ResourceQuota resourceQuota, String namespaceName) throws ZcpException {
-		resourceQuota.setApiVersion("v1");
-		resourceQuota.setKind("ResourceQuota");
-		V1ObjectMeta resourceQuotaMetadata = new V1ObjectMeta();
-		resourceQuotaMetadata.setName(ResourcesNameManager.getResouceQuotaName(namespaceName));
-		resourceQuotaMetadata.setLabels(ResourcesLabelManager.getSystemNamespaceLabels(namespaceName));
-		resourceQuota.setMetadata(resourceQuotaMetadata);
+	private V1LimitRange generateV1LimitRange(ZcpLimitRange limitRange, String namespaceName) {
+		V1LimitRange v1LimitRange = new V1LimitRange();
+		// set metadata
+		V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
+		v1ObjectMeta.setName(ResourcesNameManager.getLimtRangeName(namespaceName));
+		v1ObjectMeta.setLabels(ResourcesLabelManager.getSystemNamespaceLabels(namespaceName));
+		v1LimitRange.setMetadata(v1ObjectMeta);
 
-		V1ResourceQuota v1ResourceQuota = null;
-		try {
-			v1ResourceQuota = kubeCoreManager.getResourceQuota(namespaceName, resourceQuotaMetadata.getName());
-		} catch (ApiException e1) {
-			//
-		}
+		// set item
+		V1LimitRangeItem v1LimitRangeItem = new V1LimitRangeItem();
+		v1LimitRangeItem.setType("Container");
 
-		if (v1ResourceQuota == null) {
-			try {
-				kubeCoreManager.createResourceQuota(namespaceName, resourceQuota);
-			} catch (ApiException e) {
-				e.printStackTrace();
-				throw new ZcpException("N002", e.getMessage());
-			}
-		} else {
-			try {
-				kubeCoreManager.editResourceQuota(namespaceName, resourceQuotaMetadata.getName(), resourceQuota);
-			} catch (ApiException e) {
-				e.printStackTrace();
-				throw new ZcpException("N002", e.getMessage());
-			}
-		}
+		Map<String, Quantity> defaultLimits = new HashMap<>();
+		if (limitRange.getCpuLimitsFormat() != null)
+			defaultLimits.put("cpu", Quantity.fromString(limitRange.getCpuLimitsFormat()));
+		if (limitRange.getMemoryLimitsFormat() != null)
+			defaultLimits.put("memory", Quantity.fromString(limitRange.getMemoryLimitsFormat()));
+		v1LimitRangeItem.setDefault(defaultLimits);
+
+		Map<String, Quantity> defaultRequests = new HashMap<>();
+		if (limitRange.getCpuRequestsFormat() != null)
+			defaultRequests.put("cpu", Quantity.fromString(limitRange.getCpuRequestsFormat()));
+		if (limitRange.getMemoryRequestsFormat() != null)
+			defaultRequests.put("memory", Quantity.fromString(limitRange.getMemoryRequestsFormat()));
+		v1LimitRangeItem.setDefaultRequest(defaultRequests);
+
+		// set spec
+		V1LimitRangeSpec v1LimitRangeSpec = new V1LimitRangeSpec();
+		v1LimitRangeSpec.addLimitsItem(v1LimitRangeItem);
+
+		v1LimitRange.setSpec(v1LimitRangeSpec);
+
+		return v1LimitRange;
+	}
+
+	private V1ResourceQuota gerneateV1ResourceQuota(ZcpResourceQuota resourceQuota, String namespaceName) {
+		V1ResourceQuota v1ResourceQuota = new V1ResourceQuota();
+
+		// set metadata
+		V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
+		v1ObjectMeta.setName(ResourcesNameManager.getResouceQuotaName(namespaceName));
+		v1ObjectMeta.setLabels(ResourcesLabelManager.getSystemNamespaceLabels(namespaceName));
+		v1ResourceQuota.setMetadata(v1ObjectMeta);
+
+		// set hard
+		Map<String, Quantity> hard = new HashMap<>();
+		if (resourceQuota.getCpuLimitsFormat() != null)
+			hard.put("limits.cpu", Quantity.fromString(resourceQuota.getCpuLimitsFormat()));
+		if (resourceQuota.getMemoryLimitsFormat() != null)
+			hard.put("limits.memory", Quantity.fromString(resourceQuota.getMemoryLimitsFormat()));
+		if (resourceQuota.getCpuRequestsFormat() != null)
+			hard.put("requests.cpu", Quantity.fromString(resourceQuota.getCpuRequestsFormat()));
+		if (resourceQuota.getMemoryRequestsFormat() != null)
+			hard.put("requests.memory", Quantity.fromString(resourceQuota.getMemoryRequestsFormat()));
+
+		if (resourceQuota.getConfigmaps() != null)
+			hard.put("configmaps", Quantity.fromString(String.valueOf(resourceQuota.getConfigmaps())));
+		if (resourceQuota.getPersistentvolumeclaims() != null)
+			hard.put("persistentvolumeclaims",
+					Quantity.fromString(String.valueOf(resourceQuota.getPersistentvolumeclaims())));
+		if (resourceQuota.getPods() != null)
+			hard.put("pods", Quantity.fromString(String.valueOf(resourceQuota.getPods())));
+		if (resourceQuota.getResourcequotas() != null)
+			hard.put("resourcequotas", Quantity.fromString(String.valueOf(resourceQuota.getResourcequotas())));
+		if (resourceQuota.getSecrets() != null)
+			hard.put("secrets", Quantity.fromString(String.valueOf(resourceQuota.getSecrets())));
+		if (resourceQuota.getServices() != null)
+			hard.put("services", Quantity.fromString(String.valueOf(resourceQuota.getServices())));
+		if (resourceQuota.getServicesLoadbalancers() != null)
+			hard.put("services.loadbalancers",
+					Quantity.fromString(String.valueOf(resourceQuota.getServicesLoadbalancers())));
+		if (resourceQuota.getServicesNodeports() != null)
+			hard.put("services.nodeports", Quantity.fromString(String.valueOf(resourceQuota.getServicesNodeports())));
+		if (resourceQuota.getReplicationcontrollers() != null)
+			hard.put("replicationcontrollers",
+					Quantity.fromString(String.valueOf(resourceQuota.getReplicationcontrollers())));
+
+		// set spec
+		V1ResourceQuotaSpec v1ResourceQuotaSpec = new V1ResourceQuotaSpec();
+		v1ResourceQuotaSpec.setHard(hard);
+
+		v1ResourceQuota.setSpec(v1ResourceQuotaSpec);
+
+		return v1ResourceQuota;
 	}
 
 	public void deleteClusterRoleBinding(KubeDeleteOptionsVO data) throws IOException, ApiException {
@@ -623,7 +949,7 @@ public class NamespaceService {
 
 	}
 
-	private Map<String, String> addLabel(Map<String, String> labels, String newLabel) {
+	private Map<String, String> addLabel(Map<String, String> labels, String newLabel) throws ZcpException {
 		if (StringUtils.isEmpty(newLabel)) {
 			return labels;
 		}
@@ -631,7 +957,8 @@ public class NamespaceService {
 		String[] map = newLabel.split("=");
 		if (map == null || map.length != 2) {
 			log.debug("label is invalid - {}", newLabel);
-			return labels;
+			throw new ZcpException("N099",
+					"label[" + newLabel + "] value is invalid. The label format should be 'key=value'");
 		}
 
 		String key = map[0];
@@ -646,9 +973,4 @@ public class NamespaceService {
 		return labels;
 	}
 
-	public Object deserialize(String jsonStr, Class<?> targetClass) {
-		Object obj = (new Gson()).fromJson(jsonStr, targetClass);
-		return obj;
-	}
-	//// 테스트
 }

@@ -19,7 +19,8 @@ import com.skcc.cloudz.zcp.namespace.service.NamespaceService;
 import com.skcc.cloudz.zcp.namespace.vo.InquiryNamespaceVO;
 import com.skcc.cloudz.zcp.namespace.vo.ItemList;
 import com.skcc.cloudz.zcp.namespace.vo.LabelVO;
-import com.skcc.cloudz.zcp.namespace.vo.NamespaceVO;
+import com.skcc.cloudz.zcp.namespace.vo.NamespaceResourceDetailVO;
+import com.skcc.cloudz.zcp.namespace.vo.NamespaceResourceVO;
 import com.skcc.cloudz.zcp.namespace.vo.QuotaVO;
 import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
 
@@ -39,7 +40,7 @@ public class NamespaceController {
 
 	@RequestMapping(value = "/namespaces", method = RequestMethod.GET)
 	public Response<V1NamespaceList> getNamespaces() throws Exception {
-		Response<V1NamespaceList> response = new Response<V1NamespaceList>();
+		Response<V1NamespaceList> response = new Response<>();
 		response.setData(namespaceService.getNamespaceList());
 
 		return response;
@@ -47,7 +48,7 @@ public class NamespaceController {
 
 	@RequestMapping(value = "/namespace/{namespace}", method = RequestMethod.GET)
 	public Response<V1Namespace> getNamespace(@PathVariable("namespace") String namespace) throws Exception {
-		Response<V1Namespace> response = new Response<V1Namespace>();
+		Response<V1Namespace> response = new Response<>();
 		response.setData(namespaceService.getNamespace(namespace));
 
 		return response;
@@ -55,18 +56,19 @@ public class NamespaceController {
 
 	@RequestMapping(value = "/namespace/{namespace}/users", method = RequestMethod.GET)
 	public Response<UserList> getUserListByNamespace(@PathVariable("namespace") String namespace) throws Exception {
-		Response<UserList> response = new Response<UserList>();
+		Response<UserList> response = new Response<>();
 		response.setData(namespaceService.getUserListByNamespace(namespace));
 		return response;
 	}
 
 	@RequestMapping(value = "/namespace/{namespace}/resource", method = RequestMethod.GET)
-	public Response<NamespaceVO> getNamespaceResource(@PathVariable("namespace") String namespace) throws Exception {
-		Response<NamespaceVO> response = new Response<NamespaceVO>();
+	public Response<NamespaceResourceDetailVO> getNamespaceResource(@PathVariable("namespace") String namespace) throws Exception {
+		Response<NamespaceResourceDetailVO> response = new Response<>();
 		response.setData(namespaceService.getNamespaceResource(namespace));
 		return response;
 	}
 
+	@Deprecated
 	@RequestMapping(value = "/resourceQuotas", method = RequestMethod.GET)
 	Response<ItemList<QuotaVO>> getResourceQuotas(@ModelAttribute InquiryNamespaceVO inquiry) throws Exception {
 		Response<ItemList<QuotaVO>> response = new Response<>();
@@ -90,37 +92,37 @@ public class NamespaceController {
 
 	@RequestMapping(value = "/namespace/labels", method = RequestMethod.GET)
 	public Response<ItemList<String>> getAllLabels() throws Exception {
-		Response<ItemList<String>> response = new Response<ItemList<String>>();
+		Response<ItemList<String>> response = new Response<>();
 		response.setData(namespaceService.getAllLabelList());
 		return response;
 	}
 
 	@RequestMapping(value = "/namespace/{namespace}/labels", method = RequestMethod.GET)
 	public Response<ItemList<String>> getNamespaceLabels(@PathVariable("namespace") String namespace) throws Exception {
-		Response<ItemList<String>> vo = new Response<ItemList<String>>();
+		Response<ItemList<String>> vo = new Response<>();
 		vo.setData(namespaceService.getLabelsByNamespace(namespace));
 		return vo;
 	}
 
-	@RequestMapping(value = "/resource", method = RequestMethod.GET)
-	Response<NamespaceVO> getAllOfNamespaceResource() throws Exception {
-		Response<NamespaceVO> response = new Response<NamespaceVO>();
-		response.setData(namespaceService.getNamespaceResource(""));
-		return response;
-	}
+//	@RequestMapping(value = "/resource", method = RequestMethod.GET)
+//	Response<NamespaceVO> getAllOfNamespaceResource() throws Exception {
+//		Response<NamespaceVO> response = new Response<>();
+//		response.setData(namespaceService.getNamespaceResource(""));
+//		return response;
+//	}
 
 	@RequestMapping(value = "/namespace", method = RequestMethod.POST)
-	public Response<Object> saveNamespace(@RequestBody NamespaceVO data)
+	public Response<Object> saveNamespace(@RequestBody NamespaceResourceVO vo)
 			throws Exception {
-		Response<Object> response = new Response<Object>();
-		namespaceService.saveNamespace(data);
+		Response<Object> response = new Response<>();
+		namespaceService.saveNamespace(vo);
 		return response;
 	}
 
 	@RequestMapping(value = "/namespace/{namespace}/roleBinding", method = RequestMethod.POST)
 	public Response<Object> createRoleBinding(@PathVariable("namespace") String namespace,
 			@RequestBody @Valid RoleBindingVO vo) throws Exception {
-		Response<Object> response = new Response<Object>();
+		Response<Object> response = new Response<>();
 		namespaceService.createRoleBinding(namespace, vo);
 		return response;
 
@@ -129,7 +131,7 @@ public class NamespaceController {
 	@RequestMapping(value = "/namespace/{namespace}/roleBinding", method = RequestMethod.PUT)
 	public Response<Object> editRoleBinding(@PathVariable("namespace") String namespace,
 			@RequestBody @Valid RoleBindingVO vo) throws Exception {
-		Response<Object> resposne = new Response<Object>();
+		Response<Object> resposne = new Response<>();
 		namespaceService.editRoleBinding(namespace, vo);
 		return resposne;
 
@@ -138,14 +140,14 @@ public class NamespaceController {
 	@RequestMapping(value = "/namespace/{namespace}/roleBinding", method = RequestMethod.DELETE)
 	public Response<Object> deleteRoleBinding(@PathVariable("namespace") String namespace,
 			@RequestBody @Valid RoleBindingVO vo) throws Exception {
-		Response<Object> response = new Response<Object>();
+		Response<Object> response = new Response<>();
 		namespaceService.deleteRoleBinding(namespace, vo);
 		return response;
 	}
 
 	@RequestMapping(value = "/namespace/{namespace}", method = RequestMethod.DELETE)
 	Response<Object> deleteNamespace(@PathVariable("namespace") String namespace) throws Exception {
-		Response<Object> response = new Response<Object>();
+		Response<Object> response = new Response<>();
 		namespaceService.deleteNamespace(namespace);
 		return response;
 	}

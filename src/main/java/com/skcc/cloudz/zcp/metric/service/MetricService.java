@@ -347,6 +347,7 @@ public class MetricService {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private String formatMemory(double value, MemoryDisplayFormat mdf) {
 		double formattedValue = 0l;
 		if (mdf == MemoryDisplayFormat.MI) {
@@ -366,7 +367,7 @@ public class MetricService {
 		if (value == 0) return StringUtils.substringBefore(String.valueOf(value), ".");
 		
 		double formattedValue = value / 1024 / 1024;
-		if (formattedValue < 1000) {
+		if (formattedValue < 1024) {
 			return StringUtils.substringBefore(String.valueOf(formattedValue), ".") + "Mi";
 		} else {
 			formattedValue = formattedValue / 1024;
