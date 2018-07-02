@@ -166,16 +166,16 @@ public class MetricService {
 			zcpNode.setAllocatableCpu(allocatableCpu);
 			zcpNode.setAllocatableCpuString(formatCpu(allocatableCpu.doubleValue()));
 			zcpNode.setAllocatableMemory(allocatableMem);
-			zcpNode.setAllocatableMemoryString(formatMemory(allocatableMem.doubleValue(), MemoryDisplayFormat.MI));
+			zcpNode.setAllocatableMemoryString(formatMemory(allocatableMem.doubleValue()));
 
 			zcpNode.setCpuLimits(BigDecimal.valueOf(totalCpuLimits));
 			zcpNode.setCpuLimitsString(formatCpu(totalCpuLimits));
 			zcpNode.setCpuRequests(BigDecimal.valueOf(totalCpuRequests));
 			zcpNode.setCpuRequestsString(formatCpu(totalCpuRequests));
 			zcpNode.setMemoryLimits(BigDecimal.valueOf(totalMemLimits));
-			zcpNode.setMemoryLimitsString(formatMemory(totalMemLimits, MemoryDisplayFormat.MI));
+			zcpNode.setMemoryLimitsString(formatMemory(totalMemLimits));
 			zcpNode.setMemoryRequests(BigDecimal.valueOf(totalMemRequests));
-			zcpNode.setMemoryRequestsString(formatMemory(totalMemRequests, MemoryDisplayFormat.MI));
+			zcpNode.setMemoryRequestsString(formatMemory(totalMemRequests));
 			zcpNode.setCpuLimitsPercentage(percent(totalCpuLimits, allocatableCpu.doubleValue()));
 			zcpNode.setCpuRequestsPercentage(percent(totalCpuRequests, allocatableCpu.doubleValue()));
 			zcpNode.setMemoryLimitsPercentage(percent(totalMemLimits, allocatableMem.doubleValue()));
@@ -209,15 +209,6 @@ public class MetricService {
 		List<ZcpNamespace> zcpNamespaces = new ArrayList<>();
 
 		for (V1Namespace namespace : v1NamespaceList.getItems()) {
-			V1ResourceQuota resourceQuota = mappedResourceQuotas.get(namespace.getMetadata().getName());
-			V1ResourceQuotaStatus status = resourceQuota.getStatus();
-			Map<String, String> hard = status.getHard();
-			Map<String, String> used = status.getUsed();
-
-			logger.debug("namespace is {}", namespace.getMetadata().getName());
-			logger.debug("hard is {}", hard);
-			logger.debug("used is {}", used);
-
 			ZcpNamespace zcpNamespace = new ZcpNamespace();
 			zcpNamespace.setName(namespace.getMetadata().getName());
 			zcpNamespace.setCreationDate(new Date(namespace.getMetadata().getCreationTimestamp().getMillis()));
@@ -227,37 +218,48 @@ public class MetricService {
 				zcpNamespace.setUserCount(namespacedRolebinds.size());
 			}
 
-			BigDecimal hardRequestsCpu = Quantity.fromString(hard.get("requests.cpu")).getNumber();
-			BigDecimal usedRequestsCpu = Quantity.fromString(used.get("requests.cpu")).getNumber();
-			zcpNamespace.setHardCpuRequests(hardRequestsCpu);
-			zcpNamespace.setUsedCpuRequests(usedRequestsCpu);
-			zcpNamespace.setHardCpuRequestsString(formatCpu(hardRequestsCpu.doubleValue()));
-			zcpNamespace.setUsedCpuRequestsString(formatCpu(usedRequestsCpu.doubleValue()));
-			zcpNamespace.setCpuRequestsPercentage(percent(usedRequestsCpu.doubleValue(), hardRequestsCpu.doubleValue()));
+			V1ResourceQuota resourceQuota = mappedResourceQuotas.get(namespace.getMetadata().getName());
+			if (resourceQuota != null) {
+				V1ResourceQuotaStatus status = resourceQuota.getStatus();
+				Map<String, String> hard = status.getHard();
+				Map<String, String> used = status.getUsed();
 
-			BigDecimal hardLimitsCpu = Quantity.fromString(hard.get("limits.cpu")).getNumber();
-			BigDecimal usedLimitsCpu = Quantity.fromString(used.get("limits.cpu")).getNumber();
-			zcpNamespace.setHardCpuLimits(hardLimitsCpu);
-			zcpNamespace.setUsedCpuLimits(usedLimitsCpu);
-			zcpNamespace.setHardCpuLimitsString(formatCpu(hardLimitsCpu.doubleValue()));
-			zcpNamespace.setUsedCpuLimitsString(formatCpu(usedLimitsCpu.doubleValue()));
-			zcpNamespace.setCpuLimitsPercentage(percent(usedLimitsCpu.doubleValue(), hardLimitsCpu.doubleValue()));
+				logger.debug("namespace is {}", namespace.getMetadata().getName());
+				logger.debug("hard is {}", hard);
+				logger.debug("used is {}", used);
 
-			BigDecimal hardRequestsMemory = Quantity.fromString(hard.get("requests.memory")).getNumber();
-			BigDecimal usedRequestsMemory = Quantity.fromString(used.get("requests.memory")).getNumber();
-			zcpNamespace.setHardMemoryRequests(hardRequestsMemory);
-			zcpNamespace.setUsedMemoryRequests(usedRequestsMemory);
-			zcpNamespace.setHardMemoryRequestsString(formatMemory(hardRequestsMemory.doubleValue(), MemoryDisplayFormat.MI));
-			zcpNamespace.setUsedMemoryRequestsString(formatMemory(usedRequestsMemory.doubleValue(), MemoryDisplayFormat.MI));
-			zcpNamespace.setMemoryRequestsPercentage(percent(usedRequestsMemory.doubleValue(), hardRequestsMemory.doubleValue()));
+				BigDecimal hardRequestsCpu = Quantity.fromString(hard.get("requests.cpu")).getNumber();
+				BigDecimal usedRequestsCpu = Quantity.fromString(used.get("requests.cpu")).getNumber();
+				zcpNamespace.setHardCpuRequests(hardRequestsCpu);
+				zcpNamespace.setUsedCpuRequests(usedRequestsCpu);
+				zcpNamespace.setHardCpuRequestsString(formatCpu(hardRequestsCpu.doubleValue()));
+				zcpNamespace.setUsedCpuRequestsString(formatCpu(usedRequestsCpu.doubleValue()));
+				zcpNamespace.setCpuRequestsPercentage(percent(usedRequestsCpu.doubleValue(), hardRequestsCpu.doubleValue()));
 
-			BigDecimal hardLimitsMemory = Quantity.fromString(hard.get("limits.memory")).getNumber();
-			BigDecimal usedLimitsMemory = Quantity.fromString(used.get("limits.memory")).getNumber();
-			zcpNamespace.setHardMemoryLimits(hardLimitsMemory);
-			zcpNamespace.setUsedMemoryLimits(usedLimitsMemory);
-			zcpNamespace.setHardMemoryLimitsString(formatMemory(hardLimitsMemory.doubleValue(), MemoryDisplayFormat.MI));
-			zcpNamespace.setUsedMemoryLimitsString(formatMemory(usedLimitsMemory.doubleValue(), MemoryDisplayFormat.MI));
-			zcpNamespace.setMemoryLimitsPercentage(percent(usedLimitsMemory.doubleValue(), hardLimitsMemory.doubleValue()));
+				BigDecimal hardLimitsCpu = Quantity.fromString(hard.get("limits.cpu")).getNumber();
+				BigDecimal usedLimitsCpu = Quantity.fromString(used.get("limits.cpu")).getNumber();
+				zcpNamespace.setHardCpuLimits(hardLimitsCpu);
+				zcpNamespace.setUsedCpuLimits(usedLimitsCpu);
+				zcpNamespace.setHardCpuLimitsString(formatCpu(hardLimitsCpu.doubleValue()));
+				zcpNamespace.setUsedCpuLimitsString(formatCpu(usedLimitsCpu.doubleValue()));
+				zcpNamespace.setCpuLimitsPercentage(percent(usedLimitsCpu.doubleValue(), hardLimitsCpu.doubleValue()));
+
+				BigDecimal hardRequestsMemory = Quantity.fromString(hard.get("requests.memory")).getNumber();
+				BigDecimal usedRequestsMemory = Quantity.fromString(used.get("requests.memory")).getNumber();
+				zcpNamespace.setHardMemoryRequests(hardRequestsMemory);
+				zcpNamespace.setUsedMemoryRequests(usedRequestsMemory);
+				zcpNamespace.setHardMemoryRequestsString(formatMemory(hardRequestsMemory.doubleValue()));
+				zcpNamespace.setUsedMemoryRequestsString(formatMemory(usedRequestsMemory.doubleValue()));
+				zcpNamespace.setMemoryRequestsPercentage(percent(usedRequestsMemory.doubleValue(), hardRequestsMemory.doubleValue()));
+
+				BigDecimal hardLimitsMemory = Quantity.fromString(hard.get("limits.memory")).getNumber();
+				BigDecimal usedLimitsMemory = Quantity.fromString(used.get("limits.memory")).getNumber();
+				zcpNamespace.setHardMemoryLimits(hardLimitsMemory);
+				zcpNamespace.setUsedMemoryLimits(usedLimitsMemory);
+				zcpNamespace.setHardMemoryLimitsString(formatMemory(hardLimitsMemory.doubleValue()));
+				zcpNamespace.setUsedMemoryLimitsString(formatMemory(usedLimitsMemory.doubleValue()));
+				zcpNamespace.setMemoryLimitsPercentage(percent(usedLimitsMemory.doubleValue(), hardLimitsMemory.doubleValue()));
+			}
 
 			zcpNamespaces.add(zcpNamespace);
 		}
@@ -335,8 +337,14 @@ public class MetricService {
 	}
 
 	private String formatCpu(double value) {
-		double formattedValue = value * 1000;
-		return StringUtils.substringBefore(String.valueOf(formattedValue), ".") + "m";
+		if (value == 0) return StringUtils.substringBefore(String.valueOf(value), ".");
+		
+		if (value < 1) {
+			double formattedValue = value * 1000;
+			return StringUtils.substringBefore(String.valueOf(formattedValue), ".") + "m";
+		} else {
+			return StringUtils.substringBefore(String.valueOf(value), ".");
+		}
 	}
 
 	private String formatMemory(double value, MemoryDisplayFormat mdf) {
@@ -346,11 +354,24 @@ public class MetricService {
 			return StringUtils.substringBefore(String.valueOf(formattedValue), ".") + "Mi";
 		} else if (mdf == MemoryDisplayFormat.GI) {
 			formattedValue = value / 1024 / 1024 / 1024;
-			return StringUtils.substringBefore(String.valueOf(formattedValue), ".") + "Gi";
+			int index = StringUtils.indexOf(String.valueOf(formattedValue), ".");
+			index += 2;
+			return StringUtils.substring(String.valueOf(formattedValue), index) + "Gi";
 		} else {
 			throw new IllegalArgumentException("Display formation is invalid");
 		}
-
+	}
+	
+	private String formatMemory(double value) {
+		if (value == 0) return StringUtils.substringBefore(String.valueOf(value), ".");
+		
+		double formattedValue = value / 1024 / 1024;
+		if (formattedValue < 1000) {
+			return StringUtils.substringBefore(String.valueOf(formattedValue), ".") + "Mi";
+		} else {
+			formattedValue = formattedValue / 1024;
+			return StringUtils.substringBefore(String.valueOf(formattedValue), ".") + "Gi";
+		}
 	}
 
 }
