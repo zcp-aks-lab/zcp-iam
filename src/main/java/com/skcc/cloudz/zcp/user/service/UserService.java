@@ -235,6 +235,7 @@ public class UserService {
 			// If user registered by himself, the clusterrolebindings may not exist before
 			// cluster-admin confirms the user.
 			logger.debug("The clusterrolebinding of user({}) does not exist yet", username);
+			zcpUser.setClusterRole(ClusterRole.NONE);
 		} else {
 			zcpUser.setClusterRole(ClusterRole.getClusterRole(userClusterRoleBinding.getRoleRef().getName()));
 		}
@@ -310,7 +311,7 @@ public class UserService {
 		userRepresentation.setUsername(user.getUsername());
 		userRepresentation.setEnabled(user.getEnabled());
 		
-		if (StringUtils.isNoneEmpty(user.getDefaultNamespace())) {
+		if (StringUtils.isNotEmpty(user.getDefaultNamespace())) {
 			List<String> defaultNamespaces = new ArrayList<>();
 			defaultNamespaces.add(user.getDefaultNamespace());
 
