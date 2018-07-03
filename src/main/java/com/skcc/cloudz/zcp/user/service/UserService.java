@@ -309,6 +309,7 @@ public class UserService {
 		userRepresentation.setEmail(user.getEmail());
 		userRepresentation.setUsername(user.getUsername());
 		userRepresentation.setEnabled(user.getEnabled());
+		
 		if (StringUtils.isNoneEmpty(user.getDefaultNamespace())) {
 			List<String> defaultNamespaces = new ArrayList<>();
 			defaultNamespaces.add(user.getDefaultNamespace());
@@ -317,6 +318,16 @@ public class UserService {
 			attributes.put(KeyCloakManager.DEFAULT_NAMESPACE_ATTRIBUTE_KEY, defaultNamespaces);
 
 			userRepresentation.setAttributes(attributes);
+		}
+		
+		List<CredentialActionType> userRequiredActions = user.getRequiredActions();
+		if (userRequiredActions != null && !userRequiredActions.isEmpty()) {
+			List<String> requiredActions = new ArrayList<>();
+			for(CredentialActionType type : userRequiredActions) {
+				requiredActions.add(type.name());
+			}
+			
+			userRepresentation.setRequiredActions(requiredActions);
 		}
 
 		return userRepresentation;

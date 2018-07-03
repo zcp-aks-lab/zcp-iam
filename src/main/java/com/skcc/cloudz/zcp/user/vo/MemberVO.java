@@ -1,8 +1,11 @@
 package com.skcc.cloudz.zcp.user.vo;
 
+import java.util.List;
+
 import javax.validation.constraints.NotNull;
 
 import com.skcc.cloudz.zcp.common.model.ClusterRole;
+import com.skcc.cloudz.zcp.common.model.CredentialActionType;
 import com.skcc.cloudz.zcp.common.vo.Ivo;
 
 public class MemberVO implements Ivo {
@@ -16,6 +19,7 @@ public class MemberVO implements Ivo {
 	private String defaultNamespace;
 	private ClusterRole clusterRole = ClusterRole.NONE;
 	private Boolean enabled;
+	private List<CredentialActionType> requiredActions;
 
 	public String getUsername() {
 		return username;
@@ -71,6 +75,14 @@ public class MemberVO implements Ivo {
 
 	public void setDefaultNamespace(String defaultNamespace) {
 		this.defaultNamespace = defaultNamespace;
+	}
+
+	public List<CredentialActionType> getRequiredActions() {
+		return requiredActions;
+	}
+
+	public void setRequiredActions(List<CredentialActionType> requiredActions) {
+		this.requiredActions = requiredActions;
 	}
 
 }
