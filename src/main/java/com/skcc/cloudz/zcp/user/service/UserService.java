@@ -321,14 +321,14 @@ public class UserService {
 		}
 		
 		List<CredentialActionType> userRequiredActions = user.getRequiredActions();
+		List<String> requiredActions = new ArrayList<>();
 		if (userRequiredActions != null && !userRequiredActions.isEmpty()) {
-			List<String> requiredActions = new ArrayList<>();
 			for(CredentialActionType type : userRequiredActions) {
 				requiredActions.add(type.name());
 			}
-			
-			userRepresentation.setRequiredActions(requiredActions);
 		}
+		
+		userRepresentation.setRequiredActions(requiredActions);
 
 		return userRepresentation;
 	}
