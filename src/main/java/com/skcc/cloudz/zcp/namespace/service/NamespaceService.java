@@ -248,26 +248,29 @@ public class NamespaceService {
 			return null;
 		List<V1LimitRangeItem> limitRangeItems = v1LimitRange.getSpec().getLimits();
 		V1LimitRangeItem item = null;
-		for (V1LimitRangeItem v1LimitRangeItem : limitRangeItems) {
-			if (v1LimitRangeItem.getType().equals("Container")) {
-				item = v1LimitRangeItem;
-				break;
-			}
-		}
-
-		Map<String, Quantity> defaultLimits = item.getDefault();
-		Map<String, Quantity> defaultRequests = item.getDefaultRequest();
-
+		
 		ZcpLimitRange limitRange = new ZcpLimitRange();
-		limitRange.setCpuLimits(getResourceValue(defaultLimits.get("cpu")));
-		limitRange.setCpuLimitsUnit(getCPUUnitFormat(defaultLimits.get("cpu")));
-		limitRange.setMemoryLimits(getResourceValue(defaultLimits.get("memory")));
-		limitRange.setMemoryLimitsUnit(getMemoryUnitFormat(defaultLimits.get("memory")));
-		limitRange.setCpuRequests(getResourceValue(defaultRequests.get("cpu")));
-		limitRange.setCpuRequestsUnit(getCPUUnitFormat(defaultRequests.get("cpu")));
-		limitRange.setMemoryRequests(getResourceValue(defaultRequests.get("memory")));
-		limitRange.setMemoryRequestsUnit(getMemoryUnitFormat(defaultRequests.get("memory")));
+		
+		if(limitRangeItems != null) {
+			for (V1LimitRangeItem v1LimitRangeItem : limitRangeItems) {
+				if (v1LimitRangeItem.getType().equals("Container")) {
+					item = v1LimitRangeItem;
+					break;
+				}
+			}
 
+			Map<String, Quantity> defaultLimits = item.getDefault();
+			Map<String, Quantity> defaultRequests = item.getDefaultRequest();
+	
+			limitRange.setCpuLimits(getResourceValue(defaultLimits.get("cpu")));
+			limitRange.setCpuLimitsUnit(getCPUUnitFormat(defaultLimits.get("cpu")));
+			limitRange.setMemoryLimits(getResourceValue(defaultLimits.get("memory")));
+			limitRange.setMemoryLimitsUnit(getMemoryUnitFormat(defaultLimits.get("memory")));
+			limitRange.setCpuRequests(getResourceValue(defaultRequests.get("cpu")));
+			limitRange.setCpuRequestsUnit(getCPUUnitFormat(defaultRequests.get("cpu")));
+			limitRange.setMemoryRequests(getResourceValue(defaultRequests.get("memory")));
+			limitRange.setMemoryRequestsUnit(getMemoryUnitFormat(defaultRequests.get("memory")));
+		}
 		return limitRange;
 	}
 
