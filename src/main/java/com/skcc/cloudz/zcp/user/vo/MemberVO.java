@@ -20,6 +20,7 @@ public class MemberVO implements Ivo {
 	private ClusterRole clusterRole = ClusterRole.NONE;
 	private Boolean enabled;
 	private List<CredentialActionType> requiredActions;
+	private Boolean emailVerified;
 
 	public String getUsername() {
 		return username;
@@ -83,6 +84,14 @@ public class MemberVO implements Ivo {
 
 	public void setRequiredActions(List<CredentialActionType> requiredActions) {
 		this.requiredActions = requiredActions;
+	}
+
+	public Boolean getEmailVerified() {
+		return emailVerified;
+	}
+
+	public void setEmailVerified(Boolean emailVerified) {
+		this.emailVerified = emailVerified;
 	}
 
 }
