@@ -4,19 +4,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.skcc.cloudz.zcp.common.model.DeploymentStatus;
-import com.skcc.cloudz.zcp.common.model.DeploymentStatusMetric;
+import com.skcc.cloudz.zcp.common.model.NodeStatus;
+import com.skcc.cloudz.zcp.common.model.NodeStatusMetric;
 
-public class DeploymentsStatusMetricsVO {
-	private List<DeploymentStatusMetric> statuses;
+public class NodesStatusMetricsVO {
+	private List<NodeStatusMetric> statuses;
 	private Integer totalCount;
 	private Integer availablePercentage = -1;
 
-	public List<DeploymentStatusMetric> getStatuses() {
+	public List<NodeStatusMetric> getStatuses() {
 		return statuses;
 	}
 
-	public void setStatuses(List<DeploymentStatusMetric> statuses) {
+	public void setStatuses(List<NodeStatusMetric> statuses) {
 		this.statuses = statuses;
 	}
 
@@ -35,9 +35,9 @@ public class DeploymentsStatusMetricsVO {
 			if (totalCount == 0)
 				return availablePercentage;
 
-			Map<DeploymentStatus, Integer> map = statuses.stream()
-					.collect(Collectors.toMap(DeploymentStatusMetric::getStatus, DeploymentStatusMetric::getCount));
-			int availableCount = map.get(DeploymentStatus.Available).intValue();
+			Map<NodeStatus, Integer> map = statuses.stream()
+					.collect(Collectors.toMap(NodeStatusMetric::getStatus, NodeStatusMetric::getCount));
+			int availableCount = map.get(NodeStatus.Ready).intValue();
 			
 			return (int) (availableCount / totalCount) * 100;
 		}
@@ -47,5 +47,4 @@ public class DeploymentsStatusMetricsVO {
 	public void setAvailablePercentage(Integer availablePercentage) {
 		this.availablePercentage = availablePercentage;
 	}
-
 }

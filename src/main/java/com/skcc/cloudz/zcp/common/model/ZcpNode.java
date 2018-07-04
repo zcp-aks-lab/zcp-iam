@@ -3,10 +3,8 @@ package com.skcc.cloudz.zcp.common.model;
 import java.math.BigDecimal;
 import java.util.Date;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
 
 public class ZcpNode {
 
@@ -42,36 +40,6 @@ public class ZcpNode {
 	private String memoryLimitsString;
 	private int memoryLimitsPercentage;
 	private Date creationTime;
-
-	public enum NodeStatus {
-		READY("Ready"), NOT_READY("NotReady"), UNKNOWN("Unknown");
-		private String status;
-
-		private NodeStatus(String status) {
-			this.status = status;
-		}
-
-		@JsonValue
-		public String getStatus() {
-			return status;
-		}
-
-		public void setStatus(String status) {
-			this.status = status;
-		}
-
-		@JsonCreator
-		public static NodeStatus getNodeStatus(String status) {
-			for (NodeStatus s : values()) {
-				if (s.getStatus().equals(status)) {
-					return s;
-				}
-			}
-
-			throw new IllegalArgumentException("[" + status + "] is invalid");
-		}
-
-	}
 
 	public BigDecimal getCpuRequests() {
 		return cpuRequests;

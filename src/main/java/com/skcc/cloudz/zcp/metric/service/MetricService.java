@@ -21,12 +21,13 @@ import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.common.model.DeploymentStatus;
 import com.skcc.cloudz.zcp.common.model.DeploymentStatusMetric;
+import com.skcc.cloudz.zcp.common.model.NodeStatus;
+import com.skcc.cloudz.zcp.common.model.NodeStatusMetric;
 import com.skcc.cloudz.zcp.common.model.V1alpha1NodeMetricList;
 import com.skcc.cloudz.zcp.common.model.ZcpNamespace;
 import com.skcc.cloudz.zcp.common.model.ZcpNamespace.NamespaceStatus;
 import com.skcc.cloudz.zcp.common.model.ZcpNamespaceList;
 import com.skcc.cloudz.zcp.common.model.ZcpNode;
-import com.skcc.cloudz.zcp.common.model.ZcpNode.NodeStatus;
 import com.skcc.cloudz.zcp.common.model.ZcpNodeList;
 import com.skcc.cloudz.zcp.manager.KeyCloakManager;
 import com.skcc.cloudz.zcp.manager.KubeAppsManager;
@@ -34,6 +35,7 @@ import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.manager.KubeMetricManager;
 import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.metric.vo.DeploymentsStatusMetricsVO;
+import com.skcc.cloudz.zcp.metric.vo.NodesStatusMetricsVO;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.custom.Quantity;
@@ -397,11 +399,11 @@ public class MetricService {
 		for (V1NodeCondition condition : conditions) {
 			if (StringUtils.equals(condition.getType(), "Ready")) {
 				if (StringUtils.equals(condition.getStatus(), "True")) {
-					zcpNode.setStatus(NodeStatus.READY);
+					zcpNode.setStatus(NodeStatus.Ready);
 				} else if (StringUtils.equals(condition.getStatus(), "False")) {
-					zcpNode.setStatus(NodeStatus.NOT_READY);
+					zcpNode.setStatus(NodeStatus.NotReady);
 				} else if (StringUtils.equals(condition.getStatus(), "Unknown")) {
-					zcpNode.setStatus(NodeStatus.UNKNOWN);
+					zcpNode.setStatus(NodeStatus.Unknown);
 				}
 			}
 		}
@@ -535,6 +537,86 @@ public class MetricService {
 		dsmUnavailable.setStatus(DeploymentStatus.Unavailable);
 		dsmUnavailable.setCount(0);
 		statuesMetrics.put(DeploymentStatus.Unavailable, dsmUnavailable);
+		
+		return statuesMetrics;
+	}
+
+	public NodesStatusMetricsVO getNodesStatusMetrics() throws ZcpException {
+		V1NodeList nodeList = null;
+
+		try {
+			nodeList = kubeCoreManager.getNodeList();
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-009", e.getMessage());
+		}
+		
+		List<V1Node> nodes = nodeList.getItems();
+		Map<NodeStatus, NodeStatusMetric> statuesMetrics = getNodesStatusMap();
+		
+		for (V1Node node : nodes) {
+			List<V1NodeCondition> conditions = node.getStatus().getConditions();
+			for (V1NodeCondition condition : conditions) {
+				if (condition.getType().equals(NodeStatus.Ready.name())) {
+					if (condition.getStatus().equals("True")) {
+						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.Ready) ;
+						if (nsm != null) {
+							nsm.increaseCount();
+						} else {
+							nsm = new NodeStatusMetric();
+							nsm.setStatus(NodeStatus.Ready);
+							nsm.setCount(1);
+							statuesMetrics.put(NodeStatus.Ready, nsm);
+						}
+					} else if (condition.getStatus().equals("False")) {
+						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.NotReady) ;
+						if (nsm != null) {
+							nsm.increaseCount();
+						} else {
+							nsm = new NodeStatusMetric();
+							nsm.setStatus(NodeStatus.NotReady);
+							nsm.setCount(1);
+							statuesMetrics.put(NodeStatus.NotReady, nsm);
+						}
+					} else {
+						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.Unknown) ;
+						if (nsm != null) {
+							nsm.increaseCount();
+						} else {
+							nsm = new NodeStatusMetric();
+							nsm.setStatus(NodeStatus.Unknown);
+							nsm.setCount(1);
+							statuesMetrics.put(NodeStatus.Unknown, nsm);
+						}
+					}
+				}
+			}
+		}
+		
+		NodesStatusMetricsVO vo = new NodesStatusMetricsVO();
+		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
+		vo.setTotalCount(nodes.size());
+		
+		return vo;
+	}
+
+	private Map<NodeStatus, NodeStatusMetric> getNodesStatusMap() {
+		Map<NodeStatus, NodeStatusMetric> statuesMetrics = new HashMap<>();
+		
+		NodeStatusMetric ready = new NodeStatusMetric();
+		ready.setStatus(NodeStatus.Ready);
+		ready.setCount(0);
+		statuesMetrics.put(NodeStatus.Ready, ready);
+		
+		NodeStatusMetric notReady = new NodeStatusMetric();
+		notReady.setStatus(NodeStatus.NotReady);
+		notReady.setCount(0);
+		statuesMetrics.put(NodeStatus.NotReady, notReady);
+		
+		NodeStatusMetric unknown = new NodeStatusMetric();
+		unknown.setStatus(NodeStatus.Unknown);
+		unknown.setCount(0);
+		statuesMetrics.put(NodeStatus.Unknown, unknown);
 		
 		return statuesMetrics;
 	}

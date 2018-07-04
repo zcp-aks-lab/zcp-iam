@@ -89,7 +89,8 @@ public class KeyCloakManager {
 		BeanUtils.copyProperties(userRepresentation, currnetUserRepresentation);
 		// TODO need to check why the enabled property did not be copied
 		currnetUserRepresentation.setEnabled(userRepresentation.isEnabled());
-
+		currnetUserRepresentation.setEmailVerified(userRepresentation.isEmailVerified());
+		
 		userResource.update(currnetUserRepresentation);
 	}
 

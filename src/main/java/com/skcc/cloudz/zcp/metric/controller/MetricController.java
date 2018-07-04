@@ -16,6 +16,7 @@ import com.skcc.cloudz.zcp.common.model.ZcpNodeList;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.metric.service.MetricService;
 import com.skcc.cloudz.zcp.metric.vo.DeploymentsStatusMetricsVO;
+import com.skcc.cloudz.zcp.metric.vo.NodesStatusMetricsVO;
 
 @Configuration
 @RestController
@@ -53,8 +54,8 @@ public class MetricController {
 		return response;
 	}
 	
-	@RequestMapping(value = "/metrics/nodes/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<V1alpha1NodeMetricList> getNodesStatus() throws Exception {
+	@RequestMapping(value = "/metrics/pods/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public Response<V1alpha1NodeMetricList> getPodsStatus() throws Exception {
 		Response<V1alpha1NodeMetricList> response = new Response<>();
 //		response.setData(metricService.getNodesStatusMetrics());
 
@@ -69,10 +70,10 @@ public class MetricController {
 		return response;
 	}
 
-	@RequestMapping(value = "/metrics/pods/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<V1alpha1NodeMetricList> getPodsStatus() throws Exception {
-		Response<V1alpha1NodeMetricList> response = new Response<>();
-//		response.setData(metricService.getNodesStatusMetrics());
+	@RequestMapping(value = "/metrics/nodes/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public Response<NodesStatusMetricsVO> getNodesStatus() throws Exception {
+		Response<NodesStatusMetricsVO> response = new Response<>();
+		response.setData(metricService.getNodesStatusMetrics());
 
 		return response;
 	}
