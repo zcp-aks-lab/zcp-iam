@@ -509,7 +509,7 @@ public class MetricService {
 							dsm = new DeploymentStatusMetric();
 							dsm.setStatus(DeploymentStatus.Unavailable);
 							dsm.setCount(1);
-							statuesMetrics.put(DeploymentStatus.Available, dsm);
+							statuesMetrics.put(DeploymentStatus.Unavailable, dsm);
 						}
 					}
 				}
@@ -517,7 +517,6 @@ public class MetricService {
 		}
 		
 		DeploymentsStatusMetricsVO vo = new DeploymentsStatusMetricsVO();
-//		vo.setStatuses(new ArrayList<DeploymentStatusMetric>(statuesMetrics.values()));
 		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
 		vo.setTotalCount(deployments.size());
 		
