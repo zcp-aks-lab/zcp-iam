@@ -3,7 +3,6 @@ package com.skcc.cloudz.zcp.common.config;
 import static com.skcc.cloudz.zcp.common.cnst.COMMON.SESSION_TIMEOUT_OBJ;
 
 import java.io.IOException;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -17,7 +16,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 
@@ -33,10 +31,10 @@ public class ZcpInterceptor extends HandlerInterceptorAdapter {
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws IOException, ZcpException {
-		logger.info("================ Before Method");
-		HttpServletRequest requestCacheWrapperObject = new ContentCachingRequestWrapper(request);
-		Map<String, String[]> parameterMap = requestCacheWrapperObject.getParameterMap();
-		logger.debug("payload = {}", parameterMap);
+		logger.info("::: Before Request");
+//		HttpServletRequest requestCacheWrapperObject = new ContentCachingRequestWrapper(request);
+//		Map<String, String[]> parameterMap = requestCacheWrapperObject.getParameterMap();
+//		logger.debug("payload = {}", parameterMap);
 
 		if (environment.getActiveProfiles().equals("real")) {
 			HttpSession session = request.getSession();
@@ -44,7 +42,6 @@ public class ZcpInterceptor extends HandlerInterceptorAdapter {
 			if (timeout_obj == null) {
 				throw new ZcpException("E00001");
 			} else {
-				// 임시
 				// response.sendRedirect("/main.jsp");
 				return true;
 			}
@@ -56,13 +53,13 @@ public class ZcpInterceptor extends HandlerInterceptorAdapter {
 	@Override
 	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
 			ModelAndView modelAndView) {
-		logger.info("================ Method Executed");
+		logger.info("::: Request Executed");
 	}
 
 	@Override
 	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler,
 			Exception ex) {
-		logger.info("================ Method Completed");
+		logger.info("::: Request Completed");
 	}
 
 }

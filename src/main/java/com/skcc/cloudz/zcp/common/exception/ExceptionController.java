@@ -22,10 +22,10 @@ public class ExceptionController {
 
 	private final Logger logger = LoggerFactory.getLogger(ExceptionController.class);
 
-	private Properties prop = new Properties();
+	private Properties properties = new Properties();
 
 	public ExceptionController() throws IOException {
-		prop.load(getClass().getClassLoader().getResourceAsStream("exception.properties"));
+		properties.load(getClass().getClassLoader().getResourceAsStream("exception.properties"));
 	}
 
 	@ExceptionHandler(Exception.class)
@@ -34,11 +34,11 @@ public class ExceptionController {
 		RtnVO vo = new RtnVO();
 		logger.debug("UnKnown Error...{}", e);
 		if (e instanceof ZcpException) {
-			vo.setCode(((ZcpException)e).getCode());
+			vo.setCode(((ZcpException) e).getCode());
 		} else if (e instanceof KeyCloakException) {
-			vo.setCode(((KeyCloakException)e).getCode());
-		} else if (e instanceof ApiException ) {
-			vo.setCode(String.valueOf(((ApiException)e).getCode()));
+			vo.setCode(((KeyCloakException) e).getCode());
+		} else if (e instanceof ApiException) {
+			vo.setCode(String.valueOf(((ApiException) e).getCode()));
 		} else {
 			vo.setCode("500");
 		}
@@ -64,9 +64,9 @@ public class ExceptionController {
 	@ExceptionHandler(ZcpException.class)
 	@ResponseBody
 	public Object zcpExceptionResolver(HttpServletRequest req, ZcpException e) {
-		String msg = prop.getProperty(e.getCode());
-		logger.debug(msg, e);
-		RtnVO vo = new RtnVO(e.getCode(), msg);
+		// String msg = e.getMessage(); //prop.getProperty(e.getCode());
+		// logger.debug(msg, e);
+		RtnVO vo = new RtnVO(e.getCode(), e.getMessage());
 		return vo;
 	}
 

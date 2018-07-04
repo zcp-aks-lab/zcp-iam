@@ -54,6 +54,10 @@ public class KubeRbacAuthzManager {
 		return api.listClusterRoleBinding(pretty, null, null, null,
 				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);
 	}
+	
+	public V1ClusterRoleBinding getClusterRoleBindingByUsername(String username) throws ApiException {
+		return api.readClusterRoleBinding(ResourcesNameManager.getClusterRoleBindingName(username), pretty);
+	}
 
 	public V1ClusterRoleBinding createClusterRoleBinding(V1ClusterRoleBinding clusterrolebinding) throws ApiException {
 		return api.createClusterRoleBinding(clusterrolebinding, pretty);

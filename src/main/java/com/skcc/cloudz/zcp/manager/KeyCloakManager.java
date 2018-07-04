@@ -27,7 +27,7 @@ public class KeyCloakManager {
 	private final Logger logger = LoggerFactory.getLogger(KeyCloakManager.class);
 
 	public static final String DEFAULT_NAMESPACE_ATTRIBUTE_KEY = "defaultNamespace";
-	
+
 	public static final String NAMESPACES_ATTRIBUTE_KEY = "namespaces";
 
 	@Autowired
@@ -63,10 +63,17 @@ public class KeyCloakManager {
 		UsersResource usersRessource = keycloak.realm(realm).users();
 		UserResource userResource = usersRessource.get(id);
 		if (userResource == null) {
-			throw new KeyCloakException("KK-0001", "The user does not exist");
+			throw new KeyCloakException("KK-0001", "The user(" + id + ") does not exist");
 		}
 
-		return userResource.toRepresentation();
+		UserRepresentation userRepresentation = null;
+		try {
+			userRepresentation = userResource.toRepresentation();
+		} catch (Exception e) {
+			throw new KeyCloakException("KK-0001", "The user(" + id + ") does not exist");
+		}
+
+		return userRepresentation;
 	}
 
 	public void editUser(UserRepresentation userRepresentation) throws KeyCloakException {
@@ -80,7 +87,7 @@ public class KeyCloakManager {
 		}
 
 		BeanUtils.copyProperties(userRepresentation, currnetUserRepresentation);
-		// TODO need to check why the enabled property did not be copied 
+		// TODO need to check why the enabled property did not be copied
 		currnetUserRepresentation.setEnabled(userRepresentation.isEnabled());
 
 		userResource.update(currnetUserRepresentation);
@@ -137,13 +144,12 @@ public class KeyCloakManager {
 		}
 
 		userResource.executeActionsEmail(actions);
-		
-		
-//		UserRepresentation userRepresentation = userResource.toRepresentation();
-//		userRepresentation.setRequiredActions(actions);
-//		userResource.update(userRepresentation);
+
+		// UserRepresentation userRepresentation = userResource.toRepresentation();
+		// userRepresentation.setRequiredActions(actions);
+		// userResource.update(userRepresentation);
 	}
-	
+
 	public void enableUserOtpPassword(String id) throws KeyCloakException {
 		UsersResource usersResource = keycloak.realm(realm).users();
 		UserResource userResource = usersResource.get(id);
@@ -153,11 +159,11 @@ public class KeyCloakManager {
 		}
 
 		List<String> actions = new ArrayList<>();
-		actions.add(CredentialActionType.CONFIGURE_TOTP.name());		
+		actions.add(CredentialActionType.CONFIGURE_TOTP.name());
 
 		UserRepresentation userRepresentation = userResource.toRepresentation();
 		userRepresentation.setRequiredActions(actions);
-		
+
 		userResource.update(userRepresentation);
 	}
 
@@ -180,4 +186,3 @@ public class KeyCloakManager {
 	}
 
 }
-
