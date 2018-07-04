@@ -310,6 +310,7 @@ public class UserService {
 		userRepresentation.setEmail(user.getEmail());
 		userRepresentation.setUsername(user.getUsername());
 		userRepresentation.setEnabled(user.getEnabled());
+		userRepresentation.setEmailVerified(user.getEmailVerified());
 		
 		if (StringUtils.isNotEmpty(user.getDefaultNamespace())) {
 			List<String> defaultNamespaces = new ArrayList<>();
