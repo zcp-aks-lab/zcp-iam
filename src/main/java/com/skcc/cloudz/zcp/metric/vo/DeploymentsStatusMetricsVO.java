@@ -10,8 +10,9 @@ import com.skcc.cloudz.zcp.common.model.DeploymentStatusMetric;
 public class DeploymentsStatusMetricsVO {
 	private List<DeploymentStatusMetric> statuses;
 	private Integer totalCount;
-	private Integer availablePercentage = -1;
-
+	private Integer mainStatusPercentage = -1;
+	private DeploymentStatus mainStatus = DeploymentStatus.Available;
+	
 	public List<DeploymentStatusMetric> getStatuses() {
 		return statuses;
 	}
@@ -28,24 +29,33 @@ public class DeploymentsStatusMetricsVO {
 		this.totalCount = totalCount;
 	}
 
-	public Integer getAvailablePercentage() {
-		if (availablePercentage < 0) {
+	public Integer getMainStatusPercentage() {
+		if (mainStatusPercentage < 0) {
 			if (statuses == null)
-				return availablePercentage;
+				return mainStatusPercentage;
 			if (totalCount == 0)
-				return availablePercentage;
+				return mainStatusPercentage;
 
 			Map<DeploymentStatus, Integer> map = statuses.stream()
 					.collect(Collectors.toMap(DeploymentStatusMetric::getStatus, DeploymentStatusMetric::getCount));
-			int availableCount = map.get(DeploymentStatus.Available).intValue();
+			float availableCount = map.get(mainStatus).floatValue();
 			
-			return (int) (availableCount / totalCount) * 100;
+			return (int) (availableCount / totalCount.floatValue()) * 100;
 		}
-		return availablePercentage;
+		return mainStatusPercentage;
 	}
 
-	public void setAvailablePercentage(Integer availablePercentage) {
-		this.availablePercentage = availablePercentage;
+	public void setMainStatusPercentage(Integer mainStatusPercentage) {
+		this.mainStatusPercentage = mainStatusPercentage;
 	}
+
+	public DeploymentStatus getMainStatus() {
+		return mainStatus;
+	}
+
+	public void setMainStatus(DeploymentStatus mainStatus) {
+		this.mainStatus = mainStatus;
+	}
+
 
 }

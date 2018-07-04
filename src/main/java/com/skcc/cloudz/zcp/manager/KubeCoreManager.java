@@ -161,6 +161,14 @@ public class KubeCoreManager {
 
 		return api.listPodForAllNamespaces(null, fieldSelector.toString(), null, null, null, pretty, null, null, null);
 	}
+	
+	public V1PodList getPodListByNamespace(String namespace) throws ApiException {
+		return api.listNamespacedPod(namespace, pretty, null, null, null, null, null, null, null, null);
+	}
+	
+	public V1PodList getAllPodList() throws ApiException {
+		return api.listPodForAllNamespaces(null, null, null, null, null, pretty, null, null, null);
+	}
 
 	public V1Status deleteResourceQuota(String namespace, String resourceQuotaName) throws ApiException {
 		V1DeleteOptions deleteOptions = new V1DeleteOptions();

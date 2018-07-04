@@ -10,7 +10,8 @@ import com.skcc.cloudz.zcp.common.model.NodeStatusMetric;
 public class NodesStatusMetricsVO {
 	private List<NodeStatusMetric> statuses;
 	private Integer totalCount;
-	private Integer availablePercentage = -1;
+	private Integer mainStatusPercentage = -1;
+	private NodeStatus mainStatus = NodeStatus.Ready;
 
 	public List<NodeStatusMetric> getStatuses() {
 		return statuses;
@@ -28,23 +29,31 @@ public class NodesStatusMetricsVO {
 		this.totalCount = totalCount;
 	}
 
-	public Integer getAvailablePercentage() {
-		if (availablePercentage < 0) {
+	public Integer getMainStatusPercentage() {
+		if (mainStatusPercentage < 0) {
 			if (statuses == null)
-				return availablePercentage;
+				return mainStatusPercentage;
 			if (totalCount == 0)
-				return availablePercentage;
+				return mainStatusPercentage;
 
 			Map<NodeStatus, Integer> map = statuses.stream()
 					.collect(Collectors.toMap(NodeStatusMetric::getStatus, NodeStatusMetric::getCount));
-			int availableCount = map.get(NodeStatus.Ready).intValue();
-			
-			return (int) (availableCount / totalCount) * 100;
+			float availableCount = map.get(mainStatus).floatValue();
+
+			return (int) (availableCount / totalCount.floatValue()) * 100;
 		}
-		return availablePercentage;
+		return mainStatusPercentage;
 	}
 
-	public void setAvailablePercentage(Integer availablePercentage) {
-		this.availablePercentage = availablePercentage;
+	public void setMainStatusPercentage(Integer mainStatusPercentage) {
+		this.mainStatusPercentage = mainStatusPercentage;
+	}
+
+	public NodeStatus getMainStatus() {
+		return mainStatus;
+	}
+
+	public void setMainStatus(NodeStatus mainStatus) {
+		this.mainStatus = mainStatus;
 	}
 }

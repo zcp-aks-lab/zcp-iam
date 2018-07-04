@@ -1,33 +1,8 @@
 package com.skcc.cloudz.zcp.common.model;
 
 public enum NodeStatus {
+	// this is a condition's status of node's status
 	Ready, NotReady, Unknown;
-//	READY("Ready"), NOT_READY("NotReady"), UNKNOWN("Unknown");
-//
-//	private String status;
-//
-//	private NodeStatus(String status) {
-//		this.status = status;
-//	}
-//
-//	@JsonValue
-//	public String getStatus() {
-//		return status;
-//	}
-//
-//	public void setStatus(String status) {
-//		this.status = status;
-//	}
-//
-//	@JsonCreator
-//	public static NodeStatus getNodeStatus(String status) {
-//		for (NodeStatus s : values()) {
-//			if (s.getStatus().equals(status)) {
-//				return s;
-//			}
-//		}
-//
-//		throw new IllegalArgumentException("[" + status + "] is invalid");
-//	}
 
+	public static final String STATUS_CONDITION_TYPE = "Ready";
 }

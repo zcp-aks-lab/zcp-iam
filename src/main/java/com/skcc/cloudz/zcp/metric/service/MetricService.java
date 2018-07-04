@@ -23,6 +23,8 @@ import com.skcc.cloudz.zcp.common.model.DeploymentStatus;
 import com.skcc.cloudz.zcp.common.model.DeploymentStatusMetric;
 import com.skcc.cloudz.zcp.common.model.NodeStatus;
 import com.skcc.cloudz.zcp.common.model.NodeStatusMetric;
+import com.skcc.cloudz.zcp.common.model.PodStatus;
+import com.skcc.cloudz.zcp.common.model.PodStatusMetric;
 import com.skcc.cloudz.zcp.common.model.V1alpha1NodeMetricList;
 import com.skcc.cloudz.zcp.common.model.ZcpNamespace;
 import com.skcc.cloudz.zcp.common.model.ZcpNamespace.NamespaceStatus;
@@ -36,6 +38,7 @@ import com.skcc.cloudz.zcp.manager.KubeMetricManager;
 import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.metric.vo.DeploymentsStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.NodesStatusMetricsVO;
+import com.skcc.cloudz.zcp.metric.vo.PodsStatusMetricsVO;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.custom.Quantity;
@@ -72,7 +75,7 @@ public class MetricService {
 
 	@Autowired
 	private KubeRbacAuthzManager kubeRbacAuthzManager;
-	
+
 	@Autowired
 	private KubeAppsManager kubeAppsManager;
 
@@ -214,7 +217,6 @@ public class MetricService {
 			throw new ZcpException("ZCP-0001", "The user(" + userId + ") does not exist");
 		}
 
-		
 		String username = userRepresentation.getUsername();
 		logger.debug("keyclock username is - {}", username);
 
@@ -337,7 +339,7 @@ public class MetricService {
 					zcpNamespaces.add(zcpNamespace);
 				}
 			} else {
-				zcpNamespaces.add(zcpNamespace);				
+				zcpNamespaces.add(zcpNamespace);
 			}
 		}
 
@@ -423,17 +425,21 @@ public class MetricService {
 	}
 
 	private int percent(double usage, double sum) {
-		if (usage == 0) return 0;
-		if (sum == 0) return 0;
-		
+		if (usage == 0)
+			return 0;
+		if (sum == 0)
+			return 0;
+
 		return (int) ((usage / sum) * 100);
 	}
-	
+
 	@SuppressWarnings("unused")
 	private int percent(int usage, int sum) {
-		if (usage == 0) return 0;
-		if (sum == 0) return 0;
-		
+		if (usage == 0)
+			return 0;
+		if (sum == 0)
+			return 0;
+
 		return (int) ((usage / sum) * 100);
 	}
 
@@ -485,16 +491,16 @@ public class MetricService {
 		} catch (ApiException e) {
 			throw new ZcpException("KK", e.getMessage());
 		}
-		
+
 		List<V1beta2Deployment> deployments = deploymentList.getItems();
 		Map<DeploymentStatus, DeploymentStatusMetric> statuesMetrics = getDeploymentsStatusMap();
-		
+
 		for (V1beta2Deployment deployment : deployments) {
 			List<V1beta2DeploymentCondition> conditions = deployment.getStatus().getConditions();
 			for (V1beta2DeploymentCondition condition : conditions) {
-				if (condition.getType().equals(DeploymentStatus.Available.name())) {
+				if (condition.getType().equals(DeploymentStatus.STATUS_CONDITION_TYPE)) {
 					if (condition.getStatus().equals("True")) {
-						DeploymentStatusMetric dsm = statuesMetrics.get(DeploymentStatus.Available) ;
+						DeploymentStatusMetric dsm = statuesMetrics.get(DeploymentStatus.Available);
 						if (dsm != null) {
 							dsm.increaseCount();
 						} else {
@@ -504,7 +510,7 @@ public class MetricService {
 							statuesMetrics.put(DeploymentStatus.Available, dsm);
 						}
 					} else {
-						DeploymentStatusMetric dsm = statuesMetrics.get(DeploymentStatus.Unavailable) ;
+						DeploymentStatusMetric dsm = statuesMetrics.get(DeploymentStatus.Unavailable);
 						if (dsm != null) {
 							dsm.increaseCount();
 						} else {
@@ -517,27 +523,24 @@ public class MetricService {
 				}
 			}
 		}
-		
+
 		DeploymentsStatusMetricsVO vo = new DeploymentsStatusMetricsVO();
 		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
 		vo.setTotalCount(deployments.size());
-		
+
 		return vo;
 	}
 
 	private Map<DeploymentStatus, DeploymentStatusMetric> getDeploymentsStatusMap() {
 		Map<DeploymentStatus, DeploymentStatusMetric> statuesMetrics = new HashMap<>();
-		
-		DeploymentStatusMetric dsmAvailable = new DeploymentStatusMetric();
-		dsmAvailable.setStatus(DeploymentStatus.Available);
-		dsmAvailable.setCount(0);
-		statuesMetrics.put(DeploymentStatus.Available, dsmAvailable);
-		
-		DeploymentStatusMetric dsmUnavailable = new DeploymentStatusMetric();
-		dsmUnavailable.setStatus(DeploymentStatus.Unavailable);
-		dsmUnavailable.setCount(0);
-		statuesMetrics.put(DeploymentStatus.Unavailable, dsmUnavailable);
-		
+
+		for (DeploymentStatus status : DeploymentStatus.values()) {
+			DeploymentStatusMetric psm = new DeploymentStatusMetric();
+			psm.setStatus(status);
+			psm.setCount(0);
+			statuesMetrics.put(status, psm);
+		}
+
 		return statuesMetrics;
 	}
 
@@ -550,16 +553,16 @@ public class MetricService {
 			e.printStackTrace();
 			throw new ZcpException("ZCP-009", e.getMessage());
 		}
-		
+
 		List<V1Node> nodes = nodeList.getItems();
 		Map<NodeStatus, NodeStatusMetric> statuesMetrics = getNodesStatusMap();
-		
+
 		for (V1Node node : nodes) {
 			List<V1NodeCondition> conditions = node.getStatus().getConditions();
 			for (V1NodeCondition condition : conditions) {
-				if (condition.getType().equals(NodeStatus.Ready.name())) {
+				if (condition.getType().equals(NodeStatus.STATUS_CONDITION_TYPE)) {
 					if (condition.getStatus().equals("True")) {
-						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.Ready) ;
+						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.Ready);
 						if (nsm != null) {
 							nsm.increaseCount();
 						} else {
@@ -569,7 +572,7 @@ public class MetricService {
 							statuesMetrics.put(NodeStatus.Ready, nsm);
 						}
 					} else if (condition.getStatus().equals("False")) {
-						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.NotReady) ;
+						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.NotReady);
 						if (nsm != null) {
 							nsm.increaseCount();
 						} else {
@@ -579,7 +582,7 @@ public class MetricService {
 							statuesMetrics.put(NodeStatus.NotReady, nsm);
 						}
 					} else {
-						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.Unknown) ;
+						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.Unknown);
 						if (nsm != null) {
 							nsm.increaseCount();
 						} else {
@@ -592,32 +595,81 @@ public class MetricService {
 				}
 			}
 		}
-		
+
 		NodesStatusMetricsVO vo = new NodesStatusMetricsVO();
 		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
 		vo.setTotalCount(nodes.size());
-		
+
 		return vo;
 	}
 
 	private Map<NodeStatus, NodeStatusMetric> getNodesStatusMap() {
 		Map<NodeStatus, NodeStatusMetric> statuesMetrics = new HashMap<>();
-		
-		NodeStatusMetric ready = new NodeStatusMetric();
-		ready.setStatus(NodeStatus.Ready);
-		ready.setCount(0);
-		statuesMetrics.put(NodeStatus.Ready, ready);
-		
-		NodeStatusMetric notReady = new NodeStatusMetric();
-		notReady.setStatus(NodeStatus.NotReady);
-		notReady.setCount(0);
-		statuesMetrics.put(NodeStatus.NotReady, notReady);
-		
-		NodeStatusMetric unknown = new NodeStatusMetric();
-		unknown.setStatus(NodeStatus.Unknown);
-		unknown.setCount(0);
-		statuesMetrics.put(NodeStatus.Unknown, unknown);
-		
+
+		for (NodeStatus status : NodeStatus.values()) {
+			NodeStatusMetric psm = new NodeStatusMetric();
+			psm.setStatus(status);
+			psm.setCount(0);
+			statuesMetrics.put(status, psm);
+		}
+
+		return statuesMetrics;
+	}
+
+	public PodsStatusMetricsVO getPodsStatusMetrics(String namespace) throws ZcpException {
+		V1PodList podList = null;
+
+		try {
+			if (StringUtils.isEmpty(namespace)) {
+				podList = kubeCoreManager.getAllPodList();
+			} else {
+				podList = kubeCoreManager.getPodListByNamespace(namespace);
+			}
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-009", e.getMessage());
+		}
+
+		List<V1Pod> pods = podList.getItems();
+		Map<PodStatus, PodStatusMetric> statuesMetrics = getPodsStatusMap();
+
+		for (V1Pod pod : pods) {
+			String phase = pod.getStatus().getPhase();
+
+			for (PodStatus status : PodStatus.values()) {
+				if (StringUtils.equals(phase, status.name())) {
+					PodStatusMetric psm = statuesMetrics.get(status);
+					if (psm != null) {
+						psm.increaseCount();
+					} else {
+						psm = new PodStatusMetric();
+						psm.setStatus(status);
+						psm.setCount(1);
+						statuesMetrics.put(status, psm);
+					}
+				} else {
+					logger.warn("This phase("+ phase +") does not exist in PodStatus. Please check it");
+				}
+			}
+		}
+
+		PodsStatusMetricsVO vo = new PodsStatusMetricsVO();
+		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
+		vo.setTotalCount(pods.size());
+
+		return vo;
+	}
+
+	private Map<PodStatus, PodStatusMetric> getPodsStatusMap() {
+		Map<PodStatus, PodStatusMetric> statuesMetrics = new HashMap<>();
+
+		for (PodStatus status : PodStatus.values()) {
+			PodStatusMetric psm = new PodStatusMetric();
+			psm.setStatus(status);
+			psm.setCount(0);
+			statuesMetrics.put(status, psm);
+		}
+
 		return statuesMetrics;
 	}
 

@@ -1,5 +1,8 @@
 package com.skcc.cloudz.zcp.common.model;
 
 public enum DeploymentStatus {
-	Available, Unavailable
+	// this is a condition's status of deployment's status
+	Available, Unavailable;
+	
+	public static final String STATUS_CONDITION_TYPE = "Available";
 }
