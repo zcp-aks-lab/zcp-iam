@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.skcc.cloudz.zcp.common.exception.KeyCloakException;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.model.CPUUnit;
 import com.skcc.cloudz.zcp.common.model.ClusterRole;
@@ -94,7 +95,50 @@ public class NamespaceService {
 		}
 	}
 
-	public NamespaceResourceDetailVO getNamespaceResource(String namespace) throws ZcpException {
+	public NamespaceResourceDetailVO getNamespaceResource(String namespace, String userId) throws ZcpException {
+		// check user privillege
+		UserRepresentation userRepresentation = null;
+		try {
+			userRepresentation = keyCloakManager.getUser(userId);
+		} catch (KeyCloakException e) {
+			throw new ZcpException("ZCP-0001", "The user(" + userId + ") does not exist");
+		}
+
+		String username = userRepresentation.getUsername();
+		log.debug("keyclock username is - {}", username);
+
+		// check clusterrolebinding
+		V1ClusterRoleBinding userClusterRoleBinding = null;
+		try {
+			userClusterRoleBinding = kubeRbacAuthzManager.getClusterRoleBindingByUsername(username);
+		} catch (ApiException e2) {
+			throw new ZcpException("ZCP-0001", "The clusterrolebinding of user(" + userId + ") does not exist");
+		}
+
+		String userClusterRole = userClusterRoleBinding.getRoleRef().getName();
+		boolean isClusterAdmin = StringUtils.equals(userClusterRole, ClusterRole.CLUSTER_ADMIN.getRole()) ? true
+				: false;
+		
+		// check rolebinding of namespace
+		boolean isNamespaceAdmin = false;
+		if (!isClusterAdmin) {
+			V1RoleBinding userNamespaceRoleBinding = null;
+			try {
+				userNamespaceRoleBinding = kubeRbacAuthzManager.getRoleBindingByUserName(namespace, username);
+			} catch (ApiException e) {
+				throw new ZcpException("ZCP-0001", "The namespace(" + namespace + ") rolebinding of user(" + userId + ") does not exist");
+			}
+			
+			String userNamespaceRole = userNamespaceRoleBinding.getRoleRef().getName();
+			isNamespaceAdmin = StringUtils.equals(userNamespaceRole, ClusterRole.ADMIN.getRole()) ? true : false;
+
+			if (!isClusterAdmin && !isNamespaceAdmin) {
+				throw new ZcpException("ZCP-0001",
+						"The user(" + userId + ") does not have a permission for namespace(" + namespace +")");
+			}
+		}
+		
+		// get namespace resource
 		NamespaceResourceDetailVO namespaceDetail = new NamespaceResourceDetailVO();
 		namespaceDetail.setNamespace(namespace);
 

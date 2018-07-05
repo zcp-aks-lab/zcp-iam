@@ -28,7 +28,7 @@ public class KubeRbacAuthzManager {
 	private ApiClient client;
 
 	private RbacAuthorizationV1Api api;
-	
+
 	@Value("${kube.client.api.output.pretty}")
 	private String pretty;
 
@@ -54,7 +54,7 @@ public class KubeRbacAuthzManager {
 		return api.listClusterRoleBinding(pretty, null, null, null,
 				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);
 	}
-	
+
 	public V1ClusterRoleBinding getClusterRoleBindingByUsername(String username) throws ApiException {
 		return api.readClusterRoleBinding(ResourcesNameManager.getClusterRoleBindingName(username), pretty);
 	}
@@ -89,14 +89,21 @@ public class KubeRbacAuthzManager {
 	}
 
 	public V1RoleBindingList getRoleBindingListByUsername(String username) throws ApiException {
-		return api.listRoleBindingForAllNamespaces(null, null, null,ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, pretty, null, null, null);
+		return api.listRoleBindingForAllNamespaces(null, null, null,
+				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, pretty, null, null, null);
 	}
 
 	public V1RoleBinding createRoleBinding(String namespace, V1RoleBinding rolebinding) throws ApiException {
 		return api.createNamespacedRoleBinding(namespace, rolebinding, pretty);
 	}
 
-	public V1RoleBinding replaceRoleBinding(String namespace, String roleBindingName, V1RoleBinding rolebinding) throws ApiException {
+	public V1RoleBinding getRoleBindingByUserName(String namespace, String username) throws ApiException {
+		return api.readNamespacedRoleBinding(ResourcesNameManager.getRoleBindingName(username), namespace,
+				pretty);
+	}
+
+	public V1RoleBinding replaceRoleBinding(String namespace, String roleBindingName, V1RoleBinding rolebinding)
+			throws ApiException {
 		return api.replaceNamespacedRoleBinding(roleBindingName, namespace, rolebinding, pretty);
 	}
 
@@ -104,7 +111,7 @@ public class KubeRbacAuthzManager {
 			throws ApiException {
 		return api.deleteNamespacedRoleBinding(roleBindingName, namespace, deleteOptions, pretty, null, null, null);
 	}
-	
+
 	public V1Status deleteRoleBindingListByUsername(String namespace, String username) throws ApiException {
 		return api.deleteCollectionNamespacedRoleBinding(namespace, pretty, null, null, null,
 				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);

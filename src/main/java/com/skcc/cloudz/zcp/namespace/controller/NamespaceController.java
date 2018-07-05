@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skcc.cloudz.zcp.common.model.UserList;
@@ -62,9 +63,10 @@ public class NamespaceController {
 	}
 
 	@RequestMapping(value = "/namespace/{namespace}/resource", method = RequestMethod.GET)
-	public Response<NamespaceResourceDetailVO> getNamespaceResource(@PathVariable("namespace") String namespace) throws Exception {
+	public Response<NamespaceResourceDetailVO> getNamespaceResource(@PathVariable("namespace") String namespace,
+			@RequestParam(required = true, value = "userId") String userId) throws Exception {
 		Response<NamespaceResourceDetailVO> response = new Response<>();
-		response.setData(namespaceService.getNamespaceResource(namespace));
+		response.setData(namespaceService.getNamespaceResource(namespace, userId));
 		return response;
 	}
 
@@ -104,16 +106,15 @@ public class NamespaceController {
 		return vo;
 	}
 
-//	@RequestMapping(value = "/resource", method = RequestMethod.GET)
-//	Response<NamespaceVO> getAllOfNamespaceResource() throws Exception {
-//		Response<NamespaceVO> response = new Response<>();
-//		response.setData(namespaceService.getNamespaceResource(""));
-//		return response;
-//	}
+	// @RequestMapping(value = "/resource", method = RequestMethod.GET)
+	// Response<NamespaceVO> getAllOfNamespaceResource() throws Exception {
+	// Response<NamespaceVO> response = new Response<>();
+	// response.setData(namespaceService.getNamespaceResource(""));
+	// return response;
+	// }
 
 	@RequestMapping(value = "/namespace", method = RequestMethod.POST)
-	public Response<Object> saveNamespace(@RequestBody NamespaceResourceVO vo)
-			throws Exception {
+	public Response<Object> saveNamespace(@RequestBody NamespaceResourceVO vo) throws Exception {
 		Response<Object> response = new Response<>();
 		namespaceService.saveNamespace(vo);
 		return response;
