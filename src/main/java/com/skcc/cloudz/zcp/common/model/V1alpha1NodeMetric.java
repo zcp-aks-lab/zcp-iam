@@ -4,6 +4,7 @@ import java.util.Date;
 
 import com.google.gson.annotations.SerializedName;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.swagger.annotations.ApiModel;
 
@@ -36,23 +37,23 @@ public class V1alpha1NodeMetric {
 	@ApiModel
 	public class V1alpha1Usage {
 		@SerializedName("cpu")
-		private String cpu;
+		private Quantity cpu;
 		@SerializedName("memory")
-		private String memory;
+		private Quantity memory;
 
-		public String getCpu() {
+		public Quantity getCpu() {
 			return cpu;
 		}
 
-		public void setCpu(String cpu) {
+		public void setCpu(Quantity cpu) {
 			this.cpu = cpu;
 		}
 
-		public String getMemory() {
+		public Quantity getMemory() {
 			return memory;
 		}
 
-		public void setMemory(String memory) {
+		public void setMemory(Quantity memory) {
 			this.memory = memory;
 		}
 

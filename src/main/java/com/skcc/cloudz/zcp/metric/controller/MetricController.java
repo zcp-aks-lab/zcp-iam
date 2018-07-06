@@ -30,14 +30,6 @@ public class MetricController {
 	@Autowired
 	private MetricService metricService;
 
-	@RequestMapping(value = "/metrics/nodes", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<V1alpha1NodeMetricList> getUserList() throws Exception {
-		Response<V1alpha1NodeMetricList> response = new Response<>();
-		response.setData(metricService.getNodeMetrics());
-
-		return response;
-	}
-
 	@RequestMapping(value = "/metrics/namespaces", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	public Response<ZcpNamespaceList> getNamespaceList(@RequestParam(required = true, value = "userId") String userId)
 			throws Exception {
@@ -47,7 +39,7 @@ public class MetricController {
 		return response;
 	}
 
-	@RequestMapping(value = "/nodes", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/metrics/nodes", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	public Response<ZcpNodeList> getNodeList() throws Exception {
 		Response<ZcpNodeList> response = new Response<>();
 		response.setData(metricService.getNodeList());
@@ -76,6 +68,22 @@ public class MetricController {
 		Response<NodesStatusMetricsVO> response = new Response<>();
 		response.setData(metricService.getNodesStatusMetrics());
 
+		return response;
+	}
+
+	@RequestMapping(value = "/metrics/memory/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public Response<V1alpha1NodeMetricList> getMemoryStatus() throws Exception {
+		Response<V1alpha1NodeMetricList> response = new Response<>();
+		response.setData(metricService.getNodeMetrics());
+	
+		return response;
+	}
+
+	@RequestMapping(value = "/metrics/cpu/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public Response<V1alpha1NodeMetricList> getCPUStatus() throws Exception {
+		Response<V1alpha1NodeMetricList> response = new Response<>();
+		response.setData(metricService.getNodeMetrics());
+	
 		return response;
 	}
 }

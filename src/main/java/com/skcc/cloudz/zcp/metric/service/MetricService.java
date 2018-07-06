@@ -240,7 +240,7 @@ public class MetricService {
 
 		// get namespace list of admin user
 		List<String> userNamespaces = new ArrayList<>();
-		if (isAdmin) {
+		if (!isClusterAdmin && isAdmin) {
 			List<V1RoleBinding> userRoleBindings = null;
 			try {
 				userRoleBindings = kubeRbacAuthzManager.getRoleBindingListByUsername(username).getItems();
@@ -345,7 +345,7 @@ public class MetricService {
 						percent(usedLimitsMemory.doubleValue(), hardLimitsMemory.doubleValue()));
 			}
 
-			if (isAdmin) {
+			if (!isClusterAdmin && isAdmin) {
 				if (userNamespaces.contains(namespace.getMetadata().getName())) {
 					zcpNamespaces.add(zcpNamespace);
 				}

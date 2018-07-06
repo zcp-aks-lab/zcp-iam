@@ -4,13 +4,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.skcc.cloudz.zcp.common.model.NodeStatus;
 import com.skcc.cloudz.zcp.common.model.NodeStatusMetric;
+import com.skcc.cloudz.zcp.common.util.NumberUtils;
 
 public class NodesStatusMetricsVO {
+	private String title = "Nodes";
 	private List<NodeStatusMetric> statuses;
 	private Integer totalCount;
-	private Integer mainStatusPercentage = -1;
+	private String mainStatusPercentage;
 	private NodeStatus mainStatus = NodeStatus.Ready;
 
 	public List<NodeStatusMetric> getStatuses() {
@@ -29,23 +33,23 @@ public class NodesStatusMetricsVO {
 		this.totalCount = totalCount;
 	}
 
-	public Integer getMainStatusPercentage() {
-		if (mainStatusPercentage < 0) {
+	public String getMainStatusPercentage() {
+		if (StringUtils.isEmpty(mainStatusPercentage)) {
 			if (statuses == null)
-				return mainStatusPercentage;
+				return "0";
 			if (totalCount == 0)
-				return mainStatusPercentage;
+				return "0";
 
 			Map<NodeStatus, Integer> map = statuses.stream()
 					.collect(Collectors.toMap(NodeStatusMetric::getStatus, NodeStatusMetric::getCount));
-			float availableCount = map.get(mainStatus).floatValue();
-
-			return (int) (availableCount / totalCount.floatValue()) * 100;
+			double availableCount = map.get(mainStatus).doubleValue();
+			
+			return NumberUtils.percentFormat(availableCount, totalCount.doubleValue());
 		}
 		return mainStatusPercentage;
 	}
 
-	public void setMainStatusPercentage(Integer mainStatusPercentage) {
+	public void setMainStatusPercentage(String mainStatusPercentage) {
 		this.mainStatusPercentage = mainStatusPercentage;
 	}
 
@@ -55,5 +59,13 @@ public class NodesStatusMetricsVO {
 
 	public void setMainStatus(NodeStatus mainStatus) {
 		this.mainStatus = mainStatus;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
 	}
 }

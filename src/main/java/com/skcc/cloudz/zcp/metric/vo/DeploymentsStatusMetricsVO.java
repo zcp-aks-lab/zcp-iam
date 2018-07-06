@@ -4,13 +4,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.skcc.cloudz.zcp.common.model.DeploymentStatus;
 import com.skcc.cloudz.zcp.common.model.DeploymentStatusMetric;
+import com.skcc.cloudz.zcp.common.util.NumberUtils;
 
 public class DeploymentsStatusMetricsVO {
+	private String title = "Deployments";
 	private List<DeploymentStatusMetric> statuses;
 	private Integer totalCount;
-	private Integer mainStatusPercentage = -1;
+	private String mainStatusPercentage;
 	private DeploymentStatus mainStatus = DeploymentStatus.Available;
 	
 	public List<DeploymentStatusMetric> getStatuses() {
@@ -29,23 +33,23 @@ public class DeploymentsStatusMetricsVO {
 		this.totalCount = totalCount;
 	}
 
-	public Integer getMainStatusPercentage() {
-		if (mainStatusPercentage < 0) {
+	public String getMainStatusPercentage() {
+		if (StringUtils.isEmpty(mainStatusPercentage)) {
 			if (statuses == null)
-				return mainStatusPercentage;
+				return "0";
 			if (totalCount == 0)
-				return mainStatusPercentage;
+				return "0";
 
 			Map<DeploymentStatus, Integer> map = statuses.stream()
 					.collect(Collectors.toMap(DeploymentStatusMetric::getStatus, DeploymentStatusMetric::getCount));
-			float availableCount = map.get(mainStatus).floatValue();
+			double availableCount = map.get(mainStatus).doubleValue();
 			
-			return (int) (availableCount / totalCount.floatValue()) * 100;
+			return NumberUtils.percentFormat(availableCount, totalCount.doubleValue());
 		}
 		return mainStatusPercentage;
 	}
 
-	public void setMainStatusPercentage(Integer mainStatusPercentage) {
+	public void setMainStatusPercentage(String mainStatusPercentage) {
 		this.mainStatusPercentage = mainStatusPercentage;
 	}
 
@@ -55,6 +59,14 @@ public class DeploymentsStatusMetricsVO {
 
 	public void setMainStatus(DeploymentStatus mainStatus) {
 		this.mainStatus = mainStatus;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
 	}
 
 
