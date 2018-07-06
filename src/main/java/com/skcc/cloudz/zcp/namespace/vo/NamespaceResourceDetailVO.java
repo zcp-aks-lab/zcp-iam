@@ -2,12 +2,14 @@ package com.skcc.cloudz.zcp.namespace.vo;
 
 import com.skcc.cloudz.zcp.common.model.ZcpLimitRange;
 import com.skcc.cloudz.zcp.common.model.ZcpResourceQuota;
+import com.skcc.cloudz.zcp.common.model.ZcpResourceQuotaUsage;
 
 public class NamespaceResourceDetailVO {
 	private String namespace;
 	private ZcpResourceQuota hard;
 	private ZcpResourceQuota used;
 	private ZcpLimitRange limitRange;
+	private ZcpResourceQuotaUsage usage;
 
 	public String getNamespace() {
 		return namespace;
@@ -39,6 +41,19 @@ public class NamespaceResourceDetailVO {
 
 	public void setLimitRange(ZcpLimitRange limitRange) {
 		this.limitRange = limitRange;
+	}
+
+	public ZcpResourceQuotaUsage getUsage() {
+		if (usage == null) {
+			if (used != null && hard != null) {
+				usage = new ZcpResourceQuotaUsage(used, hard);
+			}
+		}
+		return usage;
+	}
+
+	public void setUsage(ZcpResourceQuotaUsage usage) {
+		this.usage = usage;
 	}
 
 }
