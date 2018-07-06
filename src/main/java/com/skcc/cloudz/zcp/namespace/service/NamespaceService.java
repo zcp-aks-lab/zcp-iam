@@ -281,7 +281,7 @@ public class NamespaceService {
 				return MemoryUnit.Gi;
 			if (StringUtils.contains(value, "Mi"))
 				return MemoryUnit.Mi;
-			return null;
+			return MemoryUnit.Gi;
 		} else {
 			return null;
 		}
