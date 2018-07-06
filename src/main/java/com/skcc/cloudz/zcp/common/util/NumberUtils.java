@@ -16,7 +16,7 @@ public class NumberUtils {
 		df.applyPattern("##.##");
 
 		StringBuilder sb = new StringBuilder();
-		sb.append(df.format(value)).append("%");
+		sb.append(df.format(value));//.append("%");
 		
 		return sb.toString();
 	}
