@@ -297,9 +297,20 @@ public class MetricService {
 				logger.debug("namespace is {}", namespace.getMetadata().getName());
 				logger.debug("hard is {}", hard);
 				logger.debug("used is {}", used);
+				
+				String sHardRequestsCpu = hard.get("requests.cpu") == null ? "0" : hard.get("requests.cpu"); 
+				String sUsedRequestsCpu = used.get("requests.cpu") == null ? "0" : hard.get("requests.cpu");
+				String sHardLimitsCpu = hard.get("limits.cpu") == null ? "0" : hard.get("limits.cpu");
+				String sUsedLimitsCpu = used.get("limits.cpu") == null ? "0" : hard.get("limits.cpu");
+				
+				String sHardRequestsMemory = hard.get("requests.memory") == null ? "0" : hard.get("requests.memory"); 
+				String sUsedRequestsMemory = used.get("requests.memory") == null ? "0" : hard.get("requests.memory");
+				String sHardLimitsMemory = hard.get("limits.memory") == null ? "0" : hard.get("limits.memory");
+				String sUsedLimitsMemory = used.get("limits.memory") == null ? "0" : hard.get("limits.memory");
+				
 
-				BigDecimal hardRequestsCpu = Quantity.fromString(hard.get("requests.cpu")).getNumber();
-				BigDecimal usedRequestsCpu = Quantity.fromString(used.get("requests.cpu")).getNumber();
+				BigDecimal hardRequestsCpu = Quantity.fromString(sHardRequestsCpu).getNumber();
+				BigDecimal usedRequestsCpu = Quantity.fromString(sUsedRequestsCpu).getNumber();
 				zcpNamespace.setHardCpuRequests(hardRequestsCpu);
 				zcpNamespace.setUsedCpuRequests(usedRequestsCpu);
 				zcpNamespace.setHardCpuRequestsString(formatCpu(hardRequestsCpu.doubleValue()));
@@ -307,16 +318,16 @@ public class MetricService {
 				zcpNamespace.setCpuRequestsPercentage(
 						percent(usedRequestsCpu.doubleValue(), hardRequestsCpu.doubleValue()));
 
-				BigDecimal hardLimitsCpu = Quantity.fromString(hard.get("limits.cpu")).getNumber();
-				BigDecimal usedLimitsCpu = Quantity.fromString(used.get("limits.cpu")).getNumber();
+				BigDecimal hardLimitsCpu = Quantity.fromString(sHardLimitsCpu).getNumber();
+				BigDecimal usedLimitsCpu = Quantity.fromString(sUsedLimitsCpu).getNumber();
 				zcpNamespace.setHardCpuLimits(hardLimitsCpu);
 				zcpNamespace.setUsedCpuLimits(usedLimitsCpu);
 				zcpNamespace.setHardCpuLimitsString(formatCpu(hardLimitsCpu.doubleValue()));
 				zcpNamespace.setUsedCpuLimitsString(formatCpu(usedLimitsCpu.doubleValue()));
 				zcpNamespace.setCpuLimitsPercentage(percent(usedLimitsCpu.doubleValue(), hardLimitsCpu.doubleValue()));
 
-				BigDecimal hardRequestsMemory = Quantity.fromString(hard.get("requests.memory")).getNumber();
-				BigDecimal usedRequestsMemory = Quantity.fromString(used.get("requests.memory")).getNumber();
+				BigDecimal hardRequestsMemory = Quantity.fromString(sHardRequestsMemory).getNumber();
+				BigDecimal usedRequestsMemory = Quantity.fromString(sUsedRequestsMemory).getNumber();
 				zcpNamespace.setHardMemoryRequests(hardRequestsMemory);
 				zcpNamespace.setUsedMemoryRequests(usedRequestsMemory);
 				zcpNamespace.setHardMemoryRequestsString(formatMemory(hardRequestsMemory.doubleValue()));
@@ -324,8 +335,8 @@ public class MetricService {
 				zcpNamespace.setMemoryRequestsPercentage(
 						percent(usedRequestsMemory.doubleValue(), hardRequestsMemory.doubleValue()));
 
-				BigDecimal hardLimitsMemory = Quantity.fromString(hard.get("limits.memory")).getNumber();
-				BigDecimal usedLimitsMemory = Quantity.fromString(used.get("limits.memory")).getNumber();
+				BigDecimal hardLimitsMemory = Quantity.fromString(sHardLimitsMemory).getNumber();
+				BigDecimal usedLimitsMemory = Quantity.fromString(sUsedLimitsMemory).getNumber();
 				zcpNamespace.setHardMemoryLimits(hardLimitsMemory);
 				zcpNamespace.setUsedMemoryLimits(usedLimitsMemory);
 				zcpNamespace.setHardMemoryLimitsString(formatMemory(hardLimitsMemory.doubleValue()));
