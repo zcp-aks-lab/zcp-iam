@@ -299,14 +299,14 @@ public class MetricService {
 				logger.debug("used is {}", used);
 				
 				String sHardRequestsCpu = hard.get("requests.cpu") == null ? "0" : hard.get("requests.cpu"); 
-				String sUsedRequestsCpu = used.get("requests.cpu") == null ? "0" : hard.get("requests.cpu");
+				String sUsedRequestsCpu = used.get("requests.cpu") == null ? "0" : used.get("requests.cpu");
 				String sHardLimitsCpu = hard.get("limits.cpu") == null ? "0" : hard.get("limits.cpu");
-				String sUsedLimitsCpu = used.get("limits.cpu") == null ? "0" : hard.get("limits.cpu");
+				String sUsedLimitsCpu = used.get("limits.cpu") == null ? "0" : used.get("limits.cpu");
 				
 				String sHardRequestsMemory = hard.get("requests.memory") == null ? "0" : hard.get("requests.memory"); 
-				String sUsedRequestsMemory = used.get("requests.memory") == null ? "0" : hard.get("requests.memory");
+				String sUsedRequestsMemory = used.get("requests.memory") == null ? "0" : used.get("requests.memory");
 				String sHardLimitsMemory = hard.get("limits.memory") == null ? "0" : hard.get("limits.memory");
-				String sUsedLimitsMemory = used.get("limits.memory") == null ? "0" : hard.get("limits.memory");
+				String sUsedLimitsMemory = used.get("limits.memory") == null ? "0" : used.get("limits.memory");
 				
 
 				BigDecimal hardRequestsCpu = Quantity.fromString(sHardRequestsCpu).getNumber();
