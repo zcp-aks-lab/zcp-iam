@@ -299,7 +299,7 @@ public class MetricService {
 				logger.debug("used is {}", used);
 				
 				String sHardRequestsCpu = hard.get("requests.cpu") == null ? "0" : hard.get("requests.cpu"); 
-				String sUsedRequestsCpu = used.get("requests.cpu") == null ? "0" : hard.get("requests.cpu");
+				String sUsedRequestsCpu = used.get("requests.cpu") == null ? "0" : used.get("requests.cpu");
 				String sHardLimitsCpu = hard.get("limits.cpu") == null ? "0" : hard.get("limits.cpu");
 				String sUsedLimitsCpu = used.get("limits.cpu") == null ? "0" : used.get("limits.cpu");
 				
