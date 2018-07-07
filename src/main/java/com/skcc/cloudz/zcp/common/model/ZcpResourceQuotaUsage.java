@@ -1,5 +1,7 @@
 package com.skcc.cloudz.zcp.common.model;
 
+import java.math.BigDecimal;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.skcc.cloudz.zcp.common.util.NumberUtils;
 
@@ -34,82 +36,82 @@ public class ZcpResourceQuotaUsage {
 		this.used = used;
 	}
 
-	public String getCpuLimitsUsage() {
+	public BigDecimal getCpuLimitsUsage() {
 		double usedValue = getUsageValue(used.getCpuLimits(), used.getCpuLimitsUnit());
 		double hardValue = getUsageValue(hard.getCpuLimits(), hard.getCpuLimitsUnit());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getCpuRequestsUsage() {
+	public BigDecimal getCpuRequestsUsage() {
 		double usedValue = getUsageValue(used.getCpuRequests(), used.getCpuRequestsUnit());
 		double hardValue = getUsageValue(hard.getCpuRequests(), hard.getCpuRequestsUnit());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getMemoryLimitsUsage() {
+	public BigDecimal getMemoryLimitsUsage() {
 		double usedValue = getUsageValue(used.getMemoryLimits(), used.getMemoryLimitsUnit());
 		double hardValue = getUsageValue(hard.getMemoryLimits(), hard.getMemoryLimitsUnit());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getMemoryRequestsUsage() {
+	public BigDecimal getMemoryRequestsUsage() {
 		double usedValue = getUsageValue(used.getMemoryRequests(), used.getMemoryRequestsUnit());
 		double hardValue = getUsageValue(hard.getMemoryRequests(), hard.getMemoryRequestsUnit());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getConfigmapsUsage() {
+	public BigDecimal getConfigmapsUsage() {
 		double usedValue = getUsageValue(used.getConfigmaps());
 		double hardValue = getUsageValue(hard.getConfigmaps());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getPersistentvolumeclaimsUsage() {
+	public BigDecimal getPersistentvolumeclaimsUsage() {
 		double usedValue = getUsageValue(used.getPersistentvolumeclaims());
 		double hardValue = getUsageValue(hard.getPersistentvolumeclaims());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getPodsUsage() {
+	public BigDecimal getPodsUsage() {
 		double usedValue = getUsageValue(used.getPods());
 		double hardValue = getUsageValue(hard.getPods());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getReplicationcontrollersUsage() {
+	public BigDecimal getReplicationcontrollersUsage() {
 		double usedValue = getUsageValue(used.getReplicationcontrollers());
 		double hardValue = getUsageValue(hard.getReplicationcontrollers());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getResourcequotasUsage() {
+	public BigDecimal getResourcequotasUsage() {
 		double usedValue = getUsageValue(used.getResourcequotas());
 		double hardValue = getUsageValue(hard.getResourcequotas());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getServicesUsage() {
+	public BigDecimal getServicesUsage() {
 		double usedValue = getUsageValue(used.getServices());
 		double hardValue = getUsageValue(hard.getServices());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getServicesLoadbalancersUsage() {
+	public BigDecimal getServicesLoadbalancersUsage() {
 		double usedValue = getUsageValue(used.getServicesLoadbalancers());
 		double hardValue = getUsageValue(hard.getServicesLoadbalancers());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getServicesNodeportsUsage() {
+	public BigDecimal getServicesNodeportsUsage() {
 		double usedValue = getUsageValue(used.getServicesNodeports());
 		double hardValue = getUsageValue(hard.getServicesNodeports());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 
-	public String getSecretsUsage() {
+	public BigDecimal getSecretsUsage() {
 		double usedValue = getUsageValue(used.getSecrets());
 		double hardValue = getUsageValue(hard.getSecrets());
-		return NumberUtils.percentFormat(usedValue, hardValue);
+		return NumberUtils.percent(usedValue, hardValue);
 	}
 	
 	private double getUsageValue(Number number) {

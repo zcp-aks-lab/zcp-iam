@@ -20,7 +20,7 @@ import com.skcc.cloudz.zcp.common.exception.KeyCloakException;
 import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.common.model.CredentialActionType;
-import com.skcc.cloudz.zcp.common.model.UserList;
+import com.skcc.cloudz.zcp.common.model.ZcpUserList;
 import com.skcc.cloudz.zcp.common.model.ZcpKubeConfig;
 import com.skcc.cloudz.zcp.common.model.ZcpKubeConfig.ClusterInfo;
 import com.skcc.cloudz.zcp.common.model.ZcpKubeConfig.ClusterInfo.Cluster;
@@ -75,7 +75,7 @@ public class UserService {
 	@Value("${kube.server.apiserver.endpoint}")
 	private String kubeApiServerEndpoint;
 
-	public UserList getUserList(String keyword) throws ZcpException {
+	public ZcpUserList getUserList(String keyword) throws ZcpException {
 		List<UserRepresentation> keyCloakUsers = keyCloakManager.getUserList(keyword);
 
 		List<ZcpUser> users = new ArrayList<ZcpUser>();
@@ -117,7 +117,7 @@ public class UserService {
 			}
 		}
 
-		return new UserList(users);
+		return new ZcpUserList(users);
 	}
 
 	private Map<String, List<V1RoleBinding>> getMappedRoleBindings() throws ApiException {

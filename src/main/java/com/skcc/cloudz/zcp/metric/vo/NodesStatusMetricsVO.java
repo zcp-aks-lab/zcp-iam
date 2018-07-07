@@ -1,10 +1,9 @@
 package com.skcc.cloudz.zcp.metric.vo;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.StringUtils;
 
 import com.skcc.cloudz.zcp.common.model.NodeStatus;
 import com.skcc.cloudz.zcp.common.model.NodeStatusMetric;
@@ -13,8 +12,8 @@ import com.skcc.cloudz.zcp.common.util.NumberUtils;
 public class NodesStatusMetricsVO {
 	private String title = "Nodes";
 	private List<NodeStatusMetric> statuses;
-	private Integer totalCount;
-	private String mainStatusPercentage;
+	private BigDecimal totalCount;
+	private BigDecimal mainStatusPercentage;
 	private NodeStatus mainStatus = NodeStatus.Ready;
 
 	public List<NodeStatusMetric> getStatuses() {
@@ -25,31 +24,31 @@ public class NodesStatusMetricsVO {
 		this.statuses = statuses;
 	}
 
-	public Integer getTotalCount() {
+	public BigDecimal getTotalCount() {
 		return totalCount;
 	}
 
-	public void setTotalCount(Integer totalCount) {
+	public void setTotalCount(BigDecimal totalCount) {
 		this.totalCount = totalCount;
 	}
 
-	public String getMainStatusPercentage() {
-		if (StringUtils.isEmpty(mainStatusPercentage)) {
+	public BigDecimal getMainStatusPercentage() {
+		if (mainStatusPercentage == null) {
 			if (statuses == null)
-				return "0";
-			if (totalCount == 0)
-				return "0";
+				return BigDecimal.valueOf(0);
+			if (totalCount == null)
+				return BigDecimal.valueOf(0);
 
 			Map<NodeStatus, Integer> map = statuses.stream()
 					.collect(Collectors.toMap(NodeStatusMetric::getStatus, NodeStatusMetric::getCount));
 			double availableCount = map.get(mainStatus).doubleValue();
-			
-			return NumberUtils.percentFormat(availableCount, totalCount.doubleValue());
+
+			return NumberUtils.percent(availableCount, totalCount.doubleValue());
 		}
 		return mainStatusPercentage;
 	}
 
-	public void setMainStatusPercentage(String mainStatusPercentage) {
+	public void setMainStatusPercentage(BigDecimal mainStatusPercentage) {
 		this.mainStatusPercentage = mainStatusPercentage;
 	}
 

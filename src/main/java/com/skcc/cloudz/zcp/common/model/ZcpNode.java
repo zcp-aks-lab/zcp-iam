@@ -23,22 +23,22 @@ public class ZcpNode {
 	private BigDecimal cpuRequests;
 	@JsonProperty("cpuRequests")
 	private String cpuRequestsString;
-	private int cpuRequestsPercentage;
+	private BigDecimal cpuRequestsPercentage;
 	@JsonIgnore
 	private BigDecimal memoryRequests;
 	@JsonProperty("memoryRequests")
 	private String memoryRequestsString;
-	private int memoryRequestsPercentage;
+	private BigDecimal memoryRequestsPercentage;
 	@JsonIgnore
 	private BigDecimal cpuLimits;
 	@JsonProperty("cpuLimits")
 	private String cpuLimitsString;
-	private int cpuLimitsPercentage;
+	private BigDecimal cpuLimitsPercentage;
 	@JsonIgnore
 	private BigDecimal memoryLimits;
 	@JsonProperty("memoryLimits")
 	private String memoryLimitsString;
-	private int memoryLimitsPercentage;
+	private BigDecimal memoryLimitsPercentage;
 	private Date creationTime;
 
 	public BigDecimal getCpuRequests() {
@@ -49,11 +49,11 @@ public class ZcpNode {
 		this.cpuRequests = cpuRequests;
 	}
 
-	public int getCpuRequestsPercentage() {
+	public BigDecimal getCpuRequestsPercentage() {
 		return cpuRequestsPercentage;
 	}
 
-	public void setCpuRequestsPercentage(int cpuRequestsPercentage) {
+	public void setCpuRequestsPercentage(BigDecimal cpuRequestsPercentage) {
 		this.cpuRequestsPercentage = cpuRequestsPercentage;
 	}
 
@@ -65,11 +65,11 @@ public class ZcpNode {
 		this.memoryRequests = memoryRequests;
 	}
 
-	public int getMemoryRequestsPercentage() {
+	public BigDecimal getMemoryRequestsPercentage() {
 		return memoryRequestsPercentage;
 	}
 
-	public void setMemoryRequestsPercentage(int memoryRequestsPercentage) {
+	public void setMemoryRequestsPercentage(BigDecimal memoryRequestsPercentage) {
 		this.memoryRequestsPercentage = memoryRequestsPercentage;
 	}
 
@@ -81,11 +81,11 @@ public class ZcpNode {
 		this.cpuLimits = cpuLimits;
 	}
 
-	public int getCpuLimitsPercentage() {
+	public BigDecimal getCpuLimitsPercentage() {
 		return cpuLimitsPercentage;
 	}
 
-	public void setCpuLimitsPercentage(int cpuLimitsPercentage) {
+	public void setCpuLimitsPercentage(BigDecimal cpuLimitsPercentage) {
 		this.cpuLimitsPercentage = cpuLimitsPercentage;
 	}
 
@@ -97,11 +97,11 @@ public class ZcpNode {
 		this.memoryLimits = memoryLimits;
 	}
 
-	public int getMemoryLimitsPercentage() {
+	public BigDecimal getMemoryLimitsPercentage() {
 		return memoryLimitsPercentage;
 	}
 
-	public void setMemoryLimitsPercentage(int memoryLimitsPercentage) {
+	public void setMemoryLimitsPercentage(BigDecimal memoryLimitsPercentage) {
 		this.memoryLimitsPercentage = memoryLimitsPercentage;
 	}
 

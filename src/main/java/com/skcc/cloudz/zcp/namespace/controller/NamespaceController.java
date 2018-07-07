@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.skcc.cloudz.zcp.common.model.UserList;
+import com.skcc.cloudz.zcp.common.model.ZcpUserList;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.namespace.service.NamespaceService;
 import com.skcc.cloudz.zcp.namespace.vo.InquiryNamespaceVO;
@@ -56,8 +56,8 @@ public class NamespaceController {
 	}
 
 	@RequestMapping(value = "/namespace/{namespace}/users", method = RequestMethod.GET)
-	public Response<UserList> getUserListByNamespace(@PathVariable("namespace") String namespace) throws Exception {
-		Response<UserList> response = new Response<>();
+	public Response<ZcpUserList> getUserListByNamespace(@PathVariable("namespace") String namespace) throws Exception {
+		Response<ZcpUserList> response = new Response<>();
 		response.setData(namespaceService.getUserListByNamespace(namespace));
 		return response;
 	}

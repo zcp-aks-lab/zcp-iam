@@ -23,7 +23,7 @@ public class ZcpNamespace {
 	private String hardCpuRequestsString;
 	@JsonProperty("usedCpuRequests")
 	private String usedCpuRequestsString;
-	private int cpuRequestsPercentage;
+	private BigDecimal cpuRequestsPercentage;
 
 	@JsonIgnore
 	private BigDecimal hardMemoryRequests;
@@ -33,7 +33,7 @@ public class ZcpNamespace {
 	private String hardMemoryRequestsString;
 	@JsonProperty("usedMemoryRequests")
 	private String usedMemoryRequestsString;
-	private int memoryRequestsPercentage;
+	private BigDecimal memoryRequestsPercentage;
 
 	@JsonIgnore
 	private BigDecimal hardCpuLimits;
@@ -43,7 +43,7 @@ public class ZcpNamespace {
 	private String hardCpuLimitsString;
 	@JsonProperty("usedCpuLimits")
 	private String usedCpuLimitsString;
-	private int cpuLimitsPercentage;
+	private BigDecimal cpuLimitsPercentage;
 
 	@JsonIgnore
 	private BigDecimal hardMemoryLimits;
@@ -53,7 +53,7 @@ public class ZcpNamespace {
 	private String hardMemoryLimitsString;
 	@JsonProperty("usedMemoryLimits")
 	private String usedMemoryLimitsString;
-	private int memoryLimitsPercentage;
+	private BigDecimal memoryLimitsPercentage;
 
 	public enum NamespaceStatus {
 		ACTIVE("Active"), TERMINATING("Terminating");
@@ -141,11 +141,11 @@ public class ZcpNamespace {
 		this.usedCpuRequestsString = usedCpuRequestsString;
 	}
 
-	public int getCpuRequestsPercentage() {
+	public BigDecimal getCpuRequestsPercentage() {
 		return cpuRequestsPercentage;
 	}
 
-	public void setCpuRequestsPercentage(int cpuRequestsPercentage) {
+	public void setCpuRequestsPercentage(BigDecimal cpuRequestsPercentage) {
 		this.cpuRequestsPercentage = cpuRequestsPercentage;
 	}
 
@@ -181,11 +181,11 @@ public class ZcpNamespace {
 		this.usedMemoryRequestsString = usedMemoryRequestsString;
 	}
 
-	public int getMemoryRequestsPercentage() {
+	public BigDecimal getMemoryRequestsPercentage() {
 		return memoryRequestsPercentage;
 	}
 
-	public void setMemoryRequestsPercentage(int memoryRequestsPercentage) {
+	public void setMemoryRequestsPercentage(BigDecimal memoryRequestsPercentage) {
 		this.memoryRequestsPercentage = memoryRequestsPercentage;
 	}
 
@@ -221,11 +221,11 @@ public class ZcpNamespace {
 		this.usedCpuLimitsString = usedCpuLimitsString;
 	}
 
-	public int getCpuLimitsPercentage() {
+	public BigDecimal getCpuLimitsPercentage() {
 		return cpuLimitsPercentage;
 	}
 
-	public void setCpuLimitsPercentage(int cpuLimitsPercentage) {
+	public void setCpuLimitsPercentage(BigDecimal cpuLimitsPercentage) {
 		this.cpuLimitsPercentage = cpuLimitsPercentage;
 	}
 
@@ -261,11 +261,11 @@ public class ZcpNamespace {
 		this.usedMemoryLimitsString = usedMemoryLimitsString;
 	}
 
-	public int getMemoryLimitsPercentage() {
+	public BigDecimal getMemoryLimitsPercentage() {
 		return memoryLimitsPercentage;
 	}
 
-	public void setMemoryLimitsPercentage(int memoryLimitsPercentage) {
+	public void setMemoryLimitsPercentage(BigDecimal memoryLimitsPercentage) {
 		this.memoryLimitsPercentage = memoryLimitsPercentage;
 	}
 

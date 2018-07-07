@@ -23,7 +23,7 @@ import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.model.CPUUnit;
 import com.skcc.cloudz.zcp.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.common.model.MemoryUnit;
-import com.skcc.cloudz.zcp.common.model.UserList;
+import com.skcc.cloudz.zcp.common.model.ZcpUserList;
 import com.skcc.cloudz.zcp.common.model.ZcpLimitRange;
 import com.skcc.cloudz.zcp.common.model.ZcpResourceQuota;
 import com.skcc.cloudz.zcp.common.model.ZcpUser;
@@ -908,7 +908,7 @@ public class NamespaceService {
 		}
 	}
 
-	public UserList getUserListByNamespace(String namespace) throws ZcpException {
+	public ZcpUserList getUserListByNamespace(String namespace) throws ZcpException {
 		V1RoleBindingList rolebindingList = null;
 		try {
 			rolebindingList = kubeRbacAuthzManager.getRoleBindingListByNamespace(namespace);
@@ -938,7 +938,7 @@ public class NamespaceService {
 			}
 		}
 
-		UserList userlist = new UserList();
+		ZcpUserList userlist = new ZcpUserList();
 		userlist.setItems(zcpUsers);
 
 		return userlist;

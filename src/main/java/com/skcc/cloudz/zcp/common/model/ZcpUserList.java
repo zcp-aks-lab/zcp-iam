@@ -2,14 +2,14 @@ package com.skcc.cloudz.zcp.common.model;
 
 import java.util.List;
 
-public class UserList {
+public class ZcpUserList {
 	List<ZcpUser> items;
 	
-	public UserList() {
+	public ZcpUserList() {
 		super();
 	}
 	
-	public UserList(List<ZcpUser> items) {
+	public ZcpUserList(List<ZcpUser> items) {
 		this.items = items;
 	}
 

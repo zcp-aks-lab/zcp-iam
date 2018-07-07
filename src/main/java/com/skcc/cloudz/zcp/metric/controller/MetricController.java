@@ -5,16 +5,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.skcc.cloudz.zcp.common.model.V1alpha1NodeMetricList;
 import com.skcc.cloudz.zcp.common.model.ZcpNamespaceList;
 import com.skcc.cloudz.zcp.common.model.ZcpNodeList;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.metric.service.MetricService;
+import com.skcc.cloudz.zcp.metric.vo.ClusterStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.DeploymentsStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.NodesStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.PodsStatusMetricsVO;
@@ -71,19 +72,12 @@ public class MetricController {
 		return response;
 	}
 
-	@RequestMapping(value = "/metrics/memory/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<V1alpha1NodeMetricList> getMemoryStatus() throws Exception {
-		Response<V1alpha1NodeMetricList> response = new Response<>();
-		response.setData(metricService.getNodeMetrics());
+	@RequestMapping(value = "/metrics/cluster/{type}/status/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public Response<ClusterStatusMetricsVO> getMemoryStatus(@PathVariable("type") String type) throws Exception {
+		Response<ClusterStatusMetricsVO> response = new Response<>();
+		response.setData(metricService.getClusterMetrics(type));
 	
 		return response;
 	}
 
-	@RequestMapping(value = "/metrics/cpu/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<V1alpha1NodeMetricList> getCPUStatus() throws Exception {
-		Response<V1alpha1NodeMetricList> response = new Response<>();
-		response.setData(metricService.getNodeMetrics());
-	
-		return response;
-	}
 }

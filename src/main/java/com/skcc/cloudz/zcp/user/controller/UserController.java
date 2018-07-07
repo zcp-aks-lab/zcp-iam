@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skcc.cloudz.zcp.common.annotation.NullProperty;
-import com.skcc.cloudz.zcp.common.model.UserList;
+import com.skcc.cloudz.zcp.common.model.ZcpUserList;
 import com.skcc.cloudz.zcp.common.model.ZcpKubeConfig;
 import com.skcc.cloudz.zcp.common.model.ZcpUser;
 import com.skcc.cloudz.zcp.common.vo.Response;
@@ -40,8 +40,8 @@ public class UserController {
 	private UserService userService;
 
 	@RequestMapping(value = "/users", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<UserList> getUserList(@RequestParam (required=false, value="keyword") String keyword) throws Exception {
-		Response<UserList> response = new Response<>();
+	public Response<ZcpUserList> getUserList(@RequestParam (required=false, value="keyword") String keyword) throws Exception {
+		Response<ZcpUserList> response = new Response<>();
 		response.setData(userService.getUserList(keyword));
 		return response;
 	}

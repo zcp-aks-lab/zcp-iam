@@ -25,17 +25,20 @@ import com.skcc.cloudz.zcp.common.model.NodeStatus;
 import com.skcc.cloudz.zcp.common.model.NodeStatusMetric;
 import com.skcc.cloudz.zcp.common.model.PodStatus;
 import com.skcc.cloudz.zcp.common.model.PodStatusMetric;
+import com.skcc.cloudz.zcp.common.model.V1alpha1NodeMetric;
 import com.skcc.cloudz.zcp.common.model.V1alpha1NodeMetricList;
 import com.skcc.cloudz.zcp.common.model.ZcpNamespace;
 import com.skcc.cloudz.zcp.common.model.ZcpNamespace.NamespaceStatus;
 import com.skcc.cloudz.zcp.common.model.ZcpNamespaceList;
 import com.skcc.cloudz.zcp.common.model.ZcpNode;
 import com.skcc.cloudz.zcp.common.model.ZcpNodeList;
+import com.skcc.cloudz.zcp.common.util.NumberUtils;
 import com.skcc.cloudz.zcp.manager.KeyCloakManager;
 import com.skcc.cloudz.zcp.manager.KubeAppsManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.manager.KubeMetricManager;
 import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
+import com.skcc.cloudz.zcp.metric.vo.ClusterStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.DeploymentsStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.NodesStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.PodsStatusMetricsVO;
@@ -85,22 +88,89 @@ public class MetricService {
 	@Value("${kube.server.apiserver.endpoint}")
 	private String kubeApiServerEndpoint;
 
-	public enum MemoryDisplayFormat {
-		MI, GI
-	}
+	public ClusterStatusMetricsVO getClusterMetrics(String type) throws ZcpException {
+		if (StringUtils.isEmpty(type) || (!StringUtils.equals(type, "cpu") && !StringUtils.equals(type, "memory"))) {
+			throw new ZcpException("001", "Not supported type(" + type + ")");
+		}
 
-	public V1alpha1NodeMetricList getNodeMetrics() throws ZcpException {
-		V1alpha1NodeMetricList list = null;
+		V1alpha1NodeMetricList nodeMetricList = null;
 		try {
-			list = kubeMetircManager.listNodeMetrics();
+			nodeMetricList = kubeMetircManager.listNodeMetrics();
 		} catch (ApiException e) {
 			e.printStackTrace();
 			throw new ZcpException("ZCP-009", e.getMessage());
 		}
 
-		logger.debug("Node metrics have been received");
+		BigDecimal utilization = calcluateUtilization(nodeMetricList, type);
 
-		return list;
+		V1NodeList nodeList = null;
+
+		try {
+			nodeList = kubeCoreManager.getNodeList();
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-009", e.getMessage());
+		}
+
+		BigDecimal allocatable = calcluateAllocatable(nodeList, type);
+
+		BigDecimal available = new BigDecimal(allocatable.doubleValue() - utilization.doubleValue());
+
+		ClusterStatusMetricsVO vo = new ClusterStatusMetricsVO();
+		if (StringUtils.equals(type, "cpu")) {
+			vo.setTitle("CPU");
+			vo.setUnit("Core");
+			vo.setAvailable(NumberUtils.formatCpuWithoutUnit(available.doubleValue()));
+			vo.setTotal(NumberUtils.formatCpuWithoutUnit(allocatable.doubleValue()));
+			vo.setUtilization(NumberUtils.formatCpuWithoutUnit(utilization.doubleValue()));
+			vo.setUtilizationPercentage(
+					NumberUtils.percent(utilization.doubleValue(), allocatable.doubleValue()));
+		} else {
+			vo.setTitle("Memory");
+			vo.setUnit("Gi");
+			vo.setAvailable(NumberUtils.formatMemoryWithoutUnit(available.doubleValue()));
+			vo.setTotal(NumberUtils.formatMemoryWithoutUnit(allocatable.doubleValue()));
+			vo.setUtilization(NumberUtils.formatMemoryWithoutUnit(utilization.doubleValue()));
+			vo.setUtilizationPercentage(
+					NumberUtils.percent(utilization.doubleValue(), allocatable.doubleValue()));
+		}
+		vo.setUtilizationTitle("Utilization");
+
+		return vo;
+	}
+
+	private BigDecimal calcluateAllocatable(V1NodeList nodeList, String type) {
+		double allocatable = 0d;
+		for (V1Node node : nodeList.getItems()) {
+			double data = 0d;
+			if (StringUtils.equals(type, "cpu")) {
+				data = node.getStatus().getAllocatable().get("cpu").getNumber().doubleValue();
+			} else {
+				data = node.getStatus().getAllocatable().get("memory").getNumber().doubleValue();
+			}
+			allocatable += data;
+			logger.debug("Allocatable ::: {} - {}'s value is {}, sum is {}", node.getMetadata().getName(), type, data,
+					allocatable);
+		}
+
+		return new BigDecimal(allocatable);
+	}
+
+	private BigDecimal calcluateUtilization(V1alpha1NodeMetricList nodeMetricList, String type) {
+		double utilization = 0d;
+		for (V1alpha1NodeMetric nodeMetric : nodeMetricList.getItems()) {
+			double data = 0d;
+			if (StringUtils.equals(type, "cpu")) {
+				data = nodeMetric.getUsage().getCpu().getNumber().doubleValue();
+			} else {
+				data = nodeMetric.getUsage().getMemory().getNumber().doubleValue();
+			}
+			utilization += data;
+			logger.debug("Utilizaion ::: {} - {}'s value is {}, sum is {}", nodeMetric.getMetadata().getName(), type,
+					data, utilization);
+		}
+
+		return new BigDecimal(utilization);
 	}
 
 	public ZcpNodeList getNodeList() throws ZcpException {
@@ -173,10 +243,10 @@ public class MetricService {
 			logger.debug("total mem limits is {}", totalMemLimits);
 
 			logger.debug("CPU Requests = {}, Mem Requests = {}, CPU limits = {}, Mem limits = {}",
-					percent(totalCpuRequests, allocatableCpu.doubleValue()),
-					percent(totalMemRequests, allocatableMem.doubleValue()),
-					percent(totalCpuLimits, allocatableCpu.doubleValue()),
-					percent(totalMemLimits, allocatableMem.doubleValue()));
+					NumberUtils.percent(totalCpuRequests, allocatableCpu.doubleValue()),
+					NumberUtils.percent(totalMemRequests, allocatableMem.doubleValue()),
+					NumberUtils.percent(totalCpuLimits, allocatableCpu.doubleValue()),
+					NumberUtils.percent(totalMemLimits, allocatableMem.doubleValue()));
 
 			logger.debug("------------------------------------------------");
 
@@ -185,22 +255,22 @@ public class MetricService {
 			setNodeStatus(node, zcpNode);
 			zcpNode.setCreationTime(new Date(node.getMetadata().getCreationTimestamp().getMillis()));
 			zcpNode.setAllocatableCpu(allocatableCpu);
-			zcpNode.setAllocatableCpuString(formatCpu(allocatableCpu.doubleValue()));
+			zcpNode.setAllocatableCpuString(NumberUtils.formatCpu(allocatableCpu.doubleValue()));
 			zcpNode.setAllocatableMemory(allocatableMem);
-			zcpNode.setAllocatableMemoryString(formatMemory(allocatableMem.doubleValue()));
+			zcpNode.setAllocatableMemoryString(NumberUtils.formatMemory(allocatableMem.doubleValue()));
 
 			zcpNode.setCpuLimits(BigDecimal.valueOf(totalCpuLimits));
-			zcpNode.setCpuLimitsString(formatCpu(totalCpuLimits));
+			zcpNode.setCpuLimitsString(NumberUtils.formatCpu(totalCpuLimits));
 			zcpNode.setCpuRequests(BigDecimal.valueOf(totalCpuRequests));
-			zcpNode.setCpuRequestsString(formatCpu(totalCpuRequests));
+			zcpNode.setCpuRequestsString(NumberUtils.formatCpu(totalCpuRequests));
 			zcpNode.setMemoryLimits(BigDecimal.valueOf(totalMemLimits));
-			zcpNode.setMemoryLimitsString(formatMemory(totalMemLimits));
+			zcpNode.setMemoryLimitsString(NumberUtils.formatMemory(totalMemLimits));
 			zcpNode.setMemoryRequests(BigDecimal.valueOf(totalMemRequests));
-			zcpNode.setMemoryRequestsString(formatMemory(totalMemRequests));
-			zcpNode.setCpuLimitsPercentage(percent(totalCpuLimits, allocatableCpu.doubleValue()));
-			zcpNode.setCpuRequestsPercentage(percent(totalCpuRequests, allocatableCpu.doubleValue()));
-			zcpNode.setMemoryLimitsPercentage(percent(totalMemLimits, allocatableMem.doubleValue()));
-			zcpNode.setMemoryRequestsPercentage(percent(totalMemRequests, allocatableMem.doubleValue()));
+			zcpNode.setMemoryRequestsString(NumberUtils.formatMemory(totalMemRequests));
+			zcpNode.setCpuLimitsPercentage(NumberUtils.percent(totalCpuLimits, allocatableCpu.doubleValue()));
+			zcpNode.setCpuRequestsPercentage(NumberUtils.percent(totalCpuRequests, allocatableCpu.doubleValue()));
+			zcpNode.setMemoryLimitsPercentage(NumberUtils.percent(totalMemLimits, allocatableMem.doubleValue()));
+			zcpNode.setMemoryRequestsPercentage(NumberUtils.percent(totalMemRequests, allocatableMem.doubleValue()));
 
 			zcpNodes.add(zcpNode);
 		}
@@ -297,52 +367,51 @@ public class MetricService {
 				logger.debug("namespace is {}", namespace.getMetadata().getName());
 				logger.debug("hard is {}", hard);
 				logger.debug("used is {}", used);
-				
-				String sHardRequestsCpu = hard.get("requests.cpu") == null ? "0" : hard.get("requests.cpu"); 
+
+				String sHardRequestsCpu = hard.get("requests.cpu") == null ? "0" : hard.get("requests.cpu");
 				String sUsedRequestsCpu = used.get("requests.cpu") == null ? "0" : used.get("requests.cpu");
 				String sHardLimitsCpu = hard.get("limits.cpu") == null ? "0" : hard.get("limits.cpu");
 				String sUsedLimitsCpu = used.get("limits.cpu") == null ? "0" : used.get("limits.cpu");
-				
-				String sHardRequestsMemory = hard.get("requests.memory") == null ? "0" : hard.get("requests.memory"); 
+
+				String sHardRequestsMemory = hard.get("requests.memory") == null ? "0" : hard.get("requests.memory");
 				String sUsedRequestsMemory = used.get("requests.memory") == null ? "0" : used.get("requests.memory");
 				String sHardLimitsMemory = hard.get("limits.memory") == null ? "0" : hard.get("limits.memory");
 				String sUsedLimitsMemory = used.get("limits.memory") == null ? "0" : used.get("limits.memory");
-				
 
 				BigDecimal hardRequestsCpu = Quantity.fromString(sHardRequestsCpu).getNumber();
 				BigDecimal usedRequestsCpu = Quantity.fromString(sUsedRequestsCpu).getNumber();
 				zcpNamespace.setHardCpuRequests(hardRequestsCpu);
 				zcpNamespace.setUsedCpuRequests(usedRequestsCpu);
-				zcpNamespace.setHardCpuRequestsString(formatCpu(hardRequestsCpu.doubleValue()));
-				zcpNamespace.setUsedCpuRequestsString(formatCpu(usedRequestsCpu.doubleValue()));
+				zcpNamespace.setHardCpuRequestsString(NumberUtils.formatCpu(hardRequestsCpu.doubleValue()));
+				zcpNamespace.setUsedCpuRequestsString(NumberUtils.formatCpu(usedRequestsCpu.doubleValue()));
 				zcpNamespace.setCpuRequestsPercentage(
-						percent(usedRequestsCpu.doubleValue(), hardRequestsCpu.doubleValue()));
+						NumberUtils.percent(usedRequestsCpu.doubleValue(), hardRequestsCpu.doubleValue()));
 
 				BigDecimal hardLimitsCpu = Quantity.fromString(sHardLimitsCpu).getNumber();
 				BigDecimal usedLimitsCpu = Quantity.fromString(sUsedLimitsCpu).getNumber();
 				zcpNamespace.setHardCpuLimits(hardLimitsCpu);
 				zcpNamespace.setUsedCpuLimits(usedLimitsCpu);
-				zcpNamespace.setHardCpuLimitsString(formatCpu(hardLimitsCpu.doubleValue()));
-				zcpNamespace.setUsedCpuLimitsString(formatCpu(usedLimitsCpu.doubleValue()));
-				zcpNamespace.setCpuLimitsPercentage(percent(usedLimitsCpu.doubleValue(), hardLimitsCpu.doubleValue()));
+				zcpNamespace.setHardCpuLimitsString(NumberUtils.formatCpu(hardLimitsCpu.doubleValue()));
+				zcpNamespace.setUsedCpuLimitsString(NumberUtils.formatCpu(usedLimitsCpu.doubleValue()));
+				zcpNamespace.setCpuLimitsPercentage(NumberUtils.percent(usedLimitsCpu.doubleValue(), hardLimitsCpu.doubleValue()));
 
 				BigDecimal hardRequestsMemory = Quantity.fromString(sHardRequestsMemory).getNumber();
 				BigDecimal usedRequestsMemory = Quantity.fromString(sUsedRequestsMemory).getNumber();
 				zcpNamespace.setHardMemoryRequests(hardRequestsMemory);
 				zcpNamespace.setUsedMemoryRequests(usedRequestsMemory);
-				zcpNamespace.setHardMemoryRequestsString(formatMemory(hardRequestsMemory.doubleValue()));
-				zcpNamespace.setUsedMemoryRequestsString(formatMemory(usedRequestsMemory.doubleValue()));
+				zcpNamespace.setHardMemoryRequestsString(NumberUtils.formatMemory(hardRequestsMemory.doubleValue()));
+				zcpNamespace.setUsedMemoryRequestsString(NumberUtils.formatMemory(usedRequestsMemory.doubleValue()));
 				zcpNamespace.setMemoryRequestsPercentage(
-						percent(usedRequestsMemory.doubleValue(), hardRequestsMemory.doubleValue()));
+						NumberUtils.percent(usedRequestsMemory.doubleValue(), hardRequestsMemory.doubleValue()));
 
 				BigDecimal hardLimitsMemory = Quantity.fromString(sHardLimitsMemory).getNumber();
 				BigDecimal usedLimitsMemory = Quantity.fromString(sUsedLimitsMemory).getNumber();
 				zcpNamespace.setHardMemoryLimits(hardLimitsMemory);
 				zcpNamespace.setUsedMemoryLimits(usedLimitsMemory);
-				zcpNamespace.setHardMemoryLimitsString(formatMemory(hardLimitsMemory.doubleValue()));
-				zcpNamespace.setUsedMemoryLimitsString(formatMemory(usedLimitsMemory.doubleValue()));
+				zcpNamespace.setHardMemoryLimitsString(NumberUtils.formatMemory(hardLimitsMemory.doubleValue()));
+				zcpNamespace.setUsedMemoryLimitsString(NumberUtils.formatMemory(usedLimitsMemory.doubleValue()));
 				zcpNamespace.setMemoryLimitsPercentage(
-						percent(usedLimitsMemory.doubleValue(), hardLimitsMemory.doubleValue()));
+						NumberUtils.percent(usedLimitsMemory.doubleValue(), hardLimitsMemory.doubleValue()));
 			}
 
 			if (!isClusterAdmin && isAdmin) {
@@ -435,65 +504,6 @@ public class MetricService {
 		return podList;
 	}
 
-	private int percent(double usage, double sum) {
-		if (usage == 0)
-			return 0;
-		if (sum == 0)
-			return 0;
-
-		return (int) ((usage / sum) * 100);
-	}
-
-	@SuppressWarnings("unused")
-	private int percent(int usage, int sum) {
-		if (usage == 0)
-			return 0;
-		if (sum == 0)
-			return 0;
-
-		return (int) ((usage / sum) * 100);
-	}
-
-	private String formatCpu(double value) {
-		if (value == 0)
-			return StringUtils.substringBefore(String.valueOf(value), ".");
-
-		if (value < 1) {
-			double formattedValue = value * 1000;
-			return StringUtils.substringBefore(String.valueOf(formattedValue), ".") + "m";
-		} else {
-			return StringUtils.substringBefore(String.valueOf(value), ".");
-		}
-	}
-
-	@SuppressWarnings("unused")
-	private String formatMemory(double value, MemoryDisplayFormat mdf) {
-		double formattedValue = 0l;
-		if (mdf == MemoryDisplayFormat.MI) {
-			formattedValue = value / 1024 / 1024;
-			return StringUtils.substringBefore(String.valueOf(formattedValue), ".") + "Mi";
-		} else if (mdf == MemoryDisplayFormat.GI) {
-			formattedValue = value / 1024 / 1024 / 1024;
-			int index = StringUtils.indexOf(String.valueOf(formattedValue), ".");
-			index += 2;
-			return StringUtils.substring(String.valueOf(formattedValue), index) + "Gi";
-		} else {
-			throw new IllegalArgumentException("Display formation is invalid");
-		}
-	}
-
-	private String formatMemory(double value) {
-		if (value == 0)
-			return StringUtils.substringBefore(String.valueOf(value), ".");
-
-		double formattedValue = value / 1024 / 1024;
-		if (formattedValue < 1024) {
-			return StringUtils.substringBefore(String.valueOf(formattedValue), ".") + "Mi";
-		} else {
-			formattedValue = formattedValue / 1024;
-			return StringUtils.substringBefore(String.valueOf(formattedValue), ".") + "Gi";
-		}
-	}
 
 	public DeploymentsStatusMetricsVO getDeploymentsStatusMetrics(String namespace) throws ZcpException {
 		V1beta2DeploymentList deploymentList = null;
@@ -537,7 +547,7 @@ public class MetricService {
 
 		DeploymentsStatusMetricsVO vo = new DeploymentsStatusMetricsVO();
 		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
-		vo.setTotalCount(deployments.size());
+		vo.setTotalCount(BigDecimal.valueOf(deployments.size()));
 
 		return vo;
 	}
@@ -609,7 +619,7 @@ public class MetricService {
 
 		NodesStatusMetricsVO vo = new NodesStatusMetricsVO();
 		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
-		vo.setTotalCount(nodes.size());
+		vo.setTotalCount(BigDecimal.valueOf(nodes.size()));
 
 		return vo;
 	}
@@ -659,14 +669,14 @@ public class MetricService {
 						statuesMetrics.put(status, psm);
 					}
 				} else {
-					logger.warn("This phase("+ phase +") does not exist in PodStatus. Please check it");
+					logger.warn("This phase(" + phase + ") does not exist in PodStatus. Please check it");
 				}
 			}
 		}
 
 		PodsStatusMetricsVO vo = new PodsStatusMetricsVO();
 		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
-		vo.setTotalCount(pods.size());
+		vo.setTotalCount(BigDecimal.valueOf(pods.size()));
 
 		return vo;
 	}
