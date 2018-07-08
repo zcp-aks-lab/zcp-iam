@@ -90,6 +90,46 @@ public class NamespaceService {
 
 	public NamespaceResourceDetailVO getNamespaceResource(String namespace, String userId) throws ZcpException {
 		// check user privillege
+		checkUserPrivilege(namespace, userId);
+
+		// get namespace resource
+		NamespaceResourceDetailVO namespaceDetail = new NamespaceResourceDetailVO();
+		namespaceDetail.setNamespace(namespace);
+
+		V1ResourceQuota v1ResourceQuota = null;
+		try {
+			v1ResourceQuota = kubeCoreManager.getResourceQuota(namespace,
+					ResourcesNameManager.getResouceQuotaName(namespace));
+		} catch (ApiException e) {
+			// we can ignore this case
+			log.debug("The resouece quota of " + namespace + " does not exist");
+		}
+
+		if (v1ResourceQuota != null) {
+			Map<String, String> hard = v1ResourceQuota.getStatus().getHard();
+			Map<String, String> used = v1ResourceQuota.getStatus().getUsed();
+			if (hard != null && !hard.isEmpty()) {
+				namespaceDetail.setHard(generateResourceQuota(hard));
+				namespaceDetail.setUsed(generateResourceQuota(used));
+			}
+		}
+
+		V1LimitRange v1LimitRange = null;
+		try {
+			v1LimitRange = kubeCoreManager.getLimitRange(namespace, ResourcesNameManager.getLimtRangeName(namespace));
+		} catch (ApiException e) {
+			// we can ignore this case
+			log.debug("The limit range of " + namespace + " does not exist");
+		}
+
+		if (v1LimitRange != null) {
+			namespaceDetail.setLimitRange(generateLimitRange(v1LimitRange));
+		}
+
+		return namespaceDetail;
+	}
+
+	private void checkUserPrivilege(String namespace, String userId) throws ZcpException {
 		UserRepresentation userRepresentation = null;
 		try {
 			userRepresentation = keyCloakManager.getUser(userId);
@@ -131,42 +171,6 @@ public class NamespaceService {
 						"The user(" + userId + ") does not have a permission for namespace(" + namespace + ")");
 			}
 		}
-
-		// get namespace resource
-		NamespaceResourceDetailVO namespaceDetail = new NamespaceResourceDetailVO();
-		namespaceDetail.setNamespace(namespace);
-
-		V1ResourceQuota v1ResourceQuota = null;
-		try {
-			v1ResourceQuota = kubeCoreManager.getResourceQuota(namespace,
-					ResourcesNameManager.getResouceQuotaName(namespace));
-		} catch (ApiException e) {
-			// we can ignore this case
-			log.debug("The resouece quota of " + namespace + " does not exist");
-		}
-
-		if (v1ResourceQuota != null) {
-			Map<String, String> hard = v1ResourceQuota.getStatus().getHard();
-			Map<String, String> used = v1ResourceQuota.getStatus().getUsed();
-			if (hard != null && !hard.isEmpty()) {
-				namespaceDetail.setHard(generateResourceQuota(hard));
-				namespaceDetail.setUsed(generateResourceQuota(used));
-			}
-		}
-
-		V1LimitRange v1LimitRange = null;
-		try {
-			v1LimitRange = kubeCoreManager.getLimitRange(namespace, ResourcesNameManager.getLimtRangeName(namespace));
-		} catch (ApiException e) {
-			// we can ignore this case
-			log.debug("The limit range of " + namespace + " does not exist");
-		}
-
-		if (v1LimitRange != null) {
-			namespaceDetail.setLimitRange(generateLimitRange(v1LimitRange));
-		}
-
-		return namespaceDetail;
 	}
 
 	public void saveNamespace(NamespaceResourceVO vo) throws ZcpException {
@@ -205,7 +209,10 @@ public class NamespaceService {
 		saveNamespaceLimitRange(vo.getLimitRange(), namespaceName);
 	}
 
-	public void deleteNamespace(String namespace) throws ZcpException {
+	public void deleteNamespace(String namespace, String userId) throws ZcpException {
+		// check user privillege
+		checkUserPrivilege(namespace, userId);
+
 		try {
 			kubeCoreManager.deleteNamespace(namespace);
 		} catch (ApiException e) {

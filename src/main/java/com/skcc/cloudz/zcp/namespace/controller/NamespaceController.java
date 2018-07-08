@@ -52,6 +52,21 @@ public class NamespaceController {
 		return response;
 	}
 
+	@RequestMapping(value = "/namespace", method = RequestMethod.POST)
+	public Response<Object> saveNamespace(@RequestBody NamespaceResourceVO vo) throws Exception {
+		Response<Object> response = new Response<>();
+		namespaceService.saveNamespace(vo);
+		return response;
+	}
+
+	@RequestMapping(value = "/namespace/{namespace}", method = RequestMethod.DELETE)
+	public Response<Object> deleteNamespace(@PathVariable("namespace") String namespace,
+			@RequestParam(required = true, value = "userId") String userId) throws Exception {
+		Response<Object> response = new Response<>();
+		namespaceService.deleteNamespace(namespace, userId);
+		return response;
+	}
+
 	@RequestMapping(value = "/namespace/{namespace}/users", method = RequestMethod.GET)
 	public Response<ZcpUserList> getUsersByNamespace(@PathVariable("namespace") String namespace) throws Exception {
 		Response<ZcpUserList> response = new Response<>();
@@ -95,13 +110,6 @@ public class NamespaceController {
 		return vo;
 	}
 
-	@RequestMapping(value = "/namespace", method = RequestMethod.POST)
-	public Response<Object> saveNamespace(@RequestBody NamespaceResourceVO vo) throws Exception {
-		Response<Object> response = new Response<>();
-		namespaceService.saveNamespace(vo);
-		return response;
-	}
-
 	@RequestMapping(value = "/namespace/{namespace}/roleBinding", method = RequestMethod.POST)
 	public Response<Object> createRoleBinding(@PathVariable("namespace") String namespace,
 			@RequestBody @Valid RoleBindingVO vo) throws Exception {
@@ -125,13 +133,6 @@ public class NamespaceController {
 			@RequestBody @Valid RoleBindingVO vo) throws Exception {
 		Response<Object> response = new Response<>();
 		namespaceService.deleteRoleBinding(namespace, vo);
-		return response;
-	}
-
-	@RequestMapping(value = "/namespace/{namespace}", method = RequestMethod.DELETE)
-	Response<Object> deleteNamespace(@PathVariable("namespace") String namespace) throws Exception {
-		Response<Object> response = new Response<>();
-		namespaceService.deleteNamespace(namespace);
 		return response;
 	}
 
