@@ -63,8 +63,10 @@ public class KubeRbacAuthzManager {
 		return api.createClusterRoleBinding(clusterrolebinding, pretty);
 	}
 
-	public V1Status deleteClusterRoleBinding(String clusterRoleBindingName, V1DeleteOptions deleteOptions)
+	public V1Status deleteClusterRoleBinding(String clusterRoleBindingName)
 			throws ApiException {
+		V1DeleteOptions deleteOptions = new V1DeleteOptions();
+		deleteOptions.setGracePeriodSeconds(0l);
 		return api.deleteClusterRoleBinding(clusterRoleBindingName, deleteOptions, pretty, null, null, null);
 	}
 

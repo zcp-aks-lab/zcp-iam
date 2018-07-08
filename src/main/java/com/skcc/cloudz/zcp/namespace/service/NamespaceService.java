@@ -7,10 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
-import org.joda.time.DateTime;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,24 +21,20 @@ import com.skcc.cloudz.zcp.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.common.model.CPUUnit;
 import com.skcc.cloudz.zcp.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.common.model.MemoryUnit;
-import com.skcc.cloudz.zcp.common.model.ZcpUserList;
 import com.skcc.cloudz.zcp.common.model.ZcpLimitRange;
 import com.skcc.cloudz.zcp.common.model.ZcpResourceQuota;
 import com.skcc.cloudz.zcp.common.model.ZcpUser;
+import com.skcc.cloudz.zcp.common.model.ZcpUserList;
 import com.skcc.cloudz.zcp.common.util.Util;
 import com.skcc.cloudz.zcp.manager.KeyCloakManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.manager.ResourcesLabelManager;
 import com.skcc.cloudz.zcp.manager.ResourcesNameManager;
-import com.skcc.cloudz.zcp.namespace.vo.InquiryNamespaceVO;
 import com.skcc.cloudz.zcp.namespace.vo.ItemList;
-import com.skcc.cloudz.zcp.namespace.vo.KubeDeleteOptionsVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceResourceDetailVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceResourceVO;
-import com.skcc.cloudz.zcp.namespace.vo.QuotaVO;
 import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
-import com.skcc.cloudz.zcp.namespace.vo.ServiceAccountVO;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.custom.Quantity;
@@ -54,7 +48,6 @@ import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1NamespaceSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ResourceQuota;
-import io.kubernetes.client.models.V1ResourceQuotaList;
 import io.kubernetes.client.models.V1ResourceQuotaSpec;
 import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1RoleBindingList;
@@ -78,20 +71,20 @@ public class NamespaceService {
 	@Value("${zcp.kube.namespace}")
 	private String systemNamespace;
 
-	public V1Namespace getNamespace(String namespace) throws ZcpException {
-		try {
-			return kubeCoreManager.getNamespace(namespace);
-		} catch (ApiException e) {
-			throw new ZcpException("N0005", e.getMessage());
-		}
-	}
-
-	public V1NamespaceList getNamespaceList() throws ZcpException {
+	public V1NamespaceList getNamespaces() throws ZcpException {
 		try {
 			return kubeCoreManager.getNamespaceList();
 		} catch (ApiException e) {
 			e.printStackTrace();
 			throw new ZcpException("N001", e.getMessage());
+		}
+	}
+
+	public V1Namespace getNamespace(String namespace) throws ZcpException {
+		try {
+			return kubeCoreManager.getNamespace(namespace);
+		} catch (ApiException e) {
+			throw new ZcpException("N0005", e.getMessage());
 		}
 	}
 
@@ -118,7 +111,7 @@ public class NamespaceService {
 		String userClusterRole = userClusterRoleBinding.getRoleRef().getName();
 		boolean isClusterAdmin = StringUtils.equals(userClusterRole, ClusterRole.CLUSTER_ADMIN.getRole()) ? true
 				: false;
-		
+
 		// check rolebinding of namespace
 		boolean isNamespaceAdmin = false;
 		if (!isClusterAdmin) {
@@ -126,18 +119,19 @@ public class NamespaceService {
 			try {
 				userNamespaceRoleBinding = kubeRbacAuthzManager.getRoleBindingByUserName(namespace, username);
 			} catch (ApiException e) {
-				throw new ZcpException("ZCP-0001", "The namespace(" + namespace + ") rolebinding of user(" + userId + ") does not exist");
+				throw new ZcpException("ZCP-0001",
+						"The namespace(" + namespace + ") rolebinding of user(" + userId + ") does not exist");
 			}
-			
+
 			String userNamespaceRole = userNamespaceRoleBinding.getRoleRef().getName();
 			isNamespaceAdmin = StringUtils.equals(userNamespaceRole, ClusterRole.ADMIN.getRole()) ? true : false;
 
 			if (!isClusterAdmin && !isNamespaceAdmin) {
 				throw new ZcpException("ZCP-0001",
-						"The user(" + userId + ") does not have a permission for namespace(" + namespace +")");
+						"The user(" + userId + ") does not have a permission for namespace(" + namespace + ")");
 			}
 		}
-		
+
 		// get namespace resource
 		NamespaceResourceDetailVO namespaceDetail = new NamespaceResourceDetailVO();
 		namespaceDetail.setNamespace(namespace);
@@ -173,6 +167,180 @@ public class NamespaceService {
 		}
 
 		return namespaceDetail;
+	}
+
+	public void saveNamespace(NamespaceResourceVO vo) throws ZcpException {
+
+		String namespaceName = vo.getNamespace();
+
+		V1Namespace currentV1Namespace = null;
+		try {
+			currentV1Namespace = kubeCoreManager.getNamespace(namespaceName);
+		} catch (ApiException e) {
+			// this case is create case
+			// we can ignore this case
+			log.debug("This case is a creating namespace case");
+		}
+
+		if (currentV1Namespace == null) {
+			V1Namespace v1Namespace = new V1Namespace();
+			v1Namespace.setApiVersion("v1");
+			v1Namespace.setKind("Namespace");
+			v1Namespace.setSpec(new V1NamespaceSpec().addFinalizersItem("kubernetes"));
+			V1ObjectMeta namespaceMetadata = new V1ObjectMeta();
+			namespaceMetadata.setName(vo.getNamespace());
+			v1Namespace.setMetadata(namespaceMetadata);
+			v1Namespace.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
+
+			try {
+				kubeCoreManager.createNamespace(namespaceName, v1Namespace);
+			} catch (ApiException e) {
+				e.printStackTrace();
+				throw new ZcpException("N002", e.getMessage());
+			}
+		}
+
+		saveNamespaceResoruceQuota(vo.getResourceQuota(), namespaceName);
+
+		saveNamespaceLimitRange(vo.getLimitRange(), namespaceName);
+	}
+
+	public void deleteNamespace(String namespace) throws ZcpException {
+		try {
+			kubeCoreManager.deleteNamespace(namespace);
+		} catch (ApiException e) {
+			throw new ZcpException("N0009", e.getMessage());
+		}
+	}
+
+	public ZcpUserList getUsersByNamespace(String namespace) throws ZcpException {
+		V1RoleBindingList rolebindingList = null;
+		try {
+			rolebindingList = kubeRbacAuthzManager.getRoleBindingListByNamespace(namespace);
+		} catch (ApiException e) {
+			throw new ZcpException("N0005", e.getMessage());
+		}
+		List<V1RoleBinding> rolebindings = rolebindingList.getItems();
+		List<UserRepresentation> keycloakUsers = keyCloakManager.getUserList();
+		List<ZcpUser> zcpUsers = new ArrayList<ZcpUser>();
+
+		for (V1RoleBinding rolebinding : rolebindings) {
+			String rolebindingName = rolebinding.getMetadata().getName();
+			for (UserRepresentation keycloakUser : keycloakUsers) {
+				if (rolebindingName.equals(ResourcesNameManager.getRoleBindingName(keycloakUser.getUsername()))) {
+					ZcpUser user = new ZcpUser();
+					user.setId(keycloakUser.getId());
+					user.setUsername(keycloakUser.getUsername());
+					user.setEmail(keycloakUser.getEmail());
+					user.setLastName(keycloakUser.getLastName());
+					user.setFirstName(keycloakUser.getFirstName());
+					user.setCreatedDate(new Date(keycloakUser.getCreatedTimestamp()));
+					user.setEnabled(keycloakUser.isEnabled());
+					user.setNamespacedRole(ClusterRole.getClusterRole(rolebinding.getRoleRef().getName()));
+
+					zcpUsers.add(user);
+				}
+			}
+		}
+
+		ZcpUserList userlist = new ZcpUserList();
+		userlist.setItems(zcpUsers);
+
+		return userlist;
+
+	}
+
+	public ItemList<String> getAllLabels() throws ZcpException {
+		List<String> allLabels = new ArrayList<>();
+		for (V1Namespace namespace : getNamespaces().getItems()) {
+			List<String> labels = Util.MapToList(namespace.getMetadata().getLabels());
+			allLabels.addAll(labels);
+		}
+
+		List<String> items = allLabels.stream().distinct().collect(Collectors.toList());
+		ItemList<String> item = new ItemList<>();
+		item.setItems(items);
+		return item;
+	}
+
+	public ItemList<String> getLabelsByNamespace(String namespaceName) throws ZcpException {
+		V1Namespace namespace = getNamespace(namespaceName);
+		Map<String, String> labels = namespace.getMetadata().getLabels();
+		if (labels != null && !labels.isEmpty()) {
+			ItemList<String> labelList = new ItemList<>();
+			labelList.setItems(Util.MapToList(namespace.getMetadata().getLabels()));
+			return labelList;
+		}
+
+		return null;
+	}
+
+	public void createNamespaceLabel(String namespaceName, String newLabel) throws ZcpException {
+		V1Namespace namespace = getNamespace(namespaceName);
+		Map<String, String> labels = namespace.getMetadata().getLabels();
+		namespace.getMetadata().setLabels(addLabel(labels, newLabel));
+
+		try {
+			kubeCoreManager.replaceNamespace(namespaceName, namespace);
+		} catch (ApiException e) {
+			throw new ZcpException("N0009", e.getMessage());
+		}
+
+	}
+
+	public void deleteNamespaceLabel(String namespaceName, String label) throws ZcpException {
+		V1Namespace namespace = getNamespace(namespaceName);
+		Map<String, String> labels = namespace.getMetadata().getLabels();
+		namespace.getMetadata().setLabels(removeLabel(labels, label));
+
+		try {
+			kubeCoreManager.replaceNamespace(namespaceName, namespace);
+		} catch (ApiException e) {
+			throw new ZcpException("N0009", e.getMessage());
+		}
+
+	}
+
+	public void deleteClusterRoleBinding(String clusterRoleBindingName) throws IOException, ApiException {
+		kubeRbacAuthzManager.deleteClusterRoleBinding(clusterRoleBindingName);
+	}
+
+	public void createRoleBinding(String namespace, RoleBindingVO vo) throws ZcpException {
+		V1RoleBinding roleBinding = makeRoleBinding(namespace, vo);
+
+		try {
+			roleBinding = kubeRbacAuthzManager.createRoleBinding(namespace, roleBinding);
+		} catch (ApiException e) {
+			throw new ZcpException("N0002", e.getMessage());
+		}
+	}
+
+	public void editRoleBinding(String namespace, RoleBindingVO vo) throws ZcpException {
+		V1RoleBinding roleBinding = makeRoleBinding(namespace, vo);
+
+		// 1.delete RoleBinding
+		deleteRoleBinding(namespace, vo);
+
+		// 2.create RoleBinding
+		try {
+			kubeRbacAuthzManager.createRoleBinding(namespace, roleBinding);
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("N0003", e.getMessage());
+		}
+	}
+
+	public void deleteRoleBinding(String namespace, RoleBindingVO data) throws ZcpException {
+		V1DeleteOptions deleteOptions = new V1DeleteOptions();
+		deleteOptions.setGracePeriodSeconds(0L);
+		try {
+			kubeRbacAuthzManager.deleteRoleBinding(namespace,
+					ResourcesNameManager.getRoleBindingName(data.getUsername()), deleteOptions);
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("N0002", e.getMessage());
+		}
+
 	}
 
 	private ZcpResourceQuota generateResourceQuota(Map<String, String> data) {
@@ -292,10 +460,10 @@ public class NamespaceService {
 			return null;
 		List<V1LimitRangeItem> limitRangeItems = v1LimitRange.getSpec().getLimits();
 		V1LimitRangeItem item = null;
-		
+
 		ZcpLimitRange limitRange = new ZcpLimitRange();
-		
-		if(limitRangeItems != null) {
+
+		if (limitRangeItems != null) {
 			for (V1LimitRangeItem v1LimitRangeItem : limitRangeItems) {
 				if (v1LimitRangeItem.getType().equals("Container")) {
 					item = v1LimitRangeItem;
@@ -305,7 +473,7 @@ public class NamespaceService {
 
 			Map<String, Quantity> defaultLimits = item.getDefault();
 			Map<String, Quantity> defaultRequests = item.getDefaultRequest();
-	
+
 			limitRange.setCpuLimits(getResourceValue(defaultLimits.get("cpu")));
 			limitRange.setCpuLimitsUnit(getCPUUnitFormat(defaultLimits.get("cpu")));
 			limitRange.setMemoryLimits(getResourceValue(defaultLimits.get("memory")));
@@ -390,240 +558,6 @@ public class NamespaceService {
 				return MemoryUnit.Gi;
 			}
 		}
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	private List<QuotaVO> getResourceQuotaList() throws ZcpException {
-		V1ResourceQuotaList quota = null;
-		try {
-			quota = kubeCoreManager.getAllResourceQuotaList();
-		} catch (ApiException e) {
-			throw new ZcpException("N0004", e.getMessage());
-		}
-
-		List<QuotaVO> listQuota = new ArrayList<>();
-		for (V1ResourceQuota q : quota.getItems()) {
-			QuotaVO vo = new QuotaVO();
-			Object[] obj = getInfoOfNamespace(q.getMetadata().getNamespace());
-			vo.setName(q.getMetadata().getName());
-			vo.setNamespace(q.getMetadata().getNamespace());
-			vo.setUserCount(getNamespaceUserCount(q.getMetadata().getNamespace()));
-			// vo.setSpec(q.getSpec());
-			vo.setActive((String) obj[0]);
-			vo.setLabels((List<String>) obj[1]);
-			vo.setStatus(q.getStatus());
-			if (q.getStatus().getUsed() != null) {
-				vo.setUsedCpuRate(getUsedCpuRate(
-						q.getStatus().getUsed().get("requests.cpu") == null ? "0"
-								: q.getStatus().getUsed().get("requests.cpu"),
-						q.getStatus().getHard().get("limits.cpu") == null ? "0"
-								: q.getStatus().getHard().get("limits.cpu")));
-
-				vo.setUsedMemoryRate(getUsedMemoryRate(
-						q.getStatus().getUsed().get("requests.memory") == null ? "0"
-								: q.getStatus().getUsed().get("requests.memory"),
-						q.getStatus().getHard().get("limits.memory") == null ? "0"
-								: q.getStatus().getHard().get("limits.memory")));
-			}
-			vo.setCreationTimestamp(new DateTime(q.getMetadata().getCreationTimestamp()));
-			listQuota.add(vo);
-		}
-		return listQuota;
-	}
-
-	@Deprecated
-	public ItemList<QuotaVO> getResourceQuotaList(InquiryNamespaceVO vo) throws ZcpException {
-		// sortOrder = true asc;
-		// sortOrder = false desc;
-		List<QuotaVO> listQuotas = getResourceQuotaList();
-		ItemList<QuotaVO> list = new ItemList<>();
-
-		Stream<QuotaVO> stream = listQuotas.stream();
-		if (!StringUtils.isEmpty(vo.getSortItem()))
-			switch (vo.getSortItem()) {
-			case "namespace":
-				if (vo.isSortOrder())
-					stream = stream.sorted((a, b) -> a.getNamespace().compareTo(b.getNamespace()));// asc
-				else
-					stream = stream.sorted((a, b) -> b.getNamespace().compareTo(a.getNamespace()));
-				break;
-			case "cpu":
-				if (vo.isSortOrder())
-					stream = stream.sorted((a, b) -> Util.compare(a.getUsedCpuRate(), b.getUsedCpuRate()));
-				else
-					stream = stream.sorted((a, b) -> Util.compare(b.getUsedCpuRate(), a.getUsedCpuRate()));
-				break;
-			case "memory":
-				if (vo.isSortOrder())
-					stream = stream.sorted((a, b) -> Util.compare(a.getUsedMemoryRate(), b.getUsedMemoryRate()));
-				else
-					stream = stream.sorted((a, b) -> Util.compare(b.getUsedMemoryRate(), a.getUsedMemoryRate()));
-				break;
-			case "user":
-				if (vo.isSortOrder())
-					stream = stream.sorted((a, b) -> Util.compare(a.getUserCount(), b.getUserCount()));
-				else
-					stream = stream.sorted((a, b) -> Util.compare(b.getUserCount(), a.getUserCount()));
-				break;
-			case "status":
-				if (vo.isSortOrder())
-					stream = stream.sorted((a, b) -> a.getActive().compareTo(b.getActive()));
-				else
-					stream = stream.sorted((a, b) -> b.getActive().compareTo(a.getActive()));
-				break;
-			case "createTime":
-				if (vo.isSortOrder())
-					stream = stream.sorted((a, b) -> a.getCreationTimestamp().compareTo(b.getCreationTimestamp()));
-				else
-					stream = stream.sorted((a, b) -> b.getCreationTimestamp().compareTo(a.getCreationTimestamp()));
-				break;
-			}
-		if (!StringUtils.isEmpty(vo.getNamespace())) {
-			stream = stream.filter(namespace -> namespace.getNamespace().indexOf(vo.getNamespace()) > -1);
-		}
-
-		if (!StringUtils.isEmpty(vo.getLabel())) {
-			stream = stream.filter((namespace) -> {
-				Stream<String> s = namespace.getLabels().stream().filter(label -> label.indexOf(vo.getLabel()) > -1);
-				return s.count() > 0;
-			});
-		}
-
-		if (stream != null)
-			listQuotas = stream.collect(Collectors.toList());
-
-		list.setItems(listQuotas);
-		return list;
-	}
-
-	@Deprecated
-	public Object[] getInfoOfNamespace(String namespaceName) throws ZcpException {
-		V1Namespace namespace = getNamespace(namespaceName);
-		String active = namespace.getStatus().getPhase().equals("Active") ? "active" : "inactive";
-		List<String> labels = Util.MapToList(namespace.getMetadata().getLabels());
-		Object[] obj = { active, labels };
-
-		return obj;
-	}
-
-	public ItemList<String> getAllLabelList() throws ZcpException {
-		List<String> listLabel = new ArrayList<>();
-		for (V1Namespace namespace : this.getNamespaceList().getItems()) {
-			List<String> labels = Util.MapToList(namespace.getMetadata().getLabels());
-			listLabel.addAll(labels);
-		}
-
-		List<String> items = listLabel.stream().distinct().collect(Collectors.toList());
-		ItemList<String> item = new ItemList<>();
-		item.setItems(items);
-		return item;
-	}
-
-	public ItemList<String> getLabelsByNamespace(String namespaceName) throws ZcpException {
-		V1Namespace namespace = getNamespace(namespaceName);
-		Map<String, String> labels = namespace.getMetadata().getLabels();
-		if (labels != null && !labels.isEmpty()) {
-			ItemList<String> labelList = new ItemList<>();
-			labelList.setItems(Util.MapToList(namespace.getMetadata().getLabels()));
-			return labelList;
-		}
-
-		return null;
-	}
-
-	@Deprecated
-	private double getUsedMemoryRate(String used, String hard) {
-		int iUsed = 0;
-		int iHard = 0;
-		if (used != null)
-			if (used.indexOf("Gi") > -1) {
-				iUsed = Integer.parseInt(used.replace("Gi", ""));
-				iUsed *= 1000;
-			} else if (used.indexOf("Mi") > -1) {
-				iUsed = Integer.parseInt(used.replace("Mi", ""));
-			} else
-				iUsed = Integer.parseInt(used);
-
-		if (hard != null)
-			if (hard.indexOf("Gi") > -1) {
-				iHard = Integer.parseInt(hard.replace("Gi", ""));
-				iHard *= 1000;
-			} else if (hard.indexOf("Mi") > -1) {
-				iHard = Integer.parseInt(hard.replace("Mi", ""));
-			} else {
-				iHard = Integer.parseInt(hard);
-			}
-
-		return iHard == 0 ? 0 : Math.round((double) iUsed / (double) iHard * 100);
-	}
-
-	@Deprecated
-	private double getUsedCpuRate(String used, String hard) {
-		int iUsed = 0;
-		int iHard = 0;
-		if (used != null)
-			if (used.indexOf("m") > -1) {
-				iUsed = Integer.parseInt(used.replace("m", ""));
-			} else {
-				iUsed = Integer.parseInt(used.replace("m", ""));
-				iUsed *= 1000;
-			}
-		if (hard != null)
-			if (hard.indexOf("m") > -1) {
-				iHard = Integer.parseInt(hard.replace("m", ""));
-			} else {
-				iHard = Integer.parseInt(hard.replace("m", ""));
-				iHard *= 1000;
-			}
-		return iHard == 0 ? 0 : Math.round((double) iUsed / (double) iHard * 100.0);
-	}
-
-	@Deprecated
-	private int getNamespaceUserCount(String namespaceName) throws ZcpException {
-		V1RoleBindingList list = null;
-		try {
-			list = kubeRbacAuthzManager.getRoleBindingListByNamespace(namespaceName);
-		} catch (ApiException e) {
-			throw new ZcpException("N0005", e.getMessage());
-		}
-		return list.getItems().size();
-	}
-
-	public void saveNamespace(NamespaceResourceVO vo) throws ZcpException {
-
-		String namespaceName = vo.getNamespace();
-
-		V1Namespace currentV1Namespace = null;
-		try {
-			currentV1Namespace = kubeCoreManager.getNamespace(namespaceName);
-		} catch (ApiException e) {
-			// this case is create case
-			// we can ignore this case
-			log.debug("This case is a creating namespace case");
-		}
-
-		if (currentV1Namespace == null) {
-			V1Namespace v1Namespace = new V1Namespace();
-			v1Namespace.setApiVersion("v1");
-			v1Namespace.setKind("Namespace");
-			v1Namespace.setSpec(new V1NamespaceSpec().addFinalizersItem("kubernetes"));
-			V1ObjectMeta namespaceMetadata = new V1ObjectMeta();
-			namespaceMetadata.setName(vo.getNamespace());
-			v1Namespace.setMetadata(namespaceMetadata);
-			v1Namespace.getMetadata().setLabels(ResourcesLabelManager.getSystemLabels());
-
-			try {
-				kubeCoreManager.createNamespace(namespaceName, v1Namespace);
-			} catch (ApiException e) {
-				e.printStackTrace();
-				throw new ZcpException("N002", e.getMessage());
-			}
-		}
-
-		saveNamespaceResoruceQuota(vo.getResourceQuota(), namespaceName);
-
-		saveNamespaceLimitRange(vo.getLimitRange(), namespaceName);
 	}
 
 	private void saveNamespaceLimitRange(ZcpLimitRange limitRange, String namespaceName) throws ZcpException {
@@ -799,48 +733,6 @@ public class NamespaceService {
 		return v1ResourceQuota;
 	}
 
-	public void deleteClusterRoleBinding(KubeDeleteOptionsVO data) throws IOException, ApiException {
-		kubeRbacAuthzManager.deleteClusterRoleBinding(data.getName(), data);
-	}
-
-	public void createRoleBinding(String namespace, RoleBindingVO vo) throws ZcpException {
-		V1RoleBinding roleBinding = makeRoleBinding(namespace, vo);
-
-		try {
-			roleBinding = kubeRbacAuthzManager.createRoleBinding(namespace, roleBinding);
-		} catch (ApiException e) {
-			throw new ZcpException("N0002", e.getMessage());
-		}
-	}
-
-	public void editRoleBinding(String namespace, RoleBindingVO vo) throws ZcpException {
-		V1RoleBinding roleBinding = makeRoleBinding(namespace, vo);
-
-		// 1.delete RoleBinding
-		deleteRoleBinding(namespace, vo);
-
-		// 2.create RoleBinding
-		try {
-			kubeRbacAuthzManager.createRoleBinding(namespace, roleBinding);
-		} catch (ApiException e) {
-			e.printStackTrace();
-			throw new ZcpException("N0003", e.getMessage());
-		}
-	}
-
-	public void deleteRoleBinding(String namespace, RoleBindingVO data) throws ZcpException {
-		V1DeleteOptions deleteOptions = new V1DeleteOptions();
-		deleteOptions.setGracePeriodSeconds(0L);
-		try {
-			kubeRbacAuthzManager.deleteRoleBinding(namespace,
-					ResourcesNameManager.getRoleBindingName(data.getUsername()), deleteOptions);
-		} catch (ApiException e) {
-			e.printStackTrace();
-			throw new ZcpException("N0002", e.getMessage());
-		}
-
-	}
-
 	private V1RoleBinding makeRoleBinding(String namespace, RoleBindingVO vo) {
 		String username = vo.getUsername();
 		String serviceAccountName = ResourcesNameManager.getServiceAccountName(username);
@@ -874,90 +766,6 @@ public class NamespaceService {
 		return roleBinding;
 	}
 
-	public void deleteNamespace(String namespace) throws IOException, ApiException {
-		try {
-			kubeCoreManager.deleteNamespace(namespace, new V1DeleteOptions());
-		} catch (ApiException e) {
-			throw e;
-		}
-	}
-
-	public void createAndEditServiceAccount(String name, String namespace, ServiceAccountVO vo) throws ApiException {
-		try {
-			kubeCoreManager.createServiceAccount(vo.getNamespace(), vo);
-		} catch (ApiException e) {
-			if (e.getMessage().equals("Conflict")) {
-				kubeCoreManager.editServiceAccount(name, vo.getNamespace(), vo);
-			} else {
-				throw e;
-			}
-		}
-	}
-
-	public void createAndEditClusterRoleBinding(String username, V1ClusterRoleBinding clusterRoleBinding)
-			throws ApiException {
-		try {
-			kubeRbacAuthzManager.createClusterRoleBinding(clusterRoleBinding);
-		} catch (ApiException e) {
-			if (e.getMessage().equals("Conflict")) {
-				kubeRbacAuthzManager.editClusterRoleBinding(clusterRoleBinding.getMetadata().getName(),
-						clusterRoleBinding);
-			} else {
-				throw e;
-			}
-		}
-	}
-
-	public ZcpUserList getUserListByNamespace(String namespace) throws ZcpException {
-		V1RoleBindingList rolebindingList = null;
-		try {
-			rolebindingList = kubeRbacAuthzManager.getRoleBindingListByNamespace(namespace);
-		} catch (ApiException e) {
-			throw new ZcpException("N0005", e.getMessage());
-		}
-		List<V1RoleBinding> rolebindings = rolebindingList.getItems();
-		List<UserRepresentation> keycloakUsers = keyCloakManager.getUserList();
-		List<ZcpUser> zcpUsers = new ArrayList<ZcpUser>();
-
-		for (V1RoleBinding rolebinding : rolebindings) {
-			String rolebindingName = rolebinding.getMetadata().getName();
-			for (UserRepresentation keycloakUser : keycloakUsers) {
-				if (rolebindingName.equals(ResourcesNameManager.getRoleBindingName(keycloakUser.getUsername()))) {
-					ZcpUser user = new ZcpUser();
-					user.setId(keycloakUser.getId());
-					user.setUsername(keycloakUser.getUsername());
-					user.setEmail(keycloakUser.getEmail());
-					user.setLastName(keycloakUser.getLastName());
-					user.setFirstName(keycloakUser.getFirstName());
-					user.setCreatedDate(new Date(keycloakUser.getCreatedTimestamp()));
-					user.setEnabled(keycloakUser.isEnabled());
-					user.setNamespacedRole(ClusterRole.getClusterRole(rolebinding.getRoleRef().getName()));
-
-					zcpUsers.add(user);
-				}
-			}
-		}
-
-		ZcpUserList userlist = new ZcpUserList();
-		userlist.setItems(zcpUsers);
-
-		return userlist;
-
-	}
-
-	public void deleteNamespaceLabel(String namespaceName, String label) throws ZcpException {
-		V1Namespace namespace = getNamespace(namespaceName);
-		Map<String, String> labels = namespace.getMetadata().getLabels();
-		namespace.getMetadata().setLabels(removeLabel(labels, label));
-
-		try {
-			kubeCoreManager.replaceNamespace(namespaceName, namespace);
-		} catch (ApiException e) {
-			throw new ZcpException("N0009", e.getMessage());
-		}
-
-	}
-
 	private Map<String, String> removeLabel(Map<String, String> labels, String label) {
 		if (labels == null || labels.isEmpty()) {
 			return labels;
@@ -981,19 +789,6 @@ public class NamespaceService {
 		}
 
 		return labels;
-	}
-
-	public void createNamespaceLabel(String namespaceName, String newLabel) throws ZcpException {
-		V1Namespace namespace = getNamespace(namespaceName);
-		Map<String, String> labels = namespace.getMetadata().getLabels();
-		namespace.getMetadata().setLabels(addLabel(labels, newLabel));
-
-		try {
-			kubeCoreManager.replaceNamespace(namespaceName, namespace);
-		} catch (ApiException e) {
-			throw new ZcpException("N0009", e.getMessage());
-		}
-
 	}
 
 	private Map<String, String> addLabel(Map<String, String> labels, String newLabel) throws ZcpException {

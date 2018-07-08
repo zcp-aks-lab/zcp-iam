@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,12 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.skcc.cloudz.zcp.common.model.ZcpUserList;
 import com.skcc.cloudz.zcp.common.vo.Response;
 import com.skcc.cloudz.zcp.namespace.service.NamespaceService;
-import com.skcc.cloudz.zcp.namespace.vo.InquiryNamespaceVO;
 import com.skcc.cloudz.zcp.namespace.vo.ItemList;
 import com.skcc.cloudz.zcp.namespace.vo.LabelVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceResourceDetailVO;
 import com.skcc.cloudz.zcp.namespace.vo.NamespaceResourceVO;
-import com.skcc.cloudz.zcp.namespace.vo.QuotaVO;
 import com.skcc.cloudz.zcp.namespace.vo.RoleBindingVO;
 
 import io.kubernetes.client.models.V1Namespace;
@@ -42,7 +39,7 @@ public class NamespaceController {
 	@RequestMapping(value = "/namespaces", method = RequestMethod.GET)
 	public Response<V1NamespaceList> getNamespaces() throws Exception {
 		Response<V1NamespaceList> response = new Response<>();
-		response.setData(namespaceService.getNamespaceList());
+		response.setData(namespaceService.getNamespaces());
 
 		return response;
 	}
@@ -56,9 +53,9 @@ public class NamespaceController {
 	}
 
 	@RequestMapping(value = "/namespace/{namespace}/users", method = RequestMethod.GET)
-	public Response<ZcpUserList> getUserListByNamespace(@PathVariable("namespace") String namespace) throws Exception {
+	public Response<ZcpUserList> getUsersByNamespace(@PathVariable("namespace") String namespace) throws Exception {
 		Response<ZcpUserList> response = new Response<>();
-		response.setData(namespaceService.getUserListByNamespace(namespace));
+		response.setData(namespaceService.getUsersByNamespace(namespace));
 		return response;
 	}
 
@@ -67,14 +64,6 @@ public class NamespaceController {
 			@RequestParam(required = true, value = "userId") String userId) throws Exception {
 		Response<NamespaceResourceDetailVO> response = new Response<>();
 		response.setData(namespaceService.getNamespaceResource(namespace, userId));
-		return response;
-	}
-
-	@Deprecated
-	@RequestMapping(value = "/resourceQuotas", method = RequestMethod.GET)
-	Response<ItemList<QuotaVO>> getResourceQuotas(@ModelAttribute InquiryNamespaceVO inquiry) throws Exception {
-		Response<ItemList<QuotaVO>> response = new Response<>();
-		response.setData(namespaceService.getResourceQuotaList(inquiry));
 		return response;
 	}
 
@@ -95,7 +84,7 @@ public class NamespaceController {
 	@RequestMapping(value = "/namespace/labels", method = RequestMethod.GET)
 	public Response<ItemList<String>> getAllLabels() throws Exception {
 		Response<ItemList<String>> response = new Response<>();
-		response.setData(namespaceService.getAllLabelList());
+		response.setData(namespaceService.getAllLabels());
 		return response;
 	}
 
@@ -105,13 +94,6 @@ public class NamespaceController {
 		vo.setData(namespaceService.getLabelsByNamespace(namespace));
 		return vo;
 	}
-
-	// @RequestMapping(value = "/resource", method = RequestMethod.GET)
-	// Response<NamespaceVO> getAllOfNamespaceResource() throws Exception {
-	// Response<NamespaceVO> response = new Response<>();
-	// response.setData(namespaceService.getNamespaceResource(""));
-	// return response;
-	// }
 
 	@RequestMapping(value = "/namespace", method = RequestMethod.POST)
 	public Response<Object> saveNamespace(@RequestBody NamespaceResourceVO vo) throws Exception {

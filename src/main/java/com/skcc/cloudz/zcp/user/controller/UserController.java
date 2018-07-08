@@ -40,9 +40,9 @@ public class UserController {
 	private UserService userService;
 
 	@RequestMapping(value = "/users", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<ZcpUserList> getUserList(@RequestParam (required=false, value="keyword") String keyword) throws Exception {
+	public Response<ZcpUserList> getUsers(@RequestParam (required=false, value="keyword") String keyword) throws Exception {
 		Response<ZcpUserList> response = new Response<>();
-		response.setData(userService.getUserList(keyword));
+		response.setData(userService.getUsers(keyword));
 		return response;
 	}
 
@@ -86,7 +86,7 @@ public class UserController {
 	@NullProperty(field = { "items.metadata.creationTimestamp", "items.rules" })
 	public Response<V1ClusterRoleList> getClusterRoleList() throws Exception {
 		Response<V1ClusterRoleList> response = new Response<>();
-		response.setData(userService.clusterRoleList());
+		response.setData(userService.getClusterRoles());
 		return response;
 	}
 

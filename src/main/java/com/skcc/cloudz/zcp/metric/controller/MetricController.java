@@ -19,6 +19,7 @@ import com.skcc.cloudz.zcp.metric.vo.ClusterStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.DeploymentsStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.NodesStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.PodsStatusMetricsVO;
+import com.skcc.cloudz.zcp.metric.vo.UsersStatusMetricsVO;
 
 @Configuration
 @RestController
@@ -32,18 +33,18 @@ public class MetricController {
 	private MetricService metricService;
 
 	@RequestMapping(value = "/metrics/namespaces", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<ZcpNamespaceList> getNamespaceList(@RequestParam(required = true, value = "userId") String userId)
+	public Response<ZcpNamespaceList> getNamespaces(@RequestParam(required = true, value = "userId") String userId)
 			throws Exception {
 		Response<ZcpNamespaceList> response = new Response<>();
-		response.setData(metricService.getNamespaceList(userId));
+		response.setData(metricService.getNamespaces(userId));
 
 		return response;
 	}
 
 	@RequestMapping(value = "/metrics/nodes", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<ZcpNodeList> getNodeList() throws Exception {
+	public Response<ZcpNodeList> getNodes() throws Exception {
 		Response<ZcpNodeList> response = new Response<>();
-		response.setData(metricService.getNodeList());
+		response.setData(metricService.getNodes());
 
 		return response;
 	}
@@ -68,6 +69,14 @@ public class MetricController {
 	public Response<NodesStatusMetricsVO> getNodesStatus() throws Exception {
 		Response<NodesStatusMetricsVO> response = new Response<>();
 		response.setData(metricService.getNodesStatusMetrics());
+
+		return response;
+	}
+
+	@RequestMapping(value = "/metrics/users/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public Response<UsersStatusMetricsVO> getUserStatus(@RequestParam(required = false, value = "namespace") String namespace) throws Exception {
+		Response<UsersStatusMetricsVO> response = new Response<>();
+		response.setData(metricService.getUsersStatusMetrics(namespace));
 
 		return response;
 	}

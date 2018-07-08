@@ -25,6 +25,7 @@ import com.skcc.cloudz.zcp.common.model.NodeStatus;
 import com.skcc.cloudz.zcp.common.model.NodeStatusMetric;
 import com.skcc.cloudz.zcp.common.model.PodStatus;
 import com.skcc.cloudz.zcp.common.model.PodStatusMetric;
+import com.skcc.cloudz.zcp.common.model.UserStatusMetric;
 import com.skcc.cloudz.zcp.common.model.V1alpha1NodeMetric;
 import com.skcc.cloudz.zcp.common.model.V1alpha1NodeMetricList;
 import com.skcc.cloudz.zcp.common.model.ZcpNamespace;
@@ -32,16 +33,19 @@ import com.skcc.cloudz.zcp.common.model.ZcpNamespace.NamespaceStatus;
 import com.skcc.cloudz.zcp.common.model.ZcpNamespaceList;
 import com.skcc.cloudz.zcp.common.model.ZcpNode;
 import com.skcc.cloudz.zcp.common.model.ZcpNodeList;
+import com.skcc.cloudz.zcp.common.model.ZcpUser;
 import com.skcc.cloudz.zcp.common.util.NumberUtils;
 import com.skcc.cloudz.zcp.manager.KeyCloakManager;
 import com.skcc.cloudz.zcp.manager.KubeAppsManager;
 import com.skcc.cloudz.zcp.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.manager.KubeMetricManager;
 import com.skcc.cloudz.zcp.manager.KubeRbacAuthzManager;
+import com.skcc.cloudz.zcp.manager.ResourcesLabelManager;
 import com.skcc.cloudz.zcp.metric.vo.ClusterStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.DeploymentsStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.NodesStatusMetricsVO;
 import com.skcc.cloudz.zcp.metric.vo.PodsStatusMetricsVO;
+import com.skcc.cloudz.zcp.metric.vo.UsersStatusMetricsVO;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.custom.Quantity;
@@ -58,6 +62,7 @@ import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1ResourceQuotaList;
 import io.kubernetes.client.models.V1ResourceQuotaStatus;
 import io.kubernetes.client.models.V1RoleBinding;
+import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1beta2Deployment;
 import io.kubernetes.client.models.V1beta2DeploymentCondition;
 import io.kubernetes.client.models.V1beta2DeploymentList;
@@ -87,6 +92,260 @@ public class MetricService {
 
 	@Value("${kube.server.apiserver.endpoint}")
 	private String kubeApiServerEndpoint;
+
+	public ZcpNodeList getNodes() throws ZcpException {
+		V1NodeList nodeList = null;
+	
+		try {
+			nodeList = kubeCoreManager.getNodeList();
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-009", e.getMessage());
+		}
+	
+		List<V1Node> nodes = nodeList.getItems();
+		List<ZcpNode> zcpNodes = new ArrayList<>();
+		for (V1Node node : nodes) {
+			String nodeName = node.getMetadata().getName();
+			Map<String, String> labels = node.getMetadata().getLabels();
+			Map<String, Quantity> allocatable = node.getStatus().getAllocatable();
+			BigDecimal allocatableCpu = allocatable.get("cpu").getNumber();
+			BigDecimal allocatableMem = allocatable.get("memory").getNumber();
+	
+			// Map<String, Quantity> capacity = node.getStatus().getCapacity();
+			logger.debug("Node name is {}", nodeName);
+			logger.debug("Node role is {}", labels.get("role"));
+			logger.debug("allocatable memory is {}", allocatableCpu);
+			logger.debug("allocatable cpu is {}", ((Quantity) allocatable.get("memory")).getNumber());
+	
+			V1PodList pods = getPodListByNode(nodeName);
+	
+			double totalCpuRequests = 0;
+			double totalMemRequests = 0;
+			double totalCpuLimits = 0;
+			double totalMemLimits = 0;
+			for (V1Pod pod : pods.getItems()) {
+				List<V1Container> containers = pod.getSpec().getContainers();
+				for (V1Container container : containers) {
+					Map<String, Quantity> requests = container.getResources().getRequests();
+					if (requests != null) {
+						Quantity cpuRequests = requests.get("cpu");
+						if (cpuRequests != null) {
+							logger.debug("cpu request is {}", cpuRequests.toSuffixedString());
+							totalCpuRequests += cpuRequests.getNumber().doubleValue();
+						}
+						Quantity memoryRequests = requests.get("memory");
+						if (memoryRequests != null) {
+							logger.debug("memory request is {}", memoryRequests.toSuffixedString());
+							totalMemRequests += memoryRequests.getNumber().doubleValue();
+						}
+					}
+	
+					Map<String, Quantity> limits = container.getResources().getLimits();
+					if (limits != null) {
+						Quantity cpulimits = limits.get("cpu");
+						if (cpulimits != null) {
+							logger.debug("cpu limits is {}", cpulimits.toSuffixedString());
+							totalCpuLimits += cpulimits.getNumber().doubleValue();
+						}
+						Quantity memorylimits = limits.get("memory");
+						if (memorylimits != null) {
+							logger.debug("cpu limits is {}", memorylimits.toSuffixedString());
+							totalMemLimits += memorylimits.getNumber().doubleValue();
+						}
+					}
+				}
+			}
+	
+			logger.debug("total cpu requests is {}", totalCpuRequests);
+			logger.debug("total mem requests is {}", totalMemRequests);
+			logger.debug("total cpu limits is {}", totalCpuLimits);
+			logger.debug("total mem limits is {}", totalMemLimits);
+	
+			logger.debug("CPU Requests = {}, Mem Requests = {}, CPU limits = {}, Mem limits = {}",
+					NumberUtils.percent(totalCpuRequests, allocatableCpu.doubleValue()),
+					NumberUtils.percent(totalMemRequests, allocatableMem.doubleValue()),
+					NumberUtils.percent(totalCpuLimits, allocatableCpu.doubleValue()),
+					NumberUtils.percent(totalMemLimits, allocatableMem.doubleValue()));
+	
+			logger.debug("------------------------------------------------");
+	
+			ZcpNode zcpNode = new ZcpNode();
+			zcpNode.setNodeName(nodeName);
+			setNodeStatus(node, zcpNode);
+			zcpNode.setCreationTime(new Date(node.getMetadata().getCreationTimestamp().getMillis()));
+			zcpNode.setAllocatableCpu(allocatableCpu);
+			zcpNode.setAllocatableCpuString(NumberUtils.formatCpu(allocatableCpu.doubleValue()));
+			zcpNode.setAllocatableMemory(allocatableMem);
+			zcpNode.setAllocatableMemoryString(NumberUtils.formatMemory(allocatableMem.doubleValue()));
+	
+			zcpNode.setCpuLimits(BigDecimal.valueOf(totalCpuLimits));
+			zcpNode.setCpuLimitsString(NumberUtils.formatCpu(totalCpuLimits));
+			zcpNode.setCpuRequests(BigDecimal.valueOf(totalCpuRequests));
+			zcpNode.setCpuRequestsString(NumberUtils.formatCpu(totalCpuRequests));
+			zcpNode.setMemoryLimits(BigDecimal.valueOf(totalMemLimits));
+			zcpNode.setMemoryLimitsString(NumberUtils.formatMemory(totalMemLimits));
+			zcpNode.setMemoryRequests(BigDecimal.valueOf(totalMemRequests));
+			zcpNode.setMemoryRequestsString(NumberUtils.formatMemory(totalMemRequests));
+			zcpNode.setCpuLimitsPercentage(NumberUtils.percent(totalCpuLimits, allocatableCpu.doubleValue()));
+			zcpNode.setCpuRequestsPercentage(NumberUtils.percent(totalCpuRequests, allocatableCpu.doubleValue()));
+			zcpNode.setMemoryLimitsPercentage(NumberUtils.percent(totalMemLimits, allocatableMem.doubleValue()));
+			zcpNode.setMemoryRequestsPercentage(NumberUtils.percent(totalMemRequests, allocatableMem.doubleValue()));
+	
+			zcpNodes.add(zcpNode);
+		}
+	
+		return new ZcpNodeList(zcpNodes);
+	}
+
+	public ZcpNamespaceList getNamespaces(String userId) throws ZcpException {
+		// check user
+		UserRepresentation userRepresentation = null;
+		try {
+			userRepresentation = keyCloakManager.getUser(userId);
+		} catch (KeyCloakException e) {
+			throw new ZcpException("ZCP-0001", "The user(" + userId + ") does not exist");
+		}
+	
+		String username = userRepresentation.getUsername();
+		logger.debug("keyclock username is - {}", username);
+	
+		// check clusterrolebinding
+		V1ClusterRoleBinding userClusterRoleBinding = null;
+		try {
+			userClusterRoleBinding = kubeRbacAuthzManager.getClusterRoleBindingByUsername(username);
+		} catch (ApiException e2) {
+			throw new ZcpException("ZCP-0001", "The clusterrolebinding of user(" + userId + ") does not exist");
+		}
+	
+		String userClusterRole = userClusterRoleBinding.getRoleRef().getName();
+		boolean isClusterAdmin = StringUtils.equals(userClusterRole, ClusterRole.CLUSTER_ADMIN.getRole()) ? true
+				: false;
+		boolean isAdmin = StringUtils.equals(userClusterRole, ClusterRole.ADMIN.getRole()) ? true : false;
+	
+		if (!isClusterAdmin && !isAdmin) {
+			throw new ZcpException("ZCP-0001",
+					"The user(" + userId + ") does not have a permission for namespace list");
+		}
+	
+		// get namespace list of admin user
+		List<String> userNamespaces = new ArrayList<>();
+		if (!isClusterAdmin && isAdmin) {
+			List<V1RoleBinding> userRoleBindings = null;
+			try {
+				userRoleBindings = kubeRbacAuthzManager.getRoleBindingListByUsername(username).getItems();
+			} catch (ApiException e1) {
+				throw new ZcpException("ZCP-0001");
+			}
+	
+			if (userRoleBindings != null && !userRoleBindings.isEmpty()) {
+				for (V1RoleBinding roleBinding : userRoleBindings) {
+					if (roleBinding.getRoleRef().getName().equals(ClusterRole.ADMIN.getRole())) {
+						userNamespaces.add(roleBinding.getMetadata().getNamespace());
+					}
+				}
+			}
+		}
+	
+		// get all namespace list
+		V1NamespaceList v1NamespaceList = null;
+		try {
+			v1NamespaceList = kubeCoreManager.getNamespaceList();
+		} catch (ApiException e) {
+			logger.debug("There is no namespace");
+			return new ZcpNamespaceList(new ArrayList<ZcpNamespace>());
+		}
+	
+		V1ResourceQuotaList v1ResourceQuotaList = null;
+		try {
+			v1ResourceQuotaList = kubeCoreManager.getAllResourceQuotaList();
+		} catch (ApiException e) {
+			// we can ignore this case
+			logger.debug("There is no resource quotas");
+		}
+	
+		Map<String, V1ResourceQuota> mappedResourceQuotas = getMappedResoruceQuotas(v1ResourceQuotaList);
+		Map<String, List<V1RoleBinding>> mappedRolebindins = getMappedRoleBindings();
+		List<ZcpNamespace> zcpNamespaces = new ArrayList<>();
+	
+		for (V1Namespace namespace : v1NamespaceList.getItems()) {
+			ZcpNamespace zcpNamespace = new ZcpNamespace();
+			zcpNamespace.setName(namespace.getMetadata().getName());
+			zcpNamespace.setCreationDate(new Date(namespace.getMetadata().getCreationTimestamp().getMillis()));
+			zcpNamespace.setStatus(NamespaceStatus.getNamespaceStatus(namespace.getStatus().getPhase()));
+			List<V1RoleBinding> namespacedRolebinds = mappedRolebindins.get(namespace.getMetadata().getName());
+			if (namespacedRolebinds != null) {
+				zcpNamespace.setUserCount(namespacedRolebinds.size());
+			}
+	
+			V1ResourceQuota resourceQuota = mappedResourceQuotas.get(namespace.getMetadata().getName());
+			if (resourceQuota != null) {
+				V1ResourceQuotaStatus status = resourceQuota.getStatus();
+				Map<String, String> hard = status.getHard();
+				Map<String, String> used = status.getUsed();
+	
+				logger.debug("namespace is {}", namespace.getMetadata().getName());
+				logger.debug("hard is {}", hard);
+				logger.debug("used is {}", used);
+	
+				String sHardRequestsCpu = hard.get("requests.cpu") == null ? "0" : hard.get("requests.cpu");
+				String sUsedRequestsCpu = used.get("requests.cpu") == null ? "0" : used.get("requests.cpu");
+				String sHardLimitsCpu = hard.get("limits.cpu") == null ? "0" : hard.get("limits.cpu");
+				String sUsedLimitsCpu = used.get("limits.cpu") == null ? "0" : used.get("limits.cpu");
+	
+				String sHardRequestsMemory = hard.get("requests.memory") == null ? "0" : hard.get("requests.memory");
+				String sUsedRequestsMemory = used.get("requests.memory") == null ? "0" : used.get("requests.memory");
+				String sHardLimitsMemory = hard.get("limits.memory") == null ? "0" : hard.get("limits.memory");
+				String sUsedLimitsMemory = used.get("limits.memory") == null ? "0" : used.get("limits.memory");
+	
+				BigDecimal hardRequestsCpu = Quantity.fromString(sHardRequestsCpu).getNumber();
+				BigDecimal usedRequestsCpu = Quantity.fromString(sUsedRequestsCpu).getNumber();
+				zcpNamespace.setHardCpuRequests(hardRequestsCpu);
+				zcpNamespace.setUsedCpuRequests(usedRequestsCpu);
+				zcpNamespace.setHardCpuRequestsString(NumberUtils.formatCpu(hardRequestsCpu.doubleValue()));
+				zcpNamespace.setUsedCpuRequestsString(NumberUtils.formatCpu(usedRequestsCpu.doubleValue()));
+				zcpNamespace.setCpuRequestsPercentage(
+						NumberUtils.percent(usedRequestsCpu.doubleValue(), hardRequestsCpu.doubleValue()));
+	
+				BigDecimal hardLimitsCpu = Quantity.fromString(sHardLimitsCpu).getNumber();
+				BigDecimal usedLimitsCpu = Quantity.fromString(sUsedLimitsCpu).getNumber();
+				zcpNamespace.setHardCpuLimits(hardLimitsCpu);
+				zcpNamespace.setUsedCpuLimits(usedLimitsCpu);
+				zcpNamespace.setHardCpuLimitsString(NumberUtils.formatCpu(hardLimitsCpu.doubleValue()));
+				zcpNamespace.setUsedCpuLimitsString(NumberUtils.formatCpu(usedLimitsCpu.doubleValue()));
+				zcpNamespace.setCpuLimitsPercentage(
+						NumberUtils.percent(usedLimitsCpu.doubleValue(), hardLimitsCpu.doubleValue()));
+	
+				BigDecimal hardRequestsMemory = Quantity.fromString(sHardRequestsMemory).getNumber();
+				BigDecimal usedRequestsMemory = Quantity.fromString(sUsedRequestsMemory).getNumber();
+				zcpNamespace.setHardMemoryRequests(hardRequestsMemory);
+				zcpNamespace.setUsedMemoryRequests(usedRequestsMemory);
+				zcpNamespace.setHardMemoryRequestsString(NumberUtils.formatMemory(hardRequestsMemory.doubleValue()));
+				zcpNamespace.setUsedMemoryRequestsString(NumberUtils.formatMemory(usedRequestsMemory.doubleValue()));
+				zcpNamespace.setMemoryRequestsPercentage(
+						NumberUtils.percent(usedRequestsMemory.doubleValue(), hardRequestsMemory.doubleValue()));
+	
+				BigDecimal hardLimitsMemory = Quantity.fromString(sHardLimitsMemory).getNumber();
+				BigDecimal usedLimitsMemory = Quantity.fromString(sUsedLimitsMemory).getNumber();
+				zcpNamespace.setHardMemoryLimits(hardLimitsMemory);
+				zcpNamespace.setUsedMemoryLimits(usedLimitsMemory);
+				zcpNamespace.setHardMemoryLimitsString(NumberUtils.formatMemory(hardLimitsMemory.doubleValue()));
+				zcpNamespace.setUsedMemoryLimitsString(NumberUtils.formatMemory(usedLimitsMemory.doubleValue()));
+				zcpNamespace.setMemoryLimitsPercentage(
+						NumberUtils.percent(usedLimitsMemory.doubleValue(), hardLimitsMemory.doubleValue()));
+			}
+	
+			if (!isClusterAdmin && isAdmin) {
+				if (userNamespaces.contains(namespace.getMetadata().getName())) {
+					zcpNamespaces.add(zcpNamespace);
+				}
+			} else {
+				zcpNamespaces.add(zcpNamespace);
+			}
+		}
+	
+		return new ZcpNamespaceList(zcpNamespaces);
+	}
 
 	public ClusterStatusMetricsVO getClusterMetrics(String type) throws ZcpException {
 		if (StringUtils.isEmpty(type) || (!StringUtils.equals(type, "cpu") && !StringUtils.equals(type, "memory"))) {
@@ -123,19 +382,202 @@ public class MetricService {
 			vo.setAvailable(NumberUtils.formatCpuWithoutUnit(available.doubleValue()));
 			vo.setTotal(NumberUtils.formatCpuWithoutUnit(allocatable.doubleValue()));
 			vo.setUtilization(NumberUtils.formatCpuWithoutUnit(utilization.doubleValue()));
-			vo.setUtilizationPercentage(
-					NumberUtils.percent(utilization.doubleValue(), allocatable.doubleValue()));
+			vo.setUtilizationPercentage(NumberUtils.percent(utilization.doubleValue(), allocatable.doubleValue()));
 		} else {
 			vo.setTitle("Memory");
 			vo.setUnit("Gi");
 			vo.setAvailable(NumberUtils.formatMemoryWithoutUnit(available.doubleValue()));
 			vo.setTotal(NumberUtils.formatMemoryWithoutUnit(allocatable.doubleValue()));
 			vo.setUtilization(NumberUtils.formatMemoryWithoutUnit(utilization.doubleValue()));
-			vo.setUtilizationPercentage(
-					NumberUtils.percent(utilization.doubleValue(), allocatable.doubleValue()));
+			vo.setUtilizationPercentage(NumberUtils.percent(utilization.doubleValue(), allocatable.doubleValue()));
 		}
 		vo.setUtilizationTitle("Utilization");
 
+		return vo;
+	}
+
+	public DeploymentsStatusMetricsVO getDeploymentsStatusMetrics(String namespace) throws ZcpException {
+		V1beta2DeploymentList deploymentList = null;
+		try {
+			deploymentList = kubeAppsManager.getDeploymentList(namespace);
+		} catch (ApiException e) {
+			throw new ZcpException("KK", e.getMessage());
+		}
+	
+		List<V1beta2Deployment> deployments = deploymentList.getItems();
+		Map<DeploymentStatus, DeploymentStatusMetric> statuesMetrics = getDeploymentsStatusMap();
+	
+		for (V1beta2Deployment deployment : deployments) {
+			List<V1beta2DeploymentCondition> conditions = deployment.getStatus().getConditions();
+			for (V1beta2DeploymentCondition condition : conditions) {
+				if (condition.getType().equals(DeploymentStatus.STATUS_CONDITION_TYPE)) {
+					if (condition.getStatus().equals("True")) {
+						DeploymentStatusMetric dsm = statuesMetrics.get(DeploymentStatus.Available);
+						if (dsm != null) {
+							dsm.increaseCount();
+						} else {
+							dsm = new DeploymentStatusMetric();
+							dsm.setStatus(DeploymentStatus.Available);
+							dsm.setCount(1);
+							statuesMetrics.put(DeploymentStatus.Available, dsm);
+						}
+					} else {
+						DeploymentStatusMetric dsm = statuesMetrics.get(DeploymentStatus.Unavailable);
+						if (dsm != null) {
+							dsm.increaseCount();
+						} else {
+							dsm = new DeploymentStatusMetric();
+							dsm.setStatus(DeploymentStatus.Unavailable);
+							dsm.setCount(1);
+							statuesMetrics.put(DeploymentStatus.Unavailable, dsm);
+						}
+					}
+				}
+			}
+		}
+	
+		DeploymentsStatusMetricsVO vo = new DeploymentsStatusMetricsVO();
+		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
+		vo.setTotalCount(BigDecimal.valueOf(deployments.size()));
+	
+		return vo;
+	}
+
+	public NodesStatusMetricsVO getNodesStatusMetrics() throws ZcpException {
+		V1NodeList nodeList = null;
+	
+		try {
+			nodeList = kubeCoreManager.getNodeList();
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-009", e.getMessage());
+		}
+	
+		List<V1Node> nodes = nodeList.getItems();
+		Map<NodeStatus, NodeStatusMetric> statuesMetrics = getNodesStatusMap();
+	
+		for (V1Node node : nodes) {
+			List<V1NodeCondition> conditions = node.getStatus().getConditions();
+			for (V1NodeCondition condition : conditions) {
+				if (condition.getType().equals(NodeStatus.STATUS_CONDITION_TYPE)) {
+					if (condition.getStatus().equals("True")) {
+						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.Ready);
+						if (nsm != null) {
+							nsm.increaseCount();
+						} else {
+							nsm = new NodeStatusMetric();
+							nsm.setStatus(NodeStatus.Ready);
+							nsm.setCount(1);
+							statuesMetrics.put(NodeStatus.Ready, nsm);
+						}
+					} else if (condition.getStatus().equals("False")) {
+						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.NotReady);
+						if (nsm != null) {
+							nsm.increaseCount();
+						} else {
+							nsm = new NodeStatusMetric();
+							nsm.setStatus(NodeStatus.NotReady);
+							nsm.setCount(1);
+							statuesMetrics.put(NodeStatus.NotReady, nsm);
+						}
+					} else {
+						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.Unknown);
+						if (nsm != null) {
+							nsm.increaseCount();
+						} else {
+							nsm = new NodeStatusMetric();
+							nsm.setStatus(NodeStatus.Unknown);
+							nsm.setCount(1);
+							statuesMetrics.put(NodeStatus.Unknown, nsm);
+						}
+					}
+				}
+			}
+		}
+	
+		NodesStatusMetricsVO vo = new NodesStatusMetricsVO();
+		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
+		vo.setTotalCount(BigDecimal.valueOf(nodes.size()));
+	
+		return vo;
+	}
+
+	public PodsStatusMetricsVO getPodsStatusMetrics(String namespace) throws ZcpException {
+		V1PodList podList = null;
+	
+		try {
+			if (StringUtils.isEmpty(namespace)) {
+				podList = kubeCoreManager.getAllPodList();
+			} else {
+				podList = kubeCoreManager.getPodListByNamespace(namespace);
+			}
+		} catch (ApiException e) {
+			e.printStackTrace();
+			throw new ZcpException("ZCP-009", e.getMessage());
+		}
+	
+		List<V1Pod> pods = podList.getItems();
+		Map<PodStatus, PodStatusMetric> statuesMetrics = getPodsStatusMap();
+	
+		for (V1Pod pod : pods) {
+			String phase = pod.getStatus().getPhase();
+	
+			for (PodStatus status : PodStatus.values()) {
+				if (StringUtils.equals(phase, status.name())) {
+					PodStatusMetric psm = statuesMetrics.get(status);
+					if (psm != null) {
+						psm.increaseCount();
+					} else {
+						psm = new PodStatusMetric();
+						psm.setStatus(status);
+						psm.setCount(1);
+						statuesMetrics.put(status, psm);
+					}
+				} else {
+					logger.warn("This phase(" + phase + ") does not exist in PodStatus. Please check it");
+				}
+			}
+		}
+	
+		PodsStatusMetricsVO vo = new PodsStatusMetricsVO();
+		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
+		vo.setTotalCount(BigDecimal.valueOf(pods.size()));
+	
+		return vo;
+	}
+
+	public UsersStatusMetricsVO getUsersStatusMetrics(String namespace) throws ZcpException {
+		Map<ClusterRole, UserStatusMetric> statuesMetrics = null;
+	
+		if (StringUtils.isEmpty(namespace)) {
+			try {
+				statuesMetrics = getClusterRoleStatus();
+			} catch (ApiException e) {
+				e.printStackTrace();
+				throw new ZcpException("000", e.getMessage());
+			}
+		} else {
+			try {
+				statuesMetrics = getNamespaceRoleStatus(namespace);
+			} catch (ApiException e) {
+				e.printStackTrace();
+				throw new ZcpException("000", e.getMessage());
+			}
+		}
+	
+		UsersStatusMetricsVO vo = new UsersStatusMetricsVO();
+		vo.setRoles(statuesMetrics.values().stream().collect(Collectors.toList()));
+		if (StringUtils.isEmpty(namespace)) {
+			vo.setMainRole(ClusterRole.CLUSTER_ADMIN);
+		} else {
+			vo.setMainRole(ClusterRole.ADMIN);
+		}
+		int sum = 0;
+		for (UserStatusMetric metric : vo.getRoles()) {
+			sum += metric.getCount().intValue();
+		}
+		vo.setTotalCount(BigDecimal.valueOf(sum));
+		
 		return vo;
 	}
 
@@ -173,260 +615,7 @@ public class MetricService {
 		return new BigDecimal(utilization);
 	}
 
-	public ZcpNodeList getNodeList() throws ZcpException {
-		V1NodeList nodeList = null;
-
-		try {
-			nodeList = kubeCoreManager.getNodeList();
-		} catch (ApiException e) {
-			e.printStackTrace();
-			throw new ZcpException("ZCP-009", e.getMessage());
-		}
-
-		List<V1Node> nodes = nodeList.getItems();
-		List<ZcpNode> zcpNodes = new ArrayList<>();
-		for (V1Node node : nodes) {
-			String nodeName = node.getMetadata().getName();
-			Map<String, String> labels = node.getMetadata().getLabels();
-			Map<String, Quantity> allocatable = node.getStatus().getAllocatable();
-			BigDecimal allocatableCpu = allocatable.get("cpu").getNumber();
-			BigDecimal allocatableMem = allocatable.get("memory").getNumber();
-
-			// Map<String, Quantity> capacity = node.getStatus().getCapacity();
-			logger.debug("Node name is {}", nodeName);
-			logger.debug("Node role is {}", labels.get("role"));
-			logger.debug("allocatable memory is {}", allocatableCpu);
-			logger.debug("allocatable cpu is {}", ((Quantity) allocatable.get("memory")).getNumber());
-
-			V1PodList pods = getPodListByNode(nodeName);
-
-			double totalCpuRequests = 0;
-			double totalMemRequests = 0;
-			double totalCpuLimits = 0;
-			double totalMemLimits = 0;
-			for (V1Pod pod : pods.getItems()) {
-				List<V1Container> containers = pod.getSpec().getContainers();
-				for (V1Container container : containers) {
-					Map<String, Quantity> requests = container.getResources().getRequests();
-					if (requests != null) {
-						Quantity cpuRequests = requests.get("cpu");
-						if (cpuRequests != null) {
-							logger.debug("cpu request is {}", cpuRequests.toSuffixedString());
-							totalCpuRequests += cpuRequests.getNumber().doubleValue();
-						}
-						Quantity memoryRequests = requests.get("memory");
-						if (memoryRequests != null) {
-							logger.debug("memory request is {}", memoryRequests.toSuffixedString());
-							totalMemRequests += memoryRequests.getNumber().doubleValue();
-						}
-					}
-
-					Map<String, Quantity> limits = container.getResources().getLimits();
-					if (limits != null) {
-						Quantity cpulimits = limits.get("cpu");
-						if (cpulimits != null) {
-							logger.debug("cpu limits is {}", cpulimits.toSuffixedString());
-							totalCpuLimits += cpulimits.getNumber().doubleValue();
-						}
-						Quantity memorylimits = limits.get("memory");
-						if (memorylimits != null) {
-							logger.debug("cpu limits is {}", memorylimits.toSuffixedString());
-							totalMemLimits += memorylimits.getNumber().doubleValue();
-						}
-					}
-				}
-			}
-
-			logger.debug("total cpu requests is {}", totalCpuRequests);
-			logger.debug("total mem requests is {}", totalMemRequests);
-			logger.debug("total cpu limits is {}", totalCpuLimits);
-			logger.debug("total mem limits is {}", totalMemLimits);
-
-			logger.debug("CPU Requests = {}, Mem Requests = {}, CPU limits = {}, Mem limits = {}",
-					NumberUtils.percent(totalCpuRequests, allocatableCpu.doubleValue()),
-					NumberUtils.percent(totalMemRequests, allocatableMem.doubleValue()),
-					NumberUtils.percent(totalCpuLimits, allocatableCpu.doubleValue()),
-					NumberUtils.percent(totalMemLimits, allocatableMem.doubleValue()));
-
-			logger.debug("------------------------------------------------");
-
-			ZcpNode zcpNode = new ZcpNode();
-			zcpNode.setNodeName(nodeName);
-			setNodeStatus(node, zcpNode);
-			zcpNode.setCreationTime(new Date(node.getMetadata().getCreationTimestamp().getMillis()));
-			zcpNode.setAllocatableCpu(allocatableCpu);
-			zcpNode.setAllocatableCpuString(NumberUtils.formatCpu(allocatableCpu.doubleValue()));
-			zcpNode.setAllocatableMemory(allocatableMem);
-			zcpNode.setAllocatableMemoryString(NumberUtils.formatMemory(allocatableMem.doubleValue()));
-
-			zcpNode.setCpuLimits(BigDecimal.valueOf(totalCpuLimits));
-			zcpNode.setCpuLimitsString(NumberUtils.formatCpu(totalCpuLimits));
-			zcpNode.setCpuRequests(BigDecimal.valueOf(totalCpuRequests));
-			zcpNode.setCpuRequestsString(NumberUtils.formatCpu(totalCpuRequests));
-			zcpNode.setMemoryLimits(BigDecimal.valueOf(totalMemLimits));
-			zcpNode.setMemoryLimitsString(NumberUtils.formatMemory(totalMemLimits));
-			zcpNode.setMemoryRequests(BigDecimal.valueOf(totalMemRequests));
-			zcpNode.setMemoryRequestsString(NumberUtils.formatMemory(totalMemRequests));
-			zcpNode.setCpuLimitsPercentage(NumberUtils.percent(totalCpuLimits, allocatableCpu.doubleValue()));
-			zcpNode.setCpuRequestsPercentage(NumberUtils.percent(totalCpuRequests, allocatableCpu.doubleValue()));
-			zcpNode.setMemoryLimitsPercentage(NumberUtils.percent(totalMemLimits, allocatableMem.doubleValue()));
-			zcpNode.setMemoryRequestsPercentage(NumberUtils.percent(totalMemRequests, allocatableMem.doubleValue()));
-
-			zcpNodes.add(zcpNode);
-		}
-
-		return new ZcpNodeList(zcpNodes);
-	}
-
-	public ZcpNamespaceList getNamespaceList(String userId) throws ZcpException {
-		// check user
-		UserRepresentation userRepresentation = null;
-		try {
-			userRepresentation = keyCloakManager.getUser(userId);
-		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-0001", "The user(" + userId + ") does not exist");
-		}
-
-		String username = userRepresentation.getUsername();
-		logger.debug("keyclock username is - {}", username);
-
-		// check clusterrolebinding
-		V1ClusterRoleBinding userClusterRoleBinding = null;
-		try {
-			userClusterRoleBinding = kubeRbacAuthzManager.getClusterRoleBindingByUsername(username);
-		} catch (ApiException e2) {
-			throw new ZcpException("ZCP-0001", "The clusterrolebinding of user(" + userId + ") does not exist");
-		}
-
-		String userClusterRole = userClusterRoleBinding.getRoleRef().getName();
-		boolean isClusterAdmin = StringUtils.equals(userClusterRole, ClusterRole.CLUSTER_ADMIN.getRole()) ? true
-				: false;
-		boolean isAdmin = StringUtils.equals(userClusterRole, ClusterRole.ADMIN.getRole()) ? true : false;
-
-		if (!isClusterAdmin && !isAdmin) {
-			throw new ZcpException("ZCP-0001",
-					"The user(" + userId + ") does not have a permission for namespace list");
-		}
-
-		// get namespace list of admin user
-		List<String> userNamespaces = new ArrayList<>();
-		if (!isClusterAdmin && isAdmin) {
-			List<V1RoleBinding> userRoleBindings = null;
-			try {
-				userRoleBindings = kubeRbacAuthzManager.getRoleBindingListByUsername(username).getItems();
-			} catch (ApiException e1) {
-				throw new ZcpException("ZCP-0001");
-			}
-
-			if (userRoleBindings != null && !userRoleBindings.isEmpty()) {
-				for (V1RoleBinding roleBinding : userRoleBindings) {
-					if (roleBinding.getRoleRef().getName().equals(ClusterRole.ADMIN.getRole())) {
-						userNamespaces.add(roleBinding.getMetadata().getNamespace());
-					}
-				}
-			}
-		}
-
-		// get all namespace list
-		V1NamespaceList v1NamespaceList = null;
-		try {
-			v1NamespaceList = kubeCoreManager.getNamespaceList();
-		} catch (ApiException e) {
-			logger.debug("There is no namespace");
-			return new ZcpNamespaceList(new ArrayList<ZcpNamespace>());
-		}
-
-		V1ResourceQuotaList v1ResourceQuotaList = null;
-		try {
-			v1ResourceQuotaList = kubeCoreManager.getAllResourceQuotaList();
-		} catch (ApiException e) {
-			// we can ignore this case
-			logger.debug("There is no resource quotas");
-		}
-
-		Map<String, V1ResourceQuota> mappedResourceQuotas = getMappedResoruceQuotaList(v1ResourceQuotaList);
-		Map<String, List<V1RoleBinding>> mappedRolebindins = getMappedRoleBindings();
-		List<ZcpNamespace> zcpNamespaces = new ArrayList<>();
-
-		for (V1Namespace namespace : v1NamespaceList.getItems()) {
-			ZcpNamespace zcpNamespace = new ZcpNamespace();
-			zcpNamespace.setName(namespace.getMetadata().getName());
-			zcpNamespace.setCreationDate(new Date(namespace.getMetadata().getCreationTimestamp().getMillis()));
-			zcpNamespace.setStatus(NamespaceStatus.getNamespaceStatus(namespace.getStatus().getPhase()));
-			List<V1RoleBinding> namespacedRolebinds = mappedRolebindins.get(namespace.getMetadata().getName());
-			if (namespacedRolebinds != null) {
-				zcpNamespace.setUserCount(namespacedRolebinds.size());
-			}
-
-			V1ResourceQuota resourceQuota = mappedResourceQuotas.get(namespace.getMetadata().getName());
-			if (resourceQuota != null) {
-				V1ResourceQuotaStatus status = resourceQuota.getStatus();
-				Map<String, String> hard = status.getHard();
-				Map<String, String> used = status.getUsed();
-
-				logger.debug("namespace is {}", namespace.getMetadata().getName());
-				logger.debug("hard is {}", hard);
-				logger.debug("used is {}", used);
-
-				String sHardRequestsCpu = hard.get("requests.cpu") == null ? "0" : hard.get("requests.cpu");
-				String sUsedRequestsCpu = used.get("requests.cpu") == null ? "0" : used.get("requests.cpu");
-				String sHardLimitsCpu = hard.get("limits.cpu") == null ? "0" : hard.get("limits.cpu");
-				String sUsedLimitsCpu = used.get("limits.cpu") == null ? "0" : used.get("limits.cpu");
-
-				String sHardRequestsMemory = hard.get("requests.memory") == null ? "0" : hard.get("requests.memory");
-				String sUsedRequestsMemory = used.get("requests.memory") == null ? "0" : used.get("requests.memory");
-				String sHardLimitsMemory = hard.get("limits.memory") == null ? "0" : hard.get("limits.memory");
-				String sUsedLimitsMemory = used.get("limits.memory") == null ? "0" : used.get("limits.memory");
-
-				BigDecimal hardRequestsCpu = Quantity.fromString(sHardRequestsCpu).getNumber();
-				BigDecimal usedRequestsCpu = Quantity.fromString(sUsedRequestsCpu).getNumber();
-				zcpNamespace.setHardCpuRequests(hardRequestsCpu);
-				zcpNamespace.setUsedCpuRequests(usedRequestsCpu);
-				zcpNamespace.setHardCpuRequestsString(NumberUtils.formatCpu(hardRequestsCpu.doubleValue()));
-				zcpNamespace.setUsedCpuRequestsString(NumberUtils.formatCpu(usedRequestsCpu.doubleValue()));
-				zcpNamespace.setCpuRequestsPercentage(
-						NumberUtils.percent(usedRequestsCpu.doubleValue(), hardRequestsCpu.doubleValue()));
-
-				BigDecimal hardLimitsCpu = Quantity.fromString(sHardLimitsCpu).getNumber();
-				BigDecimal usedLimitsCpu = Quantity.fromString(sUsedLimitsCpu).getNumber();
-				zcpNamespace.setHardCpuLimits(hardLimitsCpu);
-				zcpNamespace.setUsedCpuLimits(usedLimitsCpu);
-				zcpNamespace.setHardCpuLimitsString(NumberUtils.formatCpu(hardLimitsCpu.doubleValue()));
-				zcpNamespace.setUsedCpuLimitsString(NumberUtils.formatCpu(usedLimitsCpu.doubleValue()));
-				zcpNamespace.setCpuLimitsPercentage(NumberUtils.percent(usedLimitsCpu.doubleValue(), hardLimitsCpu.doubleValue()));
-
-				BigDecimal hardRequestsMemory = Quantity.fromString(sHardRequestsMemory).getNumber();
-				BigDecimal usedRequestsMemory = Quantity.fromString(sUsedRequestsMemory).getNumber();
-				zcpNamespace.setHardMemoryRequests(hardRequestsMemory);
-				zcpNamespace.setUsedMemoryRequests(usedRequestsMemory);
-				zcpNamespace.setHardMemoryRequestsString(NumberUtils.formatMemory(hardRequestsMemory.doubleValue()));
-				zcpNamespace.setUsedMemoryRequestsString(NumberUtils.formatMemory(usedRequestsMemory.doubleValue()));
-				zcpNamespace.setMemoryRequestsPercentage(
-						NumberUtils.percent(usedRequestsMemory.doubleValue(), hardRequestsMemory.doubleValue()));
-
-				BigDecimal hardLimitsMemory = Quantity.fromString(sHardLimitsMemory).getNumber();
-				BigDecimal usedLimitsMemory = Quantity.fromString(sUsedLimitsMemory).getNumber();
-				zcpNamespace.setHardMemoryLimits(hardLimitsMemory);
-				zcpNamespace.setUsedMemoryLimits(usedLimitsMemory);
-				zcpNamespace.setHardMemoryLimitsString(NumberUtils.formatMemory(hardLimitsMemory.doubleValue()));
-				zcpNamespace.setUsedMemoryLimitsString(NumberUtils.formatMemory(usedLimitsMemory.doubleValue()));
-				zcpNamespace.setMemoryLimitsPercentage(
-						NumberUtils.percent(usedLimitsMemory.doubleValue(), hardLimitsMemory.doubleValue()));
-			}
-
-			if (!isClusterAdmin && isAdmin) {
-				if (userNamespaces.contains(namespace.getMetadata().getName())) {
-					zcpNamespaces.add(zcpNamespace);
-				}
-			} else {
-				zcpNamespaces.add(zcpNamespace);
-			}
-		}
-
-		return new ZcpNamespaceList(zcpNamespaces);
-	}
-
-	private Map<String, V1ResourceQuota> getMappedResoruceQuotaList(V1ResourceQuotaList v1ResourceQuotaList) {
+	private Map<String, V1ResourceQuota> getMappedResoruceQuotas(V1ResourceQuotaList v1ResourceQuotaList) {
 		Map<String, V1ResourceQuota> data = new HashMap<>();
 
 		if (v1ResourceQuotaList == null) {
@@ -491,7 +680,7 @@ public class MetricService {
 		}
 	}
 
-	public V1PodList getPodListByNode(String nodeName) throws ZcpException {
+	private V1PodList getPodListByNode(String nodeName) throws ZcpException {
 		V1PodList podList = null;
 
 		try {
@@ -502,54 +691,6 @@ public class MetricService {
 		}
 
 		return podList;
-	}
-
-
-	public DeploymentsStatusMetricsVO getDeploymentsStatusMetrics(String namespace) throws ZcpException {
-		V1beta2DeploymentList deploymentList = null;
-		try {
-			deploymentList = kubeAppsManager.getDeploymentList(namespace);
-		} catch (ApiException e) {
-			throw new ZcpException("KK", e.getMessage());
-		}
-
-		List<V1beta2Deployment> deployments = deploymentList.getItems();
-		Map<DeploymentStatus, DeploymentStatusMetric> statuesMetrics = getDeploymentsStatusMap();
-
-		for (V1beta2Deployment deployment : deployments) {
-			List<V1beta2DeploymentCondition> conditions = deployment.getStatus().getConditions();
-			for (V1beta2DeploymentCondition condition : conditions) {
-				if (condition.getType().equals(DeploymentStatus.STATUS_CONDITION_TYPE)) {
-					if (condition.getStatus().equals("True")) {
-						DeploymentStatusMetric dsm = statuesMetrics.get(DeploymentStatus.Available);
-						if (dsm != null) {
-							dsm.increaseCount();
-						} else {
-							dsm = new DeploymentStatusMetric();
-							dsm.setStatus(DeploymentStatus.Available);
-							dsm.setCount(1);
-							statuesMetrics.put(DeploymentStatus.Available, dsm);
-						}
-					} else {
-						DeploymentStatusMetric dsm = statuesMetrics.get(DeploymentStatus.Unavailable);
-						if (dsm != null) {
-							dsm.increaseCount();
-						} else {
-							dsm = new DeploymentStatusMetric();
-							dsm.setStatus(DeploymentStatus.Unavailable);
-							dsm.setCount(1);
-							statuesMetrics.put(DeploymentStatus.Unavailable, dsm);
-						}
-					}
-				}
-			}
-		}
-
-		DeploymentsStatusMetricsVO vo = new DeploymentsStatusMetricsVO();
-		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
-		vo.setTotalCount(BigDecimal.valueOf(deployments.size()));
-
-		return vo;
 	}
 
 	private Map<DeploymentStatus, DeploymentStatusMetric> getDeploymentsStatusMap() {
@@ -565,65 +706,6 @@ public class MetricService {
 		return statuesMetrics;
 	}
 
-	public NodesStatusMetricsVO getNodesStatusMetrics() throws ZcpException {
-		V1NodeList nodeList = null;
-
-		try {
-			nodeList = kubeCoreManager.getNodeList();
-		} catch (ApiException e) {
-			e.printStackTrace();
-			throw new ZcpException("ZCP-009", e.getMessage());
-		}
-
-		List<V1Node> nodes = nodeList.getItems();
-		Map<NodeStatus, NodeStatusMetric> statuesMetrics = getNodesStatusMap();
-
-		for (V1Node node : nodes) {
-			List<V1NodeCondition> conditions = node.getStatus().getConditions();
-			for (V1NodeCondition condition : conditions) {
-				if (condition.getType().equals(NodeStatus.STATUS_CONDITION_TYPE)) {
-					if (condition.getStatus().equals("True")) {
-						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.Ready);
-						if (nsm != null) {
-							nsm.increaseCount();
-						} else {
-							nsm = new NodeStatusMetric();
-							nsm.setStatus(NodeStatus.Ready);
-							nsm.setCount(1);
-							statuesMetrics.put(NodeStatus.Ready, nsm);
-						}
-					} else if (condition.getStatus().equals("False")) {
-						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.NotReady);
-						if (nsm != null) {
-							nsm.increaseCount();
-						} else {
-							nsm = new NodeStatusMetric();
-							nsm.setStatus(NodeStatus.NotReady);
-							nsm.setCount(1);
-							statuesMetrics.put(NodeStatus.NotReady, nsm);
-						}
-					} else {
-						NodeStatusMetric nsm = statuesMetrics.get(NodeStatus.Unknown);
-						if (nsm != null) {
-							nsm.increaseCount();
-						} else {
-							nsm = new NodeStatusMetric();
-							nsm.setStatus(NodeStatus.Unknown);
-							nsm.setCount(1);
-							statuesMetrics.put(NodeStatus.Unknown, nsm);
-						}
-					}
-				}
-			}
-		}
-
-		NodesStatusMetricsVO vo = new NodesStatusMetricsVO();
-		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
-		vo.setTotalCount(BigDecimal.valueOf(nodes.size()));
-
-		return vo;
-	}
-
 	private Map<NodeStatus, NodeStatusMetric> getNodesStatusMap() {
 		Map<NodeStatus, NodeStatusMetric> statuesMetrics = new HashMap<>();
 
@@ -637,50 +719,6 @@ public class MetricService {
 		return statuesMetrics;
 	}
 
-	public PodsStatusMetricsVO getPodsStatusMetrics(String namespace) throws ZcpException {
-		V1PodList podList = null;
-
-		try {
-			if (StringUtils.isEmpty(namespace)) {
-				podList = kubeCoreManager.getAllPodList();
-			} else {
-				podList = kubeCoreManager.getPodListByNamespace(namespace);
-			}
-		} catch (ApiException e) {
-			e.printStackTrace();
-			throw new ZcpException("ZCP-009", e.getMessage());
-		}
-
-		List<V1Pod> pods = podList.getItems();
-		Map<PodStatus, PodStatusMetric> statuesMetrics = getPodsStatusMap();
-
-		for (V1Pod pod : pods) {
-			String phase = pod.getStatus().getPhase();
-
-			for (PodStatus status : PodStatus.values()) {
-				if (StringUtils.equals(phase, status.name())) {
-					PodStatusMetric psm = statuesMetrics.get(status);
-					if (psm != null) {
-						psm.increaseCount();
-					} else {
-						psm = new PodStatusMetric();
-						psm.setStatus(status);
-						psm.setCount(1);
-						statuesMetrics.put(status, psm);
-					}
-				} else {
-					logger.warn("This phase(" + phase + ") does not exist in PodStatus. Please check it");
-				}
-			}
-		}
-
-		PodsStatusMetricsVO vo = new PodsStatusMetricsVO();
-		vo.setStatuses(statuesMetrics.values().stream().collect(Collectors.toList()));
-		vo.setTotalCount(BigDecimal.valueOf(pods.size()));
-
-		return vo;
-	}
-
 	private Map<PodStatus, PodStatusMetric> getPodsStatusMap() {
 		Map<PodStatus, PodStatusMetric> statuesMetrics = new HashMap<>();
 
@@ -689,6 +727,99 @@ public class MetricService {
 			psm.setStatus(status);
 			psm.setCount(0);
 			statuesMetrics.put(status, psm);
+		}
+
+		return statuesMetrics;
+	}
+
+	private Map<ClusterRole, UserStatusMetric> getClusterRoleStatus() throws ApiException {
+		List<UserRepresentation> keyCloakUsers = keyCloakManager.getUserList(null);
+
+		List<ZcpUser> users = new ArrayList<ZcpUser>();
+		for (UserRepresentation cloakUser : keyCloakUsers) {
+			ZcpUser user = new ZcpUser();
+			user.setId(cloakUser.getId());
+			user.setUsername(cloakUser.getUsername());
+			user.setEmail(cloakUser.getEmail());
+			user.setLastName(cloakUser.getLastName());
+			user.setFirstName(cloakUser.getFirstName());
+			user.setCreatedDate(new Date(cloakUser.getCreatedTimestamp()));
+			user.setEnabled(cloakUser.isEnabled());
+
+			users.add(user);
+		}
+
+		Map<String, V1ClusterRoleBinding> mappedClusterRoleBindings = getMappedClusterRoleBindings();
+
+		for (ZcpUser user : users) {
+			V1ClusterRoleBinding userClusterRoleBinding = mappedClusterRoleBindings.get(user.getUsername());
+			if (userClusterRoleBinding != null) {
+				user.setClusterRole(ClusterRole.getClusterRole(userClusterRoleBinding.getRoleRef().getName()));
+			} else {
+				user.setClusterRole(ClusterRole.NONE);
+			}
+		}
+
+		Map<ClusterRole, UserStatusMetric> data = getUserStatusMap();
+		for (ZcpUser user : users) {
+			ClusterRole role = user.getClusterRole();
+			UserStatusMetric usm = data.get(role);
+
+			if (usm != null) {
+				usm.increaseCount();
+			} else {
+				usm = new UserStatusMetric();
+				usm.setRole(role);
+				usm.setCount(1);
+				data.put(role, usm);
+			}
+		}
+
+		return data;
+	}
+
+	private Map<ClusterRole, UserStatusMetric> getNamespaceRoleStatus(String namespace) throws ApiException {
+		V1RoleBindingList v1RoleBindingList = kubeRbacAuthzManager.getRoleBindingListByNamespace(namespace);
+
+		Map<ClusterRole, UserStatusMetric> data = getUserStatusMap();
+		for (V1RoleBinding v1RoleBinding : v1RoleBindingList.getItems()) {
+			ClusterRole role = ClusterRole.getClusterRole(v1RoleBinding.getRoleRef().getName());
+			UserStatusMetric usm = data.get(role);
+
+			if (usm != null) {
+				usm.increaseCount();
+			} else {
+				usm = new UserStatusMetric();
+				usm.setRole(role);
+				usm.setCount(1);
+				data.put(role, usm);
+			}
+		}
+
+		return data;
+	}
+
+	private Map<String, V1ClusterRoleBinding> getMappedClusterRoleBindings() throws ApiException {
+		List<V1ClusterRoleBinding> clusterRoleBindings = kubeRbacAuthzManager.getClusterRoleBindingList().getItems();
+
+		Map<String, V1ClusterRoleBinding> map = new HashMap<>();
+		for (V1ClusterRoleBinding clusterRoleBinding : clusterRoleBindings) {
+			String username = clusterRoleBinding.getMetadata().getLabels()
+					.get(ResourcesLabelManager.SYSTEM_USERNAME_LABEL_NAME);
+			map.put(username, clusterRoleBinding);
+		}
+
+		return map;
+	}
+
+	private Map<ClusterRole, UserStatusMetric> getUserStatusMap() {
+		Map<ClusterRole, UserStatusMetric> statuesMetrics = new HashMap<>();
+
+		for (ClusterRole role : ClusterRole.values()) {
+			UserStatusMetric usm = new UserStatusMetric();
+			usm.setRole(role);
+			usm.setCount(0);
+			statuesMetrics.put(role, usm);
 		}
 
 		return statuesMetrics;

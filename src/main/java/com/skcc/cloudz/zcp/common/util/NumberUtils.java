@@ -67,8 +67,9 @@ public class NumberUtils {
 
 		if (value < 1) {	// Millicore case
 			// shoud not be called this case
-			double formattedValue = value * 1000;
-			data = StringUtils.substringBefore(String.valueOf(formattedValue), ".") ;
+//			double formattedValue = value * 1000;
+//			data = StringUtils.substringBefore(String.valueOf(formattedValue), ".") ;
+			throw new IllegalArgumentException("The cpu core value is less than 1(=1000m) Core.");
 		} else {		// Core case
 			String decimalValue = StringUtils.substringBefore(String.valueOf(value), ".");
 			String decimalPoint = StringUtils.substringAfter(String.valueOf(value), ".");
@@ -122,7 +123,8 @@ public class NumberUtils {
 		double formattedValue = value / 1024 / 1024;
 		if (formattedValue < 1024) {
 			// shoud not be called this case
-			data = StringUtils.substringBefore(String.valueOf(formattedValue), ".");
+//			data = StringUtils.substringBefore(String.valueOf(formattedValue), ".");
+			throw new IllegalArgumentException("The memory value is less than 1Gi(=1024Mi).");
 		} else {
 			formattedValue = formattedValue / 1024;
 			

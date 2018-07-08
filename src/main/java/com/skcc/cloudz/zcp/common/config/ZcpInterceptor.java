@@ -1,12 +1,9 @@
 package com.skcc.cloudz.zcp.common.config;
 
-import static com.skcc.cloudz.zcp.common.cnst.COMMON.SESSION_TIMEOUT_OBJ;
-
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +22,7 @@ public class ZcpInterceptor extends HandlerInterceptorAdapter {
 
 	private static final Logger logger = LoggerFactory.getLogger(ZcpInterceptor.class);
 
+	@SuppressWarnings("unused")
 	@Autowired
 	private Environment environment;
 
@@ -36,18 +34,20 @@ public class ZcpInterceptor extends HandlerInterceptorAdapter {
 //		Map<String, String[]> parameterMap = requestCacheWrapperObject.getParameterMap();
 //		logger.debug("payload = {}", parameterMap);
 
-		if (environment.getActiveProfiles().equals("real")) {
-			HttpSession session = request.getSession();
-			String timeout_obj = (String) session.getAttribute(SESSION_TIMEOUT_OBJ);
-			if (timeout_obj == null) {
-				throw new ZcpException("E00001");
-			} else {
-				// response.sendRedirect("/main.jsp");
-				return true;
-			}
-		} else {
-			return true;
-		}
+//		if (environment.getActiveProfiles().equals("real")) {
+//			HttpSession session = request.getSession();
+//			String timeout_obj = (String) session.getAttribute(SESSION_TIMEOUT_OBJ);
+//			if (timeout_obj == null) {
+//				throw new ZcpException("E00001");
+//			} else {
+//				// response.sendRedirect("/main.jsp");
+//				return true;
+//			}
+//		} else {
+//			return true;
+//		}
+		
+		return true;
 	}
 
 	@Override

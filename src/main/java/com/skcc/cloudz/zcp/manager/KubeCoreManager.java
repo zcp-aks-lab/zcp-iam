@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.google.gson.JsonSyntaxException;
+
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Configuration;
@@ -60,19 +62,16 @@ public class KubeCoreManager {
 		return api.replaceNamespacedServiceAccount(serviceAccountName, namespace, serviceAccount, pretty);
 	}
 
-	public V1Status deleteServiceAccount(String namespace, String serviceAccountName, V1DeleteOptions deleteOption)
-			throws ApiException {
-		return api.deleteNamespacedServiceAccount(serviceAccountName, namespace, deleteOption, pretty, null, null,
+	public V1Status deleteServiceAccount(String namespace, String serviceAccountName) throws ApiException {
+		V1DeleteOptions deleteOptions = new V1DeleteOptions();
+		deleteOptions.setGracePeriodSeconds(0l);
+		return api.deleteNamespacedServiceAccount(serviceAccountName, namespace, deleteOptions, pretty, null, null,
 				null);
 	}
 
 	public V1Status deleteServiceAccountListByUsername(String namespace, String username) throws ApiException {
 		return api.deleteCollectionNamespacedServiceAccount(namespace, pretty, null, null, null,
 				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);
-	}
-
-	public V1Status deleteNamespace(String namespace, V1DeleteOptions deleteOptions) throws ApiException {
-		return api.deleteNamespace(namespace, deleteOptions, pretty, null, null, null);
 	}
 
 	public V1ServiceAccountList getServiceAccountListByUsername(String namespace, String username) throws ApiException {
@@ -84,13 +83,13 @@ public class KubeCoreManager {
 		return api.readNamespacedSecret(secretName, namespace, pretty, null, null);
 	}
 
-	public V1Namespace createNamespace(String namespaceName, V1Namespace namespace) throws ApiException {
-		return api.createNamespace(namespace, pretty);
-	}
-
 	public V1NamespaceList getNamespaceList() throws ApiException {
 		return api.listNamespace(pretty, null, null, null, ResourcesLabelManager.getSystemLabelSelector(), null, null,
 				null, null);
+	}
+
+	public V1Namespace createNamespace(String namespaceName, V1Namespace namespace) throws ApiException {
+		return api.createNamespace(namespace, pretty);
 	}
 
 	public V1Namespace getNamespace(String namespace) throws ApiException {
@@ -105,8 +104,42 @@ public class KubeCoreManager {
 		return api.replaceNamespace(namespaceName, namespace, pretty);
 	}
 
+	public V1Status deleteNamespace(String namespace) throws ApiException {
+		V1DeleteOptions deleteOptions = new V1DeleteOptions();
+		deleteOptions.setGracePeriodSeconds(0l);
+
+		V1Status status = null;
+		try {
+			status = api.deleteNamespace(namespace, deleteOptions, pretty, null, null, null);
+		} catch (JsonSyntaxException e) {
+			if (e.getCause() instanceof IllegalStateException) {
+				// TODO we shoud check why exception is thrown??
+				// this is an addhoc process
+//				e.printStackTrace();
+				logger.warn("Why does the k8s client throw the exception?? {}", e.getMessage());
+			} else {
+				throw e;
+			}
+		}
+
+		return status;
+	}
+
+	public V1LimitRangeList getLimitRanges(String namespace) throws ApiException {
+		return api.listNamespacedLimitRange(namespace, pretty, null, null, null, null, null, null, null, null);
+	}
+
 	public V1LimitRange createLimitRange(String namespace, V1LimitRange limitRange) throws ApiException {
 		return api.createNamespacedLimitRange(namespace, limitRange, pretty);
+	}
+
+	public V1LimitRange getLimitRange(String namespace, String limitRangeName) throws ApiException {
+		return api.readNamespacedLimitRange(limitRangeName, namespace, pretty, null, null);
+	}
+
+	public V1LimitRange editLimitRange(String namespace, String limitRangeName, V1LimitRange limitRange)
+			throws ApiException {
+		return api.replaceNamespacedLimitRange(limitRangeName, namespace, limitRange, pretty);
 	}
 
 	public V1Status deleteLimitRange(String namespace, String limitRangeName) throws ApiException {
@@ -115,17 +148,8 @@ public class KubeCoreManager {
 		return api.deleteNamespacedLimitRange(limitRangeName, namespace, deleteOptions, pretty, null, null, null);
 	}
 
-	public V1LimitRange editLimitRange(String namespace, String limitRangeName, V1LimitRange limitRange)
-			throws ApiException {
-		return api.replaceNamespacedLimitRange(limitRangeName, namespace, limitRange, pretty);
-	}
-
-	public V1LimitRangeList getLimitRanges(String namespace) throws ApiException {
-		return api.listNamespacedLimitRange(namespace, pretty, null, null, null, null, null, null, null, null);
-	}
-
-	public V1LimitRange getLimitRange(String namespace, String limitRangeName) throws ApiException {
-		return api.readNamespacedLimitRange(limitRangeName, namespace, pretty, null, null);
+	public V1ResourceQuotaList getResourceQuotaList(String namespace) throws ApiException {
+		return api.listNamespacedResourceQuota(namespace, pretty, null, null, null, null, null, null, null, null);
 	}
 
 	public V1ResourceQuota createResourceQuota(String namespace, V1ResourceQuota quota) throws ApiException {
@@ -137,10 +161,6 @@ public class KubeCoreManager {
 		return api.replaceNamespacedResourceQuota(quotaName, namespace, quota, pretty);
 	}
 
-	public V1ResourceQuotaList getResourceQuotaList(String namespace) throws ApiException {
-		return api.listNamespacedResourceQuota(namespace, pretty, null, null, null, null, null, null, null, null);
-	}
-
 	public V1ResourceQuota getResourceQuota(String namespace, String quotaName) throws ApiException {
 		return api.readNamespacedResourceQuota(quotaName, namespace, pretty, null, null);
 	}
@@ -149,8 +169,18 @@ public class KubeCoreManager {
 		return api.listResourceQuotaForAllNamespaces(null, null, null, null, null, pretty, null, null, null);
 	}
 
+	public V1Status deleteResourceQuota(String namespace, String resourceQuotaName) throws ApiException {
+		V1DeleteOptions deleteOptions = new V1DeleteOptions();
+		deleteOptions.setGracePeriodSeconds(0l);
+		return api.deleteNamespacedResourceQuota(resourceQuotaName, namespace, deleteOptions, pretty, null, null, null);
+	}
+
 	public V1NodeList getNodeList() throws ApiException {
 		return api.listNode(pretty, null, null, null, null, null, null, null, null);
+	}
+
+	public V1PodList getAllPodList() throws ApiException {
+		return api.listPodForAllNamespaces(null, null, null, null, null, pretty, null, null, null);
 	}
 
 	public V1PodList getPodListByNode(String nodeName) throws ApiException {
@@ -161,19 +191,9 @@ public class KubeCoreManager {
 
 		return api.listPodForAllNamespaces(null, fieldSelector.toString(), null, null, null, pretty, null, null, null);
 	}
-	
+
 	public V1PodList getPodListByNamespace(String namespace) throws ApiException {
 		return api.listNamespacedPod(namespace, pretty, null, null, null, null, null, null, null, null);
-	}
-	
-	public V1PodList getAllPodList() throws ApiException {
-		return api.listPodForAllNamespaces(null, null, null, null, null, pretty, null, null, null);
-	}
-
-	public V1Status deleteResourceQuota(String namespace, String resourceQuotaName) throws ApiException {
-		V1DeleteOptions deleteOptions = new V1DeleteOptions();
-		deleteOptions.setGracePeriodSeconds(0l);
-		return api.deleteNamespacedResourceQuota(resourceQuotaName, namespace, deleteOptions, pretty, null, null, null);
 	}
 
 }
