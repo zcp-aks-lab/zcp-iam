@@ -48,9 +48,10 @@ public class MetricController {
 
 		return response;
 	}
-	
+
 	@RequestMapping(value = "/metrics/pods/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<PodsStatusMetricsVO> getPodsStatus(@RequestParam(required = false, value = "namespace") String namespace) throws Exception {
+	public Response<PodsStatusMetricsVO> getPodsStatus(
+			@RequestParam(required = false, value = "namespace") String namespace) throws Exception {
 		Response<PodsStatusMetricsVO> response = new Response<>();
 		response.setData(metricService.getPodsStatusMetrics(namespace));
 
@@ -58,7 +59,8 @@ public class MetricController {
 	}
 
 	@RequestMapping(value = "/metrics/deployments/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<DeploymentsStatusMetricsVO> getDeploymentsStatus(@RequestParam(required = false, value = "namespace") String namespace) throws Exception {
+	public Response<DeploymentsStatusMetricsVO> getDeploymentsStatus(
+			@RequestParam(required = false, value = "namespace") String namespace) throws Exception {
 		Response<DeploymentsStatusMetricsVO> response = new Response<>();
 		response.setData(metricService.getDeploymentsStatusMetrics(namespace));
 
@@ -74,7 +76,8 @@ public class MetricController {
 	}
 
 	@RequestMapping(value = "/metrics/users/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Response<UsersStatusMetricsVO> getUserStatus(@RequestParam(required = false, value = "namespace") String namespace) throws Exception {
+	public Response<UsersStatusMetricsVO> getUserStatus(
+			@RequestParam(required = false, value = "namespace") String namespace) throws Exception {
 		Response<UsersStatusMetricsVO> response = new Response<>();
 		response.setData(metricService.getUsersStatusMetrics(namespace));
 
@@ -85,7 +88,7 @@ public class MetricController {
 	public Response<ClusterStatusMetricsVO> getMemoryStatus(@PathVariable("type") String type) throws Exception {
 		Response<ClusterStatusMetricsVO> response = new Response<>();
 		response.setData(metricService.getClusterMetrics(type));
-	
+
 		return response;
 	}
 

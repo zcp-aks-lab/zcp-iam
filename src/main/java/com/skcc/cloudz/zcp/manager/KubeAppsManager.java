@@ -35,15 +35,17 @@ public class KubeAppsManager {
 		logger.debug("KubeCoreManager is initialized");
 	}
 
-	public V1beta2DeploymentList getDeploymentList(String namespace)
-			throws ApiException {
-		V1beta2DeploymentList deploymentList = null;
+	public V1beta2DeploymentList getDeploymentList(String namespace) throws ApiException {
+		V1beta2DeploymentList v1beta2DeploymentList = null;
 		if (StringUtils.isEmpty(namespace)) {
-			deploymentList = api.listDeploymentForAllNamespaces(null, null, null, null, null, pretty, null, null, null);
+			v1beta2DeploymentList = api.listDeploymentForAllNamespaces(null, null, null, null, null, pretty, null, null,
+					null);
 		} else {
-			deploymentList = api.listNamespacedDeployment(namespace, pretty, null, null, null, null, null, null, null, null);
+			v1beta2DeploymentList = api.listNamespacedDeployment(namespace, pretty, null, null, null, null, null, null,
+					null, null);
 		}
-		return deploymentList;
+
+		return v1beta2DeploymentList;
 	}
 
 }
