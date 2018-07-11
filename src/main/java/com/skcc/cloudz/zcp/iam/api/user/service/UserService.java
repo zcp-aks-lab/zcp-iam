@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.skcc.cloudz.zcp.iam.api.namespace.vo.RoleBindingVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.ResetCredentialVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.ResetPasswordVO;
