@@ -1,0 +1,126 @@
+package com.skcc.cloudz.zcp.iam.manager;
+
+import java.io.IOException;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.Configuration;
+import io.kubernetes.client.apis.RbacAuthorizationV1Api;
+import io.kubernetes.client.models.V1ClusterRoleBinding;
+import io.kubernetes.client.models.V1ClusterRoleBindingList;
+import io.kubernetes.client.models.V1ClusterRoleList;
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1RoleBinding;
+import io.kubernetes.client.models.V1RoleBindingList;
+import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.util.Config;
+
+@Component
+public class KubeRbacAuthzManager {
+
+	private final Logger log = (Logger) LoggerFactory.getLogger(KubeRbacAuthzManager.class);
+
+	private ApiClient client;
+
+	private RbacAuthorizationV1Api api;
+
+	@Value("${kube.client.api.output.pretty}")
+	private String pretty;
+
+	public KubeRbacAuthzManager() throws IOException {
+		client = Config.defaultClient();
+		Configuration.setDefaultApiClient(client);
+		api = new RbacAuthorizationV1Api(this.client);
+
+		log.debug("KubeRbacAuthzManager is initialized");
+	}
+
+	public V1ClusterRoleList getClusterRoles(String type) throws ApiException {
+		String labelSelector = null;
+		if (StringUtils.equals(type, "cluster")) {
+			labelSelector = ResourcesLabelManager.getSystemClusterRoleLabelSelector();
+		} else if (StringUtils.equals(type, "namespace")) {
+			labelSelector = ResourcesLabelManager.getSystemNamespaceRoleLabelSelector();
+		}
+
+		return api.listClusterRole(pretty, null, null, null, labelSelector, null, null, null, null);
+	}
+
+	public V1ClusterRoleBindingList getClusterRoleBindingList() throws ApiException {
+		return api.listClusterRoleBinding(pretty, null, null, null, ResourcesLabelManager.getSystemUserLabelSelector(),
+				null, null, null, null);
+	}
+
+	public V1ClusterRoleBindingList getClusterRoleBindingListByUsername(String username) throws ApiException {
+		return api.listClusterRoleBinding(pretty, null, null, null,
+				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);
+	}
+
+	public V1ClusterRoleBinding getClusterRoleBindingByUsername(String username) throws ApiException {
+		return api.readClusterRoleBinding(ResourcesNameManager.getClusterRoleBindingName(username), pretty);
+	}
+
+	public V1ClusterRoleBinding createClusterRoleBinding(V1ClusterRoleBinding clusterrolebinding) throws ApiException {
+		return api.createClusterRoleBinding(clusterrolebinding, pretty);
+	}
+
+	public V1Status deleteClusterRoleBinding(String clusterRoleBindingName) throws ApiException {
+		V1DeleteOptions deleteOptions = new V1DeleteOptions();
+		deleteOptions.setGracePeriodSeconds(0l);
+		return api.deleteClusterRoleBinding(clusterRoleBindingName, deleteOptions, pretty, null, null, null);
+	}
+
+	public V1Status deleteClusterRoleBindingByUsername(String username) throws ApiException {
+		return api.deleteCollectionClusterRoleBinding(pretty, null, null, null,
+				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);
+	}
+
+	public V1ClusterRoleBinding editClusterRoleBinding(String clusterRoleBindingName,
+			V1ClusterRoleBinding clusterrolebinding) throws ApiException {
+		return api.replaceClusterRoleBinding(clusterRoleBindingName, clusterrolebinding, pretty);
+	}
+
+	public V1RoleBindingList getRoleBindingListAllNamespaces() throws ApiException {
+		return api.listRoleBindingForAllNamespaces(null, null, null, ResourcesLabelManager.getSystemUserLabelSelector(),
+				null, pretty, null, null, null);
+	}
+
+	public V1RoleBindingList getRoleBindingListByNamespace(String namespace) throws ApiException {
+		return api.listNamespacedRoleBinding(namespace, pretty, null, null, null,
+				ResourcesLabelManager.getSystemUserLabelSelector(), null, null, null, null);
+	}
+
+	public V1RoleBindingList getRoleBindingListByUsername(String username) throws ApiException {
+		return api.listRoleBindingForAllNamespaces(null, null, null,
+				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, pretty, null, null, null);
+	}
+
+	public V1RoleBinding createRoleBinding(String namespace, V1RoleBinding rolebinding) throws ApiException {
+		return api.createNamespacedRoleBinding(namespace, rolebinding, pretty);
+	}
+
+	public V1RoleBinding getRoleBindingByUserName(String namespace, String username) throws ApiException {
+		return api.readNamespacedRoleBinding(ResourcesNameManager.getRoleBindingName(username), namespace, pretty);
+	}
+
+	public V1RoleBinding replaceRoleBinding(String namespace, String roleBindingName, V1RoleBinding rolebinding)
+			throws ApiException {
+		return api.replaceNamespacedRoleBinding(roleBindingName, namespace, rolebinding, pretty);
+	}
+
+	public V1Status deleteRoleBinding(String namespace, String roleBindingName, V1DeleteOptions deleteOptions)
+			throws ApiException {
+		return api.deleteNamespacedRoleBinding(roleBindingName, namespace, deleteOptions, pretty, null, null, null);
+	}
+
+	public V1Status deleteRoleBindingListByUsername(String namespace, String username) throws ApiException {
+		return api.deleteCollectionNamespacedRoleBinding(namespace, pretty, null, null, null,
+				ResourcesLabelManager.getSystemUsernameLabelSelector(username), null, null, null, null);
+	}
+}

@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.skcc.cloudz.zcp.user.service.UserService;
+import com.skcc.cloudz.zcp.iam.api.user.service.UserService;
 
 import io.kubernetes.client.ApiException;
 
