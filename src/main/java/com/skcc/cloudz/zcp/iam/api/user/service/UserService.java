@@ -395,7 +395,7 @@ public class UserService {
 		V1RoleRef roleRef = new V1RoleRef();
 		roleRef.setApiGroup("rbac.authorization.k8s.io");
 		roleRef.setKind("ClusterRole");
-		roleRef.setName(ClusterRole.MEMBER.getRole());
+		roleRef.setName(ClusterRole.VIEW.getRole());
 
 		V1Subject subject = new V1Subject();
 		subject.setKind("ServiceAccount");
