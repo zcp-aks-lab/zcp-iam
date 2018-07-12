@@ -95,14 +95,16 @@ public class UserService {
 		try {
 			mappedClusterRoleBindings = getMappedClusterRoleBindings();
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-0001");
+			e.printStackTrace();
+			throw new ZcpException("U0001");
 		}
 
 		Map<String, List<V1RoleBinding>> mappedRoleBindings = null;
 		try {
 			mappedRoleBindings = getMappedRoleBindings();
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-0001");
+			e.printStackTrace();
+			throw new ZcpException("U0002");
 		}
 
 		for (ZcpUser user : users) {
@@ -125,7 +127,8 @@ public class UserService {
 		try {
 			userRepresentation = keyCloakManager.getUser(id);
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-0001", e.getMessage());
+			e.printStackTrace();
+			throw new ZcpException("U0003", e.getMessage());
 		}
 
 		logger.debug("keyclock user info - {}", userRepresentation);
@@ -137,7 +140,9 @@ public class UserService {
 		try {
 			userClusterRoleBinding = kubeRbacAuthzManager.getClusterRoleBindingByUsername(username);
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-0001");
+			//e.printStackTrace();
+			//throw new ZcpException("ZCP-0001", e.getMessage());
+			// we can ignore this case becase the user registered by himself the clusterrole does not exist yet
 		}
 
 		if (userClusterRoleBinding == null) {
@@ -152,8 +157,10 @@ public class UserService {
 		List<V1RoleBinding> userRoleBindings = null;
 		try {
 			userRoleBindings = kubeRbacAuthzManager.getRoleBindingListByUsername(username).getItems();
-		} catch (ApiException e1) {
-			throw new ZcpException("ZCP-0001");
+		} catch (ApiException e) {
+			//e.printStackTrace();
+			//throw new ZcpException("ZCP-0001", e.getMessage());
+			// we can ignore this case becase the user registered by himself the clusterrole does not exist yet
 		}
 
 		if (userRoleBindings != null && !userRoleBindings.isEmpty()) {
