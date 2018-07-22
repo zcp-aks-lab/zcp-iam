@@ -1,10 +1,11 @@
 keycloak:
-  realm: ${KEYCLOAK_MASTER_REALM}
-  clientId: ${KEYCLOAK_MASTER_CLIENTID}
-  clientSecret: ${KEYCLOAK_CLIENT_SECRET}
   serverUrl: ${KEYCLOAK_SERVER_URL}
-  username: ${KEYCLOAK_MASTER_USERNAME}
-  password: ${KEYCLOAK_MASTER_PASSWORD}
+  master:
+    realm: ${KEYCLOAK_MASTER_REALM}
+    clientId: ${KEYCLOAK_MASTER_CLIENTID}
+    clientSecret: ${KEYCLOAK_MASTER_CLIENT_SECRET}
+    username: ${KEYCLOAK_MASTER_USERNAME}
+    password: ${KEYCLOAK_MASTER_PASSWORD}
   
 logging:
   level:

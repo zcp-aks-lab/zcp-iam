@@ -1,11 +1,11 @@
 keycloak:
-  clientId: account
-  clientSecret: 611c87d9-37f3-4078-b500-542cf419b113
-  password: admin1234
-  realm: zcp
   serverUrl: http://keycloak.cberry.xyz/auth
-  username: 1800275@partner.skcc.com
-
+  master:
+    realm: zcp
+    clientId: account
+    clientSecret: 611c87d9-37f3-4078-b500-542cf419b113
+    password: admin1234
+    username: 1800275@partner.skcc.com
 
 logging:
   level:
