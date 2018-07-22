@@ -9,7 +9,6 @@ spec:
     metadata:
       labels:
         component: zcp-iam
-#        stack: stable
     spec:
       tolerations:
       - key: "management"
@@ -43,20 +42,25 @@ spec:
           limits:
             memory: "1024Mi"
             cpu: "800m"
-#        envFrom:
-#        - configMapRef:
-#            name: cloud-movie-bk-config
-#        env:
-#          - name: REDIS_PASSWORD
-#            valueFrom:
-#              secretKeyRef:
-#                name: cloud-movie-bk-secret
-#                key: REDIS_PASSWORD
-#          - name: MARIADB_PASSWORD
-#            valueFrom:
-#              secretKeyRef:
-#                name: cloud-movie-bk-secret
-#                key: MARIADB_PASSWORD
+        envFrom:
+        - configMapRef:
+            name: zcp-iam-config
+        env:
+          - name: KEYCLOAK_MASTER_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: zcp-iam-secret
+                key: KEYCLOAK_MASTER_CLIENT_SECRET
+          - name: KEYCLOAK_MASTER_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: zcp-iam-secret
+                key: KEYCLOAK_MASTER_USERNAME
+          - name: KEYCLOAK_MASTER_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: zcp-iam-secret
+                key: KEYCLOAK_MASTER_PASSWORD
       serviceAccount: zcp-system-admin
       serviceAccountName: zcp-system-admin
 ---

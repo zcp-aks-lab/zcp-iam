@@ -4,7 +4,9 @@ metadata:
   name: zcp-iam-config
   namespace: zcp-system
 data:
-  SPRING_ACTIVE_PROFILE: stage 
-  MARIADB_HOST: bk-mariadb-mariadb.bk-service
-  MARIADB_USER: zcp-user
-  REDIS_HOST: bk-redis-redis.bk-service
+  SPRING_ACTIVE_PROFILE: stage
+  KEYCLOAK_MASTER_REALM: master
+  KEYCLOAK_MASTER_CLIENTID : master-realm
+  # can we use the internal service name instead of public dns?
+  KEYCLOAK_SERVER_URL: https://keycloak.cloudzcp.io/auth/
+  KUBE_APISERVER_URL: https://169.56.69.242:23078

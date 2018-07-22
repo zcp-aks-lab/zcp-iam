@@ -1,0 +1,40 @@
+keycloak:
+  realm: ${KEYCLOAK_MASTER_REALM}
+  clientId: ${KEYCLOAK_MASTER_CLIENTID}
+  clientSecret: ${KEYCLOAK_CLIENT_SECRET}
+  serverUrl: ${KEYCLOAK_SERVER_URL}
+  username: ${KEYCLOAK_MASTER_USERNAME}
+  password: ${KEYCLOAK_MASTER_PASSWORD}
+  
+logging:
+  level:
+    com:
+      skcc:
+        cloudz:
+          zcp: DEBUG
+    io:
+      kubernetes:
+        client: DEBUG
+    org:
+      hibernate: DEBUG
+      keycloak: DEBUG
+      springframework:
+        security: DEBUG
+        web: DEBUG
+        
+kube:
+  client:
+    api:
+      output:
+        pretty: true
+  server:
+    apiserver:
+      endpoint: ${KUBE_APISERVER_URL}
+    
+server:
+  port: 8181
+zcp:
+  keycloak:
+    realm: zcp
+  kube:
+    namespace: zcp-system
