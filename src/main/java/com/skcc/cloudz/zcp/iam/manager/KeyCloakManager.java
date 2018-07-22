@@ -37,9 +37,6 @@ public class KeyCloakManager {
 	@Value("${zcp.keycloak.realm}")
 	private String realm;
 
-	@Value("${keycloak.clientId}")
-	private String clientId;
-
 	public List<UserRepresentation> getUserList() {
 		return getUserList(null);
 	}
