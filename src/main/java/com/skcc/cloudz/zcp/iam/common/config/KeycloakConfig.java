@@ -19,19 +19,19 @@ public class KeycloakConfig{
 	@Value("${keycloak.serverUrl}")
 	private String serverUrl; 
 	
-	@Value("${keycloak.realm}")
+	@Value("${keycloak.master.realm}")
 	private String realm; 
 	
-	@Value("${keycloak.clientId}")
+	@Value("${keycloak.master.clientId}")
 	private String clientId; 
 	
-	@Value("${keycloak.clientSecret}")
+	@Value("${keycloak.master.clientSecret}")
 	private String clientSecret; 
 	
-	@Value("${keycloak.username}")
+	@Value("${keycloak.master.username}")
 	private String username;
 	
-	@Value("${keycloak.password}")
+	@Value("${keycloak.master.password}")
 	private String password;
 	
 	@Bean
