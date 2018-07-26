@@ -62,26 +62,17 @@ public class NumberUtils {
 	
 	public static BigDecimal formatCpuWithoutUnit(double value) {
 		String data = null;
-		if (value == 0)
-			data = StringUtils.substringBefore(String.valueOf(value), ".");
-
-		if (value < 1) {	// Millicore case
-			// shoud not be called this case
-//			double formattedValue = value * 1000;
-//			data = StringUtils.substringBefore(String.valueOf(formattedValue), ".") ;
-			throw new IllegalArgumentException("The cpu core value is less than 1(=1000m) Core.");
-		} else {		// Core case
-			String decimalValue = StringUtils.substringBefore(String.valueOf(value), ".");
-			String decimalPoint = StringUtils.substringAfter(String.valueOf(value), ".");
-			StringBuilder sb = new StringBuilder();
-			sb.append(decimalValue);
-			if(!StringUtils.isEmpty(decimalPoint) && !StringUtils.equals(decimalPoint, "0")) {
-				sb.append(".");
-				sb.append(StringUtils.substring(decimalPoint, 0, 2));
-			}
-			data = sb.toString();
-		}
 		
+		String decimalValue = StringUtils.substringBefore(String.valueOf(value), ".");
+		String decimalPoint = StringUtils.substringAfter(String.valueOf(value), ".");
+		StringBuilder sb = new StringBuilder();
+		sb.append(decimalValue);
+		if(!StringUtils.isEmpty(decimalPoint) && !StringUtils.equals(decimalPoint, "0")) {
+			sb.append(".");
+			sb.append(StringUtils.substring(decimalPoint, 0, 2));
+		}
+		data = sb.toString();
+
 		return new BigDecimal(data);
 	}
 
@@ -146,5 +137,9 @@ public class NumberUtils {
 	public static void main(String[] args) {
 		BigDecimal b = new BigDecimal(NumberUtils.percentFormat(343, 93429));
 		System.err.println("value = " + b);
+		
+		System.out.println(NumberUtils.formatCpuWithoutUnit(0.31242));
+		System.out.println(NumberUtils.formatCpuWithoutUnit(0));
+		System.out.println(NumberUtils.formatCpuWithoutUnit(12343.3523523));
 	}
 }
