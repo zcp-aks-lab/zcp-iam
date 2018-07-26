@@ -9,10 +9,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - zcp-iam.cloudzcp.io
+    - lawai-logging.cloudzcp.io
     secretName: cloudzcp-io-cert
   rules:
-  - host: zcp-iam.cloudzcp.io
+  - host: lawai-logging.cloudzcp.io
     http:
       paths:
       - backend:

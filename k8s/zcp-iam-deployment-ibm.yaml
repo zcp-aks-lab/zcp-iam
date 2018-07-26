@@ -30,7 +30,7 @@ spec:
                 - "management"
       containers:
       - name: zcp-iam
-        image: cloudzcp/zcp-iam:latest
+        image: registry.au-syd.bluemix.net/cloudzcp/zcp-iam:0.91
         imagePullPolicy: Always
         ports:
         - name: cont-port
