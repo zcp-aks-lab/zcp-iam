@@ -8,6 +8,9 @@ metadata:
 # TODO
 imagePullSecrets:
 - name: bluemix-cloudzcp-secret
+
+# TODO
+# should add the imagePullSecrets into the default sa of the zcp-system namespace
   
 ---
 apiVersion: rbac.authorization.k8s.io/v1

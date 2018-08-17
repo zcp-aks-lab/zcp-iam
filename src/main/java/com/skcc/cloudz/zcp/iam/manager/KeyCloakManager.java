@@ -67,6 +67,7 @@ public class KeyCloakManager {
 		try {
 			userRepresentation = userResource.toRepresentation();
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new KeyCloakException("KK-0001", "The user(" + id + ") does not exist");
 		}
 
