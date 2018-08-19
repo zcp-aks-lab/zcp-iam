@@ -80,14 +80,15 @@ data:
   KEYCLOAK_MASTER_PASSWORD: Y2xvdWR6Y3AhMjMk
 ```
 
-**KeyCloak > master realm > clients > master-realm > credentials** 탭으로 이동하여 Secret 정보를 복사 한 후 base64로 incoding 한다.
-[base64 encoding web site](https://www.base64encode.org/) 참고. Mac 에서 base64 로 하는 경우 % 가 붙어서 값이 틀림 주의 요망
+KeyCloak > master realm > clients > master-realm > credentials 탭으로 이동하여 Secret 정보를 복사 한 후 base64로 incoding 한다.
+
+([base64 encoding web site](https://www.base64encode.org/) 참고. :bangbang: Mac 에서 base64 로 하는 경우 % 가 붙어서 값이 틀림 주의 요망)
 
 `KEYCLOAK_MASTER_CLIENT_SECRET` 의 value 를 base64 incoding 된 값으로 변경한다.
 
 KeyCloak의 admin id/password 도 base64 incoding 한 후, 각각 `KEYCLOAK_MASTER_USERNAME`, `KEYCLOAK_MASTER_PASSWORD` 의 value 값을 변경한다.
 
-:bangbang: KeyCloak 설치 시 admin id/password 변경하지 않은 경우 그대로 사용하면 됨
+(:white_check_mark: KeyCloak 설치 시 admin id/password 변경하지 않은 경우 그대로 사용하면 됨)
 
 * Secret 생성
 ```
