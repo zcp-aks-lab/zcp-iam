@@ -17,7 +17,7 @@ k8s configuration 파일 디렉토리로 이동한다.
 $ cd zcp-iam/k8s
 ```
 
-### 1. zcp-iam에서 사용 할 zcp-system-admin 및 Console Admin (cloudzcp-admin) 사용자 용 serviceAccount 을 생성한다.
+### :one: zcp-iam에서 사용 할 zcp-system-admin 및 Console Admin (cloudzcp-admin) 사용자 용 serviceAccount 을 생성한다.
 zcp-system namespace 에 **bluemix container registry** 용 secret - `bluemix-cloudzcp-secret` 이 생성 되어 있어야 한다.
 
 ```
@@ -29,7 +29,7 @@ $ kubectl create -f zcp-system-admin-sa-crb.yaml
 $ kubectl get secret -n zcp-system
 ```
 
-### 2. ConfigMap을 수정하고 배포한다.
+### :two: ConfigMap을 수정한 후 생성 한다.
 * 프로젝트의 `api-server endpoint` 정보를 변경해야 한다.
 `api-server endpoint` 정보 확인
 ```
@@ -61,11 +61,11 @@ data:
   KUBE_APISERVER_URL: https://169.56.69.242:30439
 ```
 
-* ConfigMap 배포
+* ConfigMap 생성
 ```
 $ kubectl create -f zcp-iam-config.yaml
 ```
-### Secret을 수정하고 배포한다.
+### :three: Secret을 수정한 후 생성 한다.
 * KeyCloak 설치 시 admin crediential 정보와 KeyCloak의 master realm에 있는 master-realm client의 secret 값을 변경해야 한다. 
 ```
 apiVersion: v1
@@ -85,14 +85,24 @@ data:
 
 `KEYCLOAK_MASTER_CLIENT_SECRET` 의 value 를 base64 incoding 된 값으로 변경한다.
 
-KeyCloak의 admin id/password 도 base64 incoding 한 후, 각각 `KEYCLOAK_MASTER_USERNAME`, `KEYCLOAK_MASTER_PASSWORD` 의 value 값을 벼경한다.
-** KeyCloak 설치 시 admin id/password 변경하지 않은 경우 그대로 사용하면 됨 **
+KeyCloak의 admin id/password 도 base64 incoding 한 후, 각각 `KEYCLOAK_MASTER_USERNAME`, `KEYCLOAK_MASTER_PASSWORD` 의 value 값을 변경한다.
 
-* Secret 배포
+:bangbang: KeyCloak 설치 시 admin id/password 변경하지 않은 경우 그대로 사용하면 됨
+
+* Secret 생성
 ```
 $ kubectl create -f zcp-iam-secret.yaml
 ```
 
+### :four: Deployment와 Service를 생성 한다.
+zcp-iam 의 container image tag 정보를 확인 한 후, 생성 한다.
+현재는 bluemix container registry `image: registry.au-syd.bluemix.net/cloudzcp/zcp-iam:0.9.3` 를 사용한다.
+```
+$ cd ../
+$ kubectl create -f zcp-iam-deployment-ibm.yaml
+```
 
-### deployment를 배포한다.
-### ingress 를 수정하고 배포한다.
+다음 명령어로 zcp-iam 이 정상적으로 배포되었는지 확인한다.
+```
+$ kubectl get pod -n zcp-system
+```
