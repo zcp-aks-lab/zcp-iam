@@ -30,7 +30,8 @@ $ kubectl get secret -n zcp-system
 ```
 
 ### :two: ConfigMap을 수정한 후 생성 한다.
-* 프로젝트의 `api-server endpoint` 정보를 변경해야 한다.
+#### 프로젝트의 `api-server endpoint` 정보를 변경해야 한다.
+
 `api-server endpoint` 정보 확인
 ```
 $ kubectl config view
@@ -44,7 +45,7 @@ clusters:
   ...
 ```
 
-* ConfigMap 에 `api-server endpoint` 정보 변경
+#### ConfigMap 에 `api-server endpoint` 정보 변경
 ```
 $ cd site/
 $ vi zcp-iam-config.yaml
@@ -61,12 +62,14 @@ data:
   KUBE_APISERVER_URL: https://169.56.69.242:30439
 ```
 
-* ConfigMap 생성
+#### ConfigMap 생성
 ```
 $ kubectl create -f zcp-iam-config.yaml
 ```
 ### :three: Secret을 수정한 후 생성 한다.
-* KeyCloak 설치 시 admin crediential 정보와 KeyCloak의 master realm에 있는 master-realm client의 secret 값을 변경해야 한다. 
+
+#### KeyCloak 설치 시 admin crediential 정보와 KeyCloak의 master realm에 있는 master-realm client의 secret 값을 변경해야 한다. 
+
 ```
 apiVersion: v1
 kind: Secret
@@ -90,7 +93,8 @@ KeyCloak의 admin id/password 도 base64 incoding 한 후, 각각 `KEYCLOAK_MAST
 
 (:white_check_mark: KeyCloak 설치 시 admin id/password 변경하지 않은 경우 그대로 사용하면 됨)
 
-* Secret 생성
+#### Secret 생성
+
 ```
 $ kubectl create -f zcp-iam-secret.yaml
 ```
