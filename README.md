@@ -108,9 +108,9 @@ Secret 정보를 복사 한 후 base64로 incoding 한다.
 $ echo -n "secret of master realm client" | base64
 ```
 
-`KEYCLOAK_MASTER_CLIENT_SECRET` 의 value 를 base64 incoding 된 값으로 변경한다.
+`KEYCLOAK_MASTER_CLIENT_SECRET` 의 value 를 base64 encoding 된 값으로 변경한다.
 
-KeyCloak 설치 시 설정한 admin id/password (KEYCLOAK_ADMIN_ID, KEYCLOAK_ADMIN_PWD) 도 base64 incoding 한 후, 각각 `KEYCLOAK_MASTER_USERNAME`, `KEYCLOAK_MASTER_PASSWORD` 의 value 값을 변경한다.
+KeyCloak 설치 시 설정한 admin id/password (KEYCLOAK_ADMIN_ID, KEYCLOAK_ADMIN_PWD) 도 base64 encoding 한 후, 각각 `KEYCLOAK_MASTER_USERNAME`, `KEYCLOAK_MASTER_PASSWORD` 의 value 값을 변경한다.
 
 (:white_check_mark: KeyCloak 설치 시 admin id/password 변경하지 않은 경우 그대로 사용하면 됨)
 
