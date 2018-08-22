@@ -45,7 +45,10 @@ public class ExceptionController {
 	@ResponseBody
 	public Object zcpExceptionResolver(HttpServletRequest req, ZcpException e) {
 		String code = String.format("%d", e.getCode().getCode());
-		RtnVO vo = new RtnVO(code , e.getMessage());
+		RtnVO vo = new RtnVO();
+		vo.setCode(code);
+		vo.setMsg(e.getCode().toString());
+		vo.setData(e.getMessage());
 		return vo;
 	}
 
