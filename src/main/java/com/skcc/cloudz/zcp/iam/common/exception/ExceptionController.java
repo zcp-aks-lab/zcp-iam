@@ -1,10 +1,5 @@
 package com.skcc.cloudz.zcp.iam.common.exception;
 
-//import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-
-import java.io.IOException;
-import java.util.Properties;
-
 import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
@@ -22,27 +17,12 @@ public class ExceptionController {
 
 	private final Logger logger = LoggerFactory.getLogger(ExceptionController.class);
 
-	private Properties properties = new Properties();
-
-	public ExceptionController() throws IOException {
-		properties.load(getClass().getClassLoader().getResourceAsStream("exception.properties"));
-	}
-
 	@ExceptionHandler(Exception.class)
 	@ResponseBody
 	public Object exceptionResolver(HttpServletRequest req, Exception e) {
 		RtnVO vo = new RtnVO();
 		logger.debug("UnKnown Error...{}", e);
-		if (e instanceof ZcpException) {
-			vo.setCode(((ZcpException) e).getCode());
-		} else if (e instanceof KeyCloakException) {
-			vo.setCode(((KeyCloakException) e).getCode());
-		} else if (e instanceof ApiException) {
-			vo.setCode(String.valueOf(((ApiException) e).getCode()));
-		} else {
-			vo.setCode("500");
-		}
-
+		vo.setCode(ZcpErrorCode.UNKNOWN_ERROR);
 		vo.setMsg(e.getMessage());
 		return vo;
 	}
@@ -56,7 +36,7 @@ public class ExceptionController {
 		logger.debug(e.getMessage());
 		logger.debug("", e);
 		vo.setData(e.getResponseBody());
-		vo.setCode("K500");// 코드 수정 예정
+		vo.setCode(ZcpErrorCode.KUBERNETES_ERROR);
 		vo.setMsg(e.getMessage());
 		return vo;
 	}
@@ -64,9 +44,8 @@ public class ExceptionController {
 	@ExceptionHandler(ZcpException.class)
 	@ResponseBody
 	public Object zcpExceptionResolver(HttpServletRequest req, ZcpException e) {
-		// String msg = e.getMessage(); //prop.getProperty(e.getCode());
-		// logger.debug(msg, e);
-		RtnVO vo = new RtnVO(e.getCode(), e.getMessage());
+		String code = String.format("%d", e.getCode().getCode());
+		RtnVO vo = new RtnVO(code , e.getMessage());
 		return vo;
 	}
 
@@ -74,11 +53,10 @@ public class ExceptionController {
 	@ResponseBody
 	public Object KeycloakExceptionResolver(HttpServletRequest req, KeyCloakException e) {
 		RtnVO vo = new RtnVO();
-		logger.debug("{} : {} ", e.getCode(), e.getMessage());
-		vo.setData("");
-		vo.setCode(e.getCode());// 코드 수정 예정
+		vo.setCode(ZcpErrorCode.KEYCLOAK_ERROR);
 		vo.setMsg(e.getMessage());
 		return vo;
 	}
+	
 
 }

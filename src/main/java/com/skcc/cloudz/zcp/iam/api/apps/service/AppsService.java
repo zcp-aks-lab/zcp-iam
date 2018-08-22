@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.skcc.cloudz.zcp.iam.common.exception.ZcpErrorCode;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.iam.manager.KubeAppsManager;
 
@@ -32,9 +33,12 @@ public class AppsService {
 			v1beta2DeploymentList = kubeAppsManager.getDeploymentList(namespace);
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException("A001", e.getMessage());
+			if(e.getCode() == 400)
+				throw new ZcpException(ZcpErrorCode.UNAUTHORIZED_ERROR);
+			else
+				throw new ZcpException(ZcpErrorCode.UNKNOWN_ERROR, e);
 		}
-
+		
 		List<String> deployments = new ArrayList<>();
 		for (V1beta2Deployment v1beta2Deployment : v1beta2DeploymentList.getItems()) {
 			deployments.add(v1beta2Deployment.getMetadata().getName());

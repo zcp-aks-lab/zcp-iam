@@ -1,8 +1,27 @@
 package com.skcc.cloudz.zcp.iam.common.exception;
 
 public enum ZcpErrorCode {
-	SUCCESS(0, "Success"),
-	USER_NOTFOUND(10001, "User not found");
+	
+	//common
+	UNKNOWN_ERROR(10000, "Unknown error"),
+	KUBERNETES_ERROR(10001, "Unknown kobernetes error"),
+	KEYCLOAK_ERROR(10002, "Unknown keycloak error"),
+	USER_NOT_FOUND(10003, ""),
+	CLUSTERROLEBINDING_NOT_FOUND(10004, ""),
+	PERMISSION_DENY(10005, ""),
+	
+	//app
+	UNAUTHORIZED_ERROR(11001, "Unauthorized error"),
+	
+	//metric
+	UNSUPPORTED_TYPE(21001, "Unsupported type"),
+	
+	//namespace
+	ROLEBINDING_NOT_FOUND(31001, "")
+	
+	
+	;
+	
 	
 	private int code;
 	private String message;

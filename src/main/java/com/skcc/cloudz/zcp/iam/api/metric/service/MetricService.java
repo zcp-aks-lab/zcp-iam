@@ -21,6 +21,7 @@ import com.skcc.cloudz.zcp.iam.api.metric.vo.NodesStatusMetricsVO;
 import com.skcc.cloudz.zcp.iam.api.metric.vo.PodsStatusMetricsVO;
 import com.skcc.cloudz.zcp.iam.api.metric.vo.UsersStatusMetricsVO;
 import com.skcc.cloudz.zcp.iam.common.exception.KeyCloakException;
+import com.skcc.cloudz.zcp.iam.common.exception.ZcpErrorCode;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.iam.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.iam.common.model.DeploymentStatus;
@@ -93,7 +94,7 @@ public class MetricService {
 			nodeList = kubeCoreManager.getNodeList();
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
 		}
 
 		List<V1Node> nodes = nodeList.getItems();
@@ -197,7 +198,8 @@ public class MetricService {
 		try {
 			userRepresentation = keyCloakManager.getUser(userId);
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-0001", "The user(" + userId + ") does not exist");
+			e.printStackTrace();
+			throw new ZcpException(ZcpErrorCode.USER_NOT_FOUND, "The user(" + userId + ") does not exist");
 		}
 
 		String username = userRepresentation.getUsername();
@@ -208,7 +210,8 @@ public class MetricService {
 		try {
 			userClusterRoleBinding = kubeRbacAuthzManager.getClusterRoleBindingByUsername(username);
 		} catch (ApiException e2) {
-			throw new ZcpException("ZCP-0001", "The clusterrolebinding of user(" + userId + ") does not exist");
+			e2.printStackTrace();
+			throw new ZcpException(ZcpErrorCode.CLUSTERROLEBINDING_NOT_FOUND, "The clusterrolebinding of user(" + userId + ") does not exist");
 		}
 
 		String userClusterRole = userClusterRoleBinding.getRoleRef().getName();
@@ -217,7 +220,7 @@ public class MetricService {
 		boolean isAdmin = StringUtils.equals(userClusterRole, ClusterRole.ADMIN.getRole()) ? true : false;
 
 		if (!isClusterAdmin && !isAdmin) {
-			throw new ZcpException("ZCP-0001",
+			throw new ZcpException(ZcpErrorCode.PERMISSION_DENY,
 					"The user(" + userId + ") does not have a permission for namespace list");
 		}
 
@@ -228,7 +231,8 @@ public class MetricService {
 			try {
 				userRoleBindings = kubeRbacAuthzManager.getRoleBindingListByUsername(username).getItems();
 			} catch (ApiException e1) {
-				throw new ZcpException("ZCP-0001");
+				e1.printStackTrace();
+				throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e1);
 			}
 
 			if (userRoleBindings != null && !userRoleBindings.isEmpty()) {
@@ -342,7 +346,7 @@ public class MetricService {
 
 	public ClusterStatusMetricsVO getClusterMetrics(String type) throws ZcpException {
 		if (StringUtils.isEmpty(type) || (!StringUtils.equals(type, "cpu") && !StringUtils.equals(type, "memory"))) {
-			throw new ZcpException("001", "Unsupported type(" + type + ")");
+			throw new ZcpException(ZcpErrorCode.UNSUPPORTED_TYPE, "Unsupported type(" + type + ")");
 		}
 
 		V1alpha1NodeMetricList nodeMetricList = null;
@@ -350,7 +354,7 @@ public class MetricService {
 			nodeMetricList = kubeMetircManager.listNodeMetrics();
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
 		}
 
 		BigDecimal utilization = calcluateUtilization(nodeMetricList, type);
@@ -361,7 +365,7 @@ public class MetricService {
 			nodeList = kubeCoreManager.getNodeList();
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
 		}
 
 		BigDecimal allocatable = calcluateAllocatable(nodeList, type);
@@ -394,7 +398,8 @@ public class MetricService {
 		try {
 			deploymentList = kubeAppsManager.getDeploymentList(namespace);
 		} catch (ApiException e) {
-			throw new ZcpException("KK", e.getMessage());
+			e.printStackTrace();
+			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
 		}
 
 		List<V1beta2Deployment> deployments = deploymentList.getItems();
@@ -443,7 +448,7 @@ public class MetricService {
 			nodeList = kubeCoreManager.getNodeList();
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
 		}
 
 		List<V1Node> nodes = nodeList.getItems();
@@ -506,7 +511,7 @@ public class MetricService {
 			}
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
 		}
 
 		List<V1Pod> pods = podList.getItems();
@@ -547,14 +552,14 @@ public class MetricService {
 				statuesMetrics = getClusterRoleStatus();
 			} catch (ApiException e) {
 				e.printStackTrace();
-				throw new ZcpException("000", e.getMessage());
+				throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
 			}
 		} else {
 			try {
 				statuesMetrics = getNamespaceRoleStatus(namespace);
 			} catch (ApiException e) {
 				e.printStackTrace();
-				throw new ZcpException("000", e.getMessage());
+				throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
 			}
 		}
 
@@ -680,7 +685,7 @@ public class MetricService {
 			podList = kubeCoreManager.getPodListByNode(nodeName);
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
 		}
 
 		return podList;

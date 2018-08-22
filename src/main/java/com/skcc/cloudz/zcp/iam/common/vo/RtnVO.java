@@ -1,5 +1,7 @@
 package com.skcc.cloudz.zcp.iam.common.vo;
 
+import com.skcc.cloudz.zcp.iam.common.exception.ZcpErrorCode;
+
 public class RtnVO {
 	String msg = "Success";
 	String code = "200";
@@ -29,6 +31,9 @@ public class RtnVO {
 	}
 	public void setData(Object data) {
 		this.data = data;
+	}
+	public void setCode(ZcpErrorCode code) {
+		this.code = String.format("%d", code.getCode());
 	}
 	
 }
