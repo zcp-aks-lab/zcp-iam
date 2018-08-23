@@ -2,14 +2,14 @@ package com.skcc.cloudz.zcp.iam.common.vo;
 
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpErrorCode;
 
-public class RtnVO {
+public class ErrorVO {
 	String msg = "Success";
 	String code = "200";
-	Object data;
+	Object detail;
 	
-	public RtnVO() {}
+	public ErrorVO() {}
 	
-	public RtnVO(String code, String msg) {
+	public ErrorVO(String code, String msg) {
 		this.code = code;
 		this.msg = msg;
 	}
@@ -26,12 +26,14 @@ public class RtnVO {
 	public void setCode(String code) {
 		this.code = code;
 	}
-	public Object getData() {
-		return data;
+	public Object getDetail() {
+		return detail;
 	}
-	public void setData(Object data) {
-		this.data = data;
+
+	public void setDetail(Object detail) {
+		this.detail = detail;
 	}
+
 	public void setCode(ZcpErrorCode code) {
 		this.code = String.format("%d", code.getCode());
 	}

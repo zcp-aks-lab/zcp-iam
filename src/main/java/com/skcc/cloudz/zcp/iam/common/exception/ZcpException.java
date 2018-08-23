@@ -6,7 +6,6 @@ public class ZcpException extends Exception {
 	
 	private static final long serialVersionUID = 4608131642086831206L;
 	
-	private String message;
 	private ZcpErrorCode code;
 	private String apiMsg; 
 	
@@ -18,6 +17,7 @@ public class ZcpException extends Exception {
 		this.code = code;
 		this.code.setMessage(message);
 	}
+	
 	
 	public ZcpException(ZcpErrorCode code, ApiException e) {
 		super(e);

@@ -76,7 +76,6 @@ public class NamespaceService {
 		try {
 			return kubeCoreManager.getNamespaceList();
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.NAMESAPCE_LIST_ERROR, e);
 		}
 	}
@@ -135,7 +134,6 @@ public class NamespaceService {
 		try {
 			userRepresentation = keyCloakManager.getUser(userId);
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.USER_NOT_FOUND, "The user(" + userId + ") does not exist");
 		}
 
@@ -147,7 +145,6 @@ public class NamespaceService {
 		try {
 			userClusterRoleBinding = kubeRbacAuthzManager.getClusterRoleBindingByUsername(username);
 		} catch (ApiException e2) {
-			e2.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.CLUSTERROLEBINDING_NOT_FOUND, "The clusterrolebinding of user(" + userId + ") does not exist");
 		}
 
@@ -162,7 +159,6 @@ public class NamespaceService {
 			try {
 				userNamespaceRoleBinding = kubeRbacAuthzManager.getRoleBindingByUserName(namespace, username);
 			} catch (ApiException e) {
-				e.printStackTrace();
 				throw new ZcpException(ZcpErrorCode.ROLEBINDING_NOT_FOUND,
 						"The namespace(" + namespace + ") rolebinding of user(" + userId + ") does not exist");
 			}
@@ -203,7 +199,6 @@ public class NamespaceService {
 			try {
 				kubeCoreManager.createNamespace(namespaceName, v1Namespace);
 			} catch (ApiException e) {
-				e.printStackTrace();
 				throw new ZcpException(ZcpErrorCode.CREATE_NAMESAPCE_ERROR, e);
 			}
 		}
@@ -220,7 +215,6 @@ public class NamespaceService {
 		try {
 			kubeCoreManager.deleteNamespace(namespace);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.DELETE_NAMESPACE_ERROR, e);
 		}
 	}
@@ -230,7 +224,6 @@ public class NamespaceService {
 		try {
 			rolebindingList = kubeRbacAuthzManager.getRoleBindingListByNamespace(namespace);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.ROLE_BINDING_LIST_BY_NAMESPACE_ERROR, e);
 		}
 		List<V1RoleBinding> rolebindings = rolebindingList.getItems();
@@ -296,7 +289,6 @@ public class NamespaceService {
 		try {
 			kubeCoreManager.replaceNamespace(namespaceName, namespace);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.REPLACE_NAMESPACE_ERROR, e);
 		}
 
@@ -310,7 +302,6 @@ public class NamespaceService {
 		try {
 			kubeCoreManager.replaceNamespace(namespaceName, namespace);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.REPLACE_NAMESPACE_ERROR, e);
 		}
 
@@ -326,7 +317,6 @@ public class NamespaceService {
 		try {
 			roleBinding = kubeRbacAuthzManager.createRoleBinding(namespace, roleBinding);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.CREATE_ROLE_BINDING_ERROR, e);
 		}
 	}
@@ -341,7 +331,6 @@ public class NamespaceService {
 		try {
 			kubeRbacAuthzManager.createRoleBinding(namespace, roleBinding);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.CREATE_ROLE_BINDING_ERROR, e);
 		}
 	}
@@ -353,7 +342,6 @@ public class NamespaceService {
 			kubeRbacAuthzManager.deleteRoleBinding(namespace,
 					ResourcesNameManager.getRoleBindingName(data.getUsername()), deleteOptions);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.DELETE_ROLE_BINDING_ERROR, e);
 		}
 
@@ -593,7 +581,6 @@ public class NamespaceService {
 					kubeCoreManager.deleteLimitRange(namespaceName,
 							ResourcesNameManager.getLimtRangeName(namespaceName));
 				} catch (ApiException e) {
-					e.printStackTrace();
 					throw new ZcpException(ZcpErrorCode.DELETE_LIMIT_RANGE_ERROR, e);
 				}
 			}
@@ -603,7 +590,6 @@ public class NamespaceService {
 				try {
 					kubeCoreManager.createLimitRange(namespaceName, newV1LimitRange);
 				} catch (ApiException e) {
-					e.printStackTrace();
 					throw new ZcpException(ZcpErrorCode.CREATE_LIMIT_RANGE_ERROR, e);
 				}
 			} else {
@@ -612,7 +598,6 @@ public class NamespaceService {
 					kubeCoreManager.editLimitRange(namespaceName, ResourcesNameManager.getLimtRangeName(namespaceName),
 							currentV1LimitRange);
 				} catch (ApiException e) {
-					e.printStackTrace();
 					throw new ZcpException(ZcpErrorCode.EDIT_LIMIT_RANGE_ERROR, e);
 				}
 			}
@@ -637,7 +622,6 @@ public class NamespaceService {
 					kubeCoreManager.deleteResourceQuota(namespaceName,
 							ResourcesNameManager.getResouceQuotaName(namespaceName));
 				} catch (ApiException e) {
-					e.printStackTrace();
 					throw new ZcpException(ZcpErrorCode.DELETE_RESOURCE_QUOTA_ERROR, e);
 				}
 			}
@@ -647,7 +631,6 @@ public class NamespaceService {
 				try {
 					kubeCoreManager.createResourceQuota(namespaceName, newV1ResourceQuota);
 				} catch (ApiException e) {
-					e.printStackTrace();
 					throw new ZcpException(ZcpErrorCode.CREATE_RESOURCE_QUOTA_ERROR, e);
 				}
 			} else {
@@ -656,7 +639,6 @@ public class NamespaceService {
 					kubeCoreManager.editResourceQuota(namespaceName,
 							ResourcesNameManager.getResouceQuotaName(namespaceName), currentV1ResourceQuota);
 				} catch (ApiException e) {
-					e.printStackTrace();
 					throw new ZcpException(ZcpErrorCode.EDIT_RESOURCE_QUOTA_ERROR, e);
 				}
 			}

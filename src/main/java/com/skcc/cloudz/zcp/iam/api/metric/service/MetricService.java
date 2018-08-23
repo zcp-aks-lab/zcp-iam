@@ -93,7 +93,6 @@ public class MetricService {
 		try {
 			nodeList = kubeCoreManager.getNodeList();
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.NODE_LIST_ERROR, e);
 		}
 
@@ -198,7 +197,6 @@ public class MetricService {
 		try {
 			userRepresentation = keyCloakManager.getUser(userId);
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.USER_NOT_FOUND, "The user(" + userId + ") does not exist");
 		}
 
@@ -210,7 +208,6 @@ public class MetricService {
 		try {
 			userClusterRoleBinding = kubeRbacAuthzManager.getClusterRoleBindingByUsername(username);
 		} catch (ApiException e2) {
-			e2.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.CLUSTERROLEBINDING_NOT_FOUND, "The clusterrolebinding of user(" + userId + ") does not exist");
 		}
 
@@ -231,7 +228,6 @@ public class MetricService {
 			try {
 				userRoleBindings = kubeRbacAuthzManager.getRoleBindingListByUsername(username).getItems();
 			} catch (ApiException e1) {
-				e1.printStackTrace();
 				throw new ZcpException(ZcpErrorCode.ROLE_BINDING_LIST_ERROR, e1);
 			}
 
@@ -353,7 +349,6 @@ public class MetricService {
 		try {
 			nodeMetricList = kubeMetircManager.listNodeMetrics();
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.LIST_NODE_METRICS_ERROR, e);
 		}
 
@@ -364,7 +359,6 @@ public class MetricService {
 		try {
 			nodeList = kubeCoreManager.getNodeList();
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.NODE_LIST_ERROR, e);
 		}
 
@@ -398,7 +392,6 @@ public class MetricService {
 		try {
 			deploymentList = kubeAppsManager.getDeploymentList(namespace);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.DEPLOYMENT_LIST_ERROR, e);
 		}
 
@@ -447,7 +440,6 @@ public class MetricService {
 		try {
 			nodeList = kubeCoreManager.getNodeList();
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.NODE_LIST_ERROR, e);
 		}
 
@@ -510,7 +502,6 @@ public class MetricService {
 				podList = kubeCoreManager.getPodListByNamespace(namespace);
 			}
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.POD_LIST_ERROR, e);
 		}
 
@@ -551,14 +542,12 @@ public class MetricService {
 			try {
 				statuesMetrics = getClusterRoleStatus();
 			} catch (ApiException e) {
-				e.printStackTrace();
 				throw new ZcpException(ZcpErrorCode.CLUSTER_ROLE_STATUS_ERROR, e);
 			}
 		} else {
 			try {
 				statuesMetrics = getNamespaceRoleStatus(namespace);
 			} catch (ApiException e) {
-				e.printStackTrace();
 				throw new ZcpException(ZcpErrorCode.NAMESPACE_ROLE_STATUS_ERROR, e);
 			}
 		}
@@ -684,7 +673,6 @@ public class MetricService {
 		try {
 			podList = kubeCoreManager.getPodListByNode(nodeName);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.POD_LIST_ERROR, e);
 		}
 

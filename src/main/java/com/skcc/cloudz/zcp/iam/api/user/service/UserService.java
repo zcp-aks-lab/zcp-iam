@@ -96,7 +96,6 @@ public class UserService {
 		try {
 			mappedClusterRoleBindings = getMappedClusterRoleBindings();
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.MAPPED_CLUSTER_ROLE_BINDINGS_ERROR, e);
 		}
 
@@ -104,7 +103,6 @@ public class UserService {
 		try {
 			mappedRoleBindings = getMappedRoleBindings();
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.MAPPED_ROLE_BINDINGS_ERROR, e);
 		}
 
@@ -128,7 +126,6 @@ public class UserService {
 		try {
 			userRepresentation = keyCloakManager.getUser(id);
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.GET_USER_ERROR, e);
 		}
 
@@ -260,7 +257,6 @@ public class UserService {
 		try {
 			kubeCoreManager.deleteServiceAccountListByUsername(zcpSystemNamespace, username);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.DELETE_SERVICE_ACCOUNT_LIST_BY_USERNAME_ERROR, e);
 		}
 
@@ -268,7 +264,6 @@ public class UserService {
 		try {
 			kubeRbacAuthzManager.deleteClusterRoleBindingByUsername(username);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.DELETE_CLUSTER_ROLE_BINDING_BY_USERNAME_ERROR, e);
 		}
 
@@ -279,7 +274,6 @@ public class UserService {
 				try {
 					kubeRbacAuthzManager.deleteRoleBindingListByUsername(namespace, username);
 				} catch (ApiException e) {
-					e.printStackTrace();
 					throw new ZcpException(ZcpErrorCode.DELETE_ROLE_BINDING_LIST_BY_USERNAME_ERROR, e);
 				}
 			}
@@ -289,7 +283,6 @@ public class UserService {
 		try {
 			keyCloakManager.deleteUser(id);
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.DELETE_ROLE_BINDING_LIST_BY_USERNAME_ERROR, e);
 		}
 	}
@@ -299,7 +292,6 @@ public class UserService {
 		try {
 			userRepresentation = keyCloakManager.getUser(id);
 		} catch (KeyCloakException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.GET_USER_ERROR, e);
 		}
 
@@ -312,7 +304,6 @@ public class UserService {
 		try {
 			serviceAccounts = kubeCoreManager.getServiceAccountListByUsername(zcpSystemNamespace, username);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.SERVICE_ACCOUNT_LIST_BY_USERNAME_ERROR, e);
 		}
 
@@ -321,7 +312,6 @@ public class UserService {
 			try {
 				kubeCoreManager.createServiceAccount(zcpSystemNamespace, serviceAccount);
 			} catch (ApiException e) {
-				e.printStackTrace();
 				throw new ZcpException(ZcpErrorCode.SERVICE_ACCOUNT_ERROR, e);
 			}
 		}

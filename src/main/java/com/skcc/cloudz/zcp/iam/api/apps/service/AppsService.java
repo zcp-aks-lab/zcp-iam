@@ -32,7 +32,6 @@ public class AppsService {
 		try {
 			v1beta2DeploymentList = kubeAppsManager.getDeploymentList(namespace);
 		} catch (ApiException e) {
-			e.printStackTrace();
 			throw new ZcpException(ZcpErrorCode.DEPOLYMENT_LIST_ERROR, e);
 		}
 		
