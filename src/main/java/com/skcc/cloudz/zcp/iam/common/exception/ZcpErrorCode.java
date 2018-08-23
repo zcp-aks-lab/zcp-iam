@@ -3,24 +3,73 @@ package com.skcc.cloudz.zcp.iam.common.exception;
 public enum ZcpErrorCode {
 	
 	//common
-	UNKNOWN_ERROR(10000, "Unknown error"),
-	KUBERNETES_ERROR(10001, "Unknown kobernetes error"),
-	KEYCLOAK_ERROR(10002, "Unknown keycloak error"),
-	USER_NOT_FOUND(10003, ""),
-	CLUSTERROLEBINDING_NOT_FOUND(10004, ""),
-	PERMISSION_DENY(10005, ""),
+	UNKNOWN_ERROR						            (10000, "Unknown error"),
+	KUBERNETES_UNKNOWN_ERROR			            (10001, "Unknown kobernetes error"),
+	KEYCLOAK_UNKNOWN_ERROR				            (10002, "Unknown keycloak error"),
+	USER_NOT_FOUND						            (10003, ""),
+	CLUSTERROLEBINDING_NOT_FOUND		            (10004, ""),
+	PERMISSION_DENY						            (10005, ""),
+	UNSUPPORTED_TYPE					            (10006, "error : Unsupported type"),
+	                                                
+	//app                                           
+	DEPOLYMENT_LIST_ERROR				            (11001, "error : Unauthorized"),
+	                                                
+	//metric                                        
+	ROLE_BINDING_LIST_ERROR				            (21002, "error : Role binding list by username"),
+	LIST_NODE_METRICS_ERROR				            (21003, "error : Node metrics list"),
+	NODE_LIST_ERROR						            (21004, "error : Node list"),
+	DEPLOYMENT_LIST_ERROR				            (21005, "error : Deployment list"),
+	POD_LIST_ERROR						            (21006, "error : Pod list"),
+	CLUSTER_ROLE_STATUS_ERROR			            (21007, "error : Cluster role status"),
+	NAMESPACE_ROLE_STATUS_ERROR 		            (21008, "error : Namespace role status"),
+	                                                
+	//namespace                                     
+	ROLEBINDING_NOT_FOUND				            (31001, "error : Rolebinding not found"),
+	CREATE_NAMESAPCE_ERROR				            (31002, "error : Create namespace"),
+	DELETE_NAMESPACE_ERROR				            (31003, "error : Delete namespace"),
+	ROLE_BINDING_LIST_BY_NAMESPACE_ERROR            (31004, "error : Role binding list by namespace"),
+	REPLACE_NAMESPACE_ERROR				            (31005, "error : Replace namesapce"),
+	CREATE_ROLE_BINDING_ERROR			            (31006, "error : Create role binding"),
+	DELETE_ROLE_BINDING_ERROR			            (31007, "error : Delete role binding"),
+	DELETE_LIMIT_RANGE_ERROR			            (31008, "error : Delete limit range"),
+	CREATE_LIMIT_RANGE_ERROR			            (31009, "error : Create limit range"),
+	EDIT_LIMIT_RANGE_ERROR				            (31010, "error : Edit limit range"),
+	DELETE_RESOURCE_QUOTA_ERROR			            (31011, "error : Delete resource quota"),
+	CREATE_RESOURCE_QUOTA_ERROR			            (31012, "error : Create resource quota"),
+	EDIT_RESOURCE_QUOTA_ERROR			            (31013, "error : Edit resource quota"),
+	NAMESAPCE_LIST_ERROR				            (31014, "error : Namespace list"),
+	GET_NAMESPACE_ERROR					            (31015, "error : Get namespace"),
+	LABEL_INVALID_ERROR								(31016, "error : Label invalid"),
 	
-	//app
-	UNAUTHORIZED_ERROR(11001, "Unauthorized error"),
+	//rbac                                          
+	CLUSTER_ROLE_TYPE_ERROR				            (41001, "error : The type is null"),
+	CLUSTER_ROLE_ERROR								(41002, "error : Cluster role"),
 	
-	//metric
-	UNSUPPORTED_TYPE(21001, "Unsupported type"),
-	
-	//namespace
-	ROLEBINDING_NOT_FOUND(31001, "")
-	
+	//user
+	MAPPED_CLUSTER_ROLE_BINDINGS_ERROR 				(51001, "error : Mapped cluster role bindings"),
+	MAPPED_ROLE_BINDINGS_ERROR 						(51002, "error : Mapped role binding"),
+	DELETE_SERVICE_ACCOUNT_LIST_BY_USERNAME_ERROR	(51003, "error : Delete service account list by username"),
+	CREATE_SERVICE_ACCOUNT_ERROR					(51002, "error : Create service account"),
+	CLUSTER_ROLE_BINDING_LIST_BY_USERNAME_ERROR		(51002, "error : Cluster role binding list by username"),
+	DELETE_CLUSTER_ROLE_BINDING_BY_USERNAME_ERROR	(51002, "error : Delete cluster role binding by username"),
+	CREATE_CLUSTER_ROLE_BINDING_ERROR				(51002, "error : Create cluster role binding"),
+	EDIT_USER_ERROR									(51002, "error : Edit user"),
+	DELETE_ROLE_BINDING_LIST_BY_USERNAME_ERROR		(51002, "error : Delete role binding list by username"),
+	GET_USER_ERROR									(51002, "error : Get username"),
+	SERVICE_ACCOUNT_LIST_BY_USERNAME_ERROR			(51002, "error : Service account list by username"),
+	SERVICE_ACCOUNT_ERROR							(51002, "error : Service account"),
+	EDIT_USER_PASSWORD_ERROR						(51002, "error : Edit user password"),
+	ROLE_BINDING_LIST_BY_USERNAME_ERROR				(51002, "error : Role binding list by username"),
+	DELETE_CLUSTER_ROLE_BINDING_BY_USERNAME			(51002, "error : Delete cluster role binding by username"),
+	RESET_USER_CREDENTIALS_ERROR					(51002, "error : Reset user credentials"),
+	DELETE_USER_OTP_PASSWORD_ERROR					(51002, "error : Delete user otp password"),
+	ENABLE_USER_OTP_PASSWORD_ERROR					(51002, "error : Enable user otp password"),
+	LOGOUT_ERROR									(51002, "error : Logout"),
+	GET_SECRET_ERROR								(51002, "error : Get secret"),
 	
 	;
+
+	
 	
 	
 	private int code;

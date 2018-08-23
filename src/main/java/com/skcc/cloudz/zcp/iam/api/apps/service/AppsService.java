@@ -33,10 +33,7 @@ public class AppsService {
 			v1beta2DeploymentList = kubeAppsManager.getDeploymentList(namespace);
 		} catch (ApiException e) {
 			e.printStackTrace();
-			if(e.getCode() == 400)
-				throw new ZcpException(ZcpErrorCode.UNAUTHORIZED_ERROR);
-			else
-				throw new ZcpException(ZcpErrorCode.UNKNOWN_ERROR, e);
+			throw new ZcpException(ZcpErrorCode.DEPOLYMENT_LIST_ERROR, e);
 		}
 		
 		List<String> deployments = new ArrayList<>();

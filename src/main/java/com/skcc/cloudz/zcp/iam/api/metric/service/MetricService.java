@@ -94,7 +94,7 @@ public class MetricService {
 			nodeList = kubeCoreManager.getNodeList();
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
+			throw new ZcpException(ZcpErrorCode.NODE_LIST_ERROR, e);
 		}
 
 		List<V1Node> nodes = nodeList.getItems();
@@ -232,7 +232,7 @@ public class MetricService {
 				userRoleBindings = kubeRbacAuthzManager.getRoleBindingListByUsername(username).getItems();
 			} catch (ApiException e1) {
 				e1.printStackTrace();
-				throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e1);
+				throw new ZcpException(ZcpErrorCode.ROLE_BINDING_LIST_ERROR, e1);
 			}
 
 			if (userRoleBindings != null && !userRoleBindings.isEmpty()) {
@@ -346,7 +346,7 @@ public class MetricService {
 
 	public ClusterStatusMetricsVO getClusterMetrics(String type) throws ZcpException {
 		if (StringUtils.isEmpty(type) || (!StringUtils.equals(type, "cpu") && !StringUtils.equals(type, "memory"))) {
-			throw new ZcpException(ZcpErrorCode.UNSUPPORTED_TYPE, "Unsupported type(" + type + ")");
+			throw new ZcpException(ZcpErrorCode.UNSUPPORTED_TYPE, "Cluster Unsupported type(" + type + ")");
 		}
 
 		V1alpha1NodeMetricList nodeMetricList = null;
@@ -354,7 +354,7 @@ public class MetricService {
 			nodeMetricList = kubeMetircManager.listNodeMetrics();
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
+			throw new ZcpException(ZcpErrorCode.LIST_NODE_METRICS_ERROR, e);
 		}
 
 		BigDecimal utilization = calcluateUtilization(nodeMetricList, type);
@@ -365,7 +365,7 @@ public class MetricService {
 			nodeList = kubeCoreManager.getNodeList();
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
+			throw new ZcpException(ZcpErrorCode.NODE_LIST_ERROR, e);
 		}
 
 		BigDecimal allocatable = calcluateAllocatable(nodeList, type);
@@ -399,7 +399,7 @@ public class MetricService {
 			deploymentList = kubeAppsManager.getDeploymentList(namespace);
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
+			throw new ZcpException(ZcpErrorCode.DEPLOYMENT_LIST_ERROR, e);
 		}
 
 		List<V1beta2Deployment> deployments = deploymentList.getItems();
@@ -448,7 +448,7 @@ public class MetricService {
 			nodeList = kubeCoreManager.getNodeList();
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
+			throw new ZcpException(ZcpErrorCode.NODE_LIST_ERROR, e);
 		}
 
 		List<V1Node> nodes = nodeList.getItems();
@@ -511,7 +511,7 @@ public class MetricService {
 			}
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
+			throw new ZcpException(ZcpErrorCode.POD_LIST_ERROR, e);
 		}
 
 		List<V1Pod> pods = podList.getItems();
@@ -552,14 +552,14 @@ public class MetricService {
 				statuesMetrics = getClusterRoleStatus();
 			} catch (ApiException e) {
 				e.printStackTrace();
-				throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
+				throw new ZcpException(ZcpErrorCode.CLUSTER_ROLE_STATUS_ERROR, e);
 			}
 		} else {
 			try {
 				statuesMetrics = getNamespaceRoleStatus(namespace);
 			} catch (ApiException e) {
 				e.printStackTrace();
-				throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
+				throw new ZcpException(ZcpErrorCode.NAMESPACE_ROLE_STATUS_ERROR, e);
 			}
 		}
 
@@ -685,7 +685,7 @@ public class MetricService {
 			podList = kubeCoreManager.getPodListByNode(nodeName);
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException(ZcpErrorCode.KUBERNETES_ERROR, e);
+			throw new ZcpException(ZcpErrorCode.POD_LIST_ERROR, e);
 		}
 
 		return podList;

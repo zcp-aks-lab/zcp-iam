@@ -22,6 +22,7 @@ import com.skcc.cloudz.zcp.iam.api.user.vo.ResetPasswordVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.UpdateClusterRoleVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.UpdatePasswordVO;
 import com.skcc.cloudz.zcp.iam.common.exception.KeyCloakException;
+import com.skcc.cloudz.zcp.iam.common.exception.ZcpErrorCode;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.iam.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.iam.common.model.CredentialActionType;
@@ -96,7 +97,7 @@ public class UserService {
 			mappedClusterRoleBindings = getMappedClusterRoleBindings();
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException("U0001");
+			throw new ZcpException(ZcpErrorCode.MAPPED_CLUSTER_ROLE_BINDINGS_ERROR, e);
 		}
 
 		Map<String, List<V1RoleBinding>> mappedRoleBindings = null;
@@ -104,7 +105,7 @@ public class UserService {
 			mappedRoleBindings = getMappedRoleBindings();
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException("U0002");
+			throw new ZcpException(ZcpErrorCode.MAPPED_ROLE_BINDINGS_ERROR, e);
 		}
 
 		for (ZcpUser user : users) {
@@ -128,7 +129,7 @@ public class UserService {
 			userRepresentation = keyCloakManager.getUser(id);
 		} catch (KeyCloakException e) {
 			e.printStackTrace();
-			throw new ZcpException("U0003", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.GET_USER_ERROR, e);
 		}
 
 		logger.debug("keyclock user info - {}", userRepresentation);
@@ -142,7 +143,7 @@ public class UserService {
 		} catch (ApiException e) {
 			//e.printStackTrace();
 			//throw new ZcpException("ZCP-0001", e.getMessage());
-			// we can ignore this case becase the user registered by himself the clusterrole does not exist yet
+			// we can ignore this case becuase the user registered by himself the clusterrole does not exist yet
 		}
 
 		if (userClusterRoleBinding == null) {
@@ -192,7 +193,7 @@ public class UserService {
 			try {
 				status = kubeCoreManager.deleteServiceAccountListByUsername(zcpSystemNamespace, user.getUsername());
 			} catch (ApiException e) {
-				throw new ZcpException("ZCP-008", e.getMessage());
+				throw new ZcpException(ZcpErrorCode.DELETE_SERVICE_ACCOUNT_LIST_BY_USERNAME_ERROR, e);
 			}
 
 			logger.debug("The serviceaccounts of user({}) have been removed. {}", user.getUsername(),
@@ -204,7 +205,7 @@ public class UserService {
 		try {
 			serviceAccount = kubeCoreManager.createServiceAccount(zcpSystemNamespace, serviceAccount);
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.CREATE_SERVICE_ACCOUNT_ERROR, e);
 		}
 
 		// 2. create clusterRolebindinding
@@ -212,7 +213,7 @@ public class UserService {
 		try {
 			clusterRoleBindingList = kubeRbacAuthzManager.getClusterRoleBindingListByUsername(user.getUsername());
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.CLUSTER_ROLE_BINDING_LIST_BY_USERNAME_ERROR, e);
 		}
 
 		if (clusterRoleBindingList != null) {
@@ -220,7 +221,7 @@ public class UserService {
 			try {
 				status = kubeRbacAuthzManager.deleteClusterRoleBindingByUsername(user.getUsername());
 			} catch (ApiException e) {
-				throw new ZcpException("ZCP-008", e.getMessage());
+				throw new ZcpException(ZcpErrorCode.DELETE_CLUSTER_ROLE_BINDING_BY_USERNAME_ERROR, e);
 			}
 
 			logger.debug("The clusterRoleBindings of user({}) have been removed. {}", user.getUsername(),
@@ -231,7 +232,7 @@ public class UserService {
 		try {
 			clusterRoleBinding = kubeRbacAuthzManager.createClusterRoleBinding(clusterRoleBinding);
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.CREATE_CLUSTER_ROLE_BINDING_ERROR, e);
 		}
 
 		// 3. create keycloak user
@@ -246,7 +247,7 @@ public class UserService {
 		try {
 			keyCloakManager.editUser(getKeyCloakUser(id, user));
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.EDIT_USER_ERROR, e);
 		}
 	}
 
@@ -260,7 +261,7 @@ public class UserService {
 			kubeCoreManager.deleteServiceAccountListByUsername(zcpSystemNamespace, username);
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.DELETE_SERVICE_ACCOUNT_LIST_BY_USERNAME_ERROR, e);
 		}
 
 		// delete clusterrolebinding
@@ -268,7 +269,7 @@ public class UserService {
 			kubeRbacAuthzManager.deleteClusterRoleBindingByUsername(username);
 		} catch (ApiException e) {
 			e.printStackTrace();
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.DELETE_CLUSTER_ROLE_BINDING_BY_USERNAME_ERROR, e);
 		}
 
 		// delete rolebindings
@@ -279,7 +280,7 @@ public class UserService {
 					kubeRbacAuthzManager.deleteRoleBindingListByUsername(namespace, username);
 				} catch (ApiException e) {
 					e.printStackTrace();
-					throw new ZcpException("ZCP-000", e.getMessage());
+					throw new ZcpException(ZcpErrorCode.DELETE_ROLE_BINDING_LIST_BY_USERNAME_ERROR, e);
 				}
 			}
 		}
@@ -289,7 +290,7 @@ public class UserService {
 			keyCloakManager.deleteUser(id);
 		} catch (KeyCloakException e) {
 			e.printStackTrace();
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.DELETE_ROLE_BINDING_LIST_BY_USERNAME_ERROR, e);
 		}
 	}
 
@@ -298,7 +299,8 @@ public class UserService {
 		try {
 			userRepresentation = keyCloakManager.getUser(id);
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			e.printStackTrace();
+			throw new ZcpException(ZcpErrorCode.GET_USER_ERROR, e);
 		}
 
 		String username = userRepresentation.getUsername();
@@ -310,7 +312,8 @@ public class UserService {
 		try {
 			serviceAccounts = kubeCoreManager.getServiceAccountListByUsername(zcpSystemNamespace, username);
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			e.printStackTrace();
+			throw new ZcpException(ZcpErrorCode.SERVICE_ACCOUNT_LIST_BY_USERNAME_ERROR, e);
 		}
 
 		if (serviceAccounts == null || serviceAccounts.getItems() == null || serviceAccounts.getItems().isEmpty()) {
@@ -319,7 +322,7 @@ public class UserService {
 				kubeCoreManager.createServiceAccount(zcpSystemNamespace, serviceAccount);
 			} catch (ApiException e) {
 				e.printStackTrace();
-				throw new ZcpException("ZCP-000", e.getMessage());
+				throw new ZcpException(ZcpErrorCode.SERVICE_ACCOUNT_ERROR, e);
 			}
 		}
 
@@ -328,7 +331,7 @@ public class UserService {
 		try {
 			clusterRoleBindingList = kubeRbacAuthzManager.getClusterRoleBindingListByUsername(username);
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.CLUSTER_ROLE_BINDING_LIST_BY_USERNAME_ERROR, e);
 		}
 
 		if (clusterRoleBindingList != null) {
@@ -336,7 +339,7 @@ public class UserService {
 			try {
 				status = kubeRbacAuthzManager.deleteClusterRoleBindingByUsername(username);
 			} catch (ApiException e) {
-				throw new ZcpException("ZCP-008", e.getMessage());
+				throw new ZcpException(ZcpErrorCode.DELETE_CLUSTER_ROLE_BINDING_BY_USERNAME_ERROR, e);
 			}
 
 			logger.debug("The clusterRoleBindings of user({}) have been removed. {}", username, status.getMessage());
@@ -347,7 +350,7 @@ public class UserService {
 		try {
 			clusterRoleBinding = kubeRbacAuthzManager.createClusterRoleBinding(clusterRoleBinding);
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.CREATE_CLUSTER_ROLE_BINDING_ERROR, e);
 		}
 		
 		// create a rolebinding of default namespace
@@ -359,7 +362,7 @@ public class UserService {
 			try {
 				roleBinding = kubeRbacAuthzManager.createRoleBinding(defaultNamespace, roleBinding);
 			} catch (ApiException e) {
-				throw new ZcpException("N0002", e.getMessage());
+				throw new ZcpException(ZcpErrorCode.CREATE_ROLE_BINDING_ERROR, e);
 			}
 			zcpUser.setDefaultNamespace(defaultNamespace);
 
@@ -375,7 +378,7 @@ public class UserService {
 			try {
 				keyCloakManager.editUser(userRepresentation);
 			} catch (KeyCloakException e) {
-				throw new ZcpException("ZCP-000", e.getMessage());
+				throw new ZcpException(ZcpErrorCode.EDIT_USER_ERROR, e);
 			}
 			
 		}
@@ -421,7 +424,7 @@ public class UserService {
 		try {
 			keyCloakManager.editUserPassword(id, getCredentialRepresentation(vo.getNewPassword(), Boolean.FALSE));
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.EDIT_USER_PASSWORD_ERROR, e);
 		}
 	}
 
@@ -429,7 +432,7 @@ public class UserService {
 		try {
 			keyCloakManager.editUserPassword(id, getCredentialRepresentation(vo.getPassword(), vo.getTemporary()));
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.EDIT_USER_PASSWORD_ERROR, e);
 		}
 	}
 
@@ -439,7 +442,7 @@ public class UserService {
 		try {
 			roleBindingList = kubeRbacAuthzManager.getRoleBindingListByUsername(zcpUser.getUsername());
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.ROLE_BINDING_LIST_BY_USERNAME_ERROR, e);
 		}
 
 		return roleBindingList;
@@ -449,7 +452,7 @@ public class UserService {
 		try {
 			keyCloakManager.resetUserCredentials(id, resetCredentialVO.getActions());
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.RESET_USER_CREDENTIALS_ERROR, e);
 		}
 	}
 
@@ -457,7 +460,7 @@ public class UserService {
 		try {
 			keyCloakManager.deleteUserOtpPassword(id);
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.DELETE_USER_OTP_PASSWORD_ERROR, e);
 		}
 	}
 
@@ -465,7 +468,7 @@ public class UserService {
 		try {
 			keyCloakManager.enableUserOtpPassword(id);
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-008", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.ENABLE_USER_OTP_PASSWORD_ERROR, e);
 		}
 
 	}
@@ -474,7 +477,7 @@ public class UserService {
 		try {
 			keyCloakManager.logout(id);
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.LOGOUT_ERROR, e);
 		}
 	}
 
@@ -483,7 +486,7 @@ public class UserService {
 		try {
 			userRepresentation = keyCloakManager.getUser(id);
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.GET_USER_ERROR, e);
 		}
 
 		String username = userRepresentation.getUsername();
@@ -492,7 +495,7 @@ public class UserService {
 		try {
 			serviceAccount = kubeCoreManager.getServiceAccount(zcpSystemNamespace, serviceAccountName);
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.SERVICE_ACCOUNT_ERROR, e);
 		}
 
 		List<V1ObjectReference> secrets = serviceAccount.getSecrets();
@@ -502,7 +505,7 @@ public class UserService {
 			// objectReference.getNamespace() is null, so shoud use zcpSystemNamespace
 			secret = kubeCoreManager.getSecret(zcpSystemNamespace, objectReference.getName());
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.GET_SECRET_ERROR, e);
 		}
 
 		String caCrt = new String(Base64.getEncoder().encode(secret.getData().get("ca.crt")));
@@ -520,7 +523,7 @@ public class UserService {
 		try {
 			userRepresentation = keyCloakManager.getUser(id);
 		} catch (KeyCloakException e) {
-			throw new ZcpException("ZCP-000", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.GET_USER_ERROR, e);
 		}
 
 		String username = userRepresentation.getUsername();
@@ -537,7 +540,7 @@ public class UserService {
 			try {
 				status = kubeCoreManager.deleteServiceAccountListByUsername(zcpSystemNamespace, username);
 			} catch (ApiException e) {
-				throw new ZcpException("ZCP-008", e.getMessage());
+				throw new ZcpException(ZcpErrorCode.DELETE_SERVICE_ACCOUNT_LIST_BY_USERNAME_ERROR, e);
 			}
 
 			logger.debug("The serviceaccounts of user({}) have been removed. {}", username, status.getMessage());
@@ -548,7 +551,7 @@ public class UserService {
 		try {
 			serviceAccount = kubeCoreManager.createServiceAccount(zcpSystemNamespace, serviceAccount);
 		} catch (ApiException e) {
-			throw new ZcpException("ZCP-009", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.CREATE_SERVICE_ACCOUNT_ERROR, e);
 		}
 
 	}

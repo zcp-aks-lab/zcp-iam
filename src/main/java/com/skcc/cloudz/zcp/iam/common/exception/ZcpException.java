@@ -7,9 +7,8 @@ public class ZcpException extends Exception {
 	private static final long serialVersionUID = 4608131642086831206L;
 	
 	private String message;
-	private String _code;
 	private ZcpErrorCode code;
-	Throwable throwable;
+	private String apiMsg; 
 	
 	public ZcpException(ZcpErrorCode code) {
 		this.code = code;
@@ -23,26 +22,13 @@ public class ZcpException extends Exception {
 	public ZcpException(ZcpErrorCode code, ApiException e) {
 		super(e);
 		this.code = code;
-		this.code.setMessage(e.getResponseBody());
+		apiMsg = e.getResponseBody();
 	}
 	
-	public ZcpException(ZcpErrorCode code, Throwable throwable) {
-		super(throwable);
+	public ZcpException(ZcpErrorCode code, KeyCloakException e) {
+		super(e);
 		this.code = code;
-		this.code.setMessage(message);
-	}
-	
-	public ZcpException(String code, String message) {
-		this._code = code;
-		this.message = message;
-	}
-	
-	public ZcpException(String code) {
-		this._code = code;
-	}
-	
-	public String getCode2() {
-		return _code;
+		apiMsg = e.getMessage();
 	}
 	
 	public ZcpErrorCode getCode() {
@@ -52,4 +38,14 @@ public class ZcpException extends Exception {
 	public String getMessage() {
 		return this.code.getMessage();
 	}
+
+	public String getApiMsg() {
+		return apiMsg;
+	}
+
+	public void setApiMsg(String apiMsg) {
+		this.apiMsg = apiMsg;
+	}
+	
+	
 }

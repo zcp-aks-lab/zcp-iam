@@ -35,9 +35,11 @@ public class ExceptionController {
 		logger.debug(e.getResponseBody());
 		logger.debug(e.getMessage());
 		logger.debug("", e);
+		String code = String.format("%d", ZcpErrorCode.KUBERNETES_UNKNOWN_ERROR.getCode());
 		vo.setData(e.getResponseBody());
-		vo.setCode(ZcpErrorCode.KUBERNETES_ERROR);
-		vo.setMsg(e.getMessage());
+		vo.setCode(code);
+		vo.setMsg(ZcpErrorCode.KEYCLOAK_UNKNOWN_ERROR.toString());
+		
 		return vo;
 	}
 
@@ -47,8 +49,8 @@ public class ExceptionController {
 		String code = String.format("%d", e.getCode().getCode());
 		RtnVO vo = new RtnVO();
 		vo.setCode(code);
-		vo.setMsg(e.getCode().toString());
-		vo.setData(e.getMessage());
+		vo.setMsg(e.getCode().getMessage());
+		vo.setData(e.getApiMsg());
 		return vo;
 	}
 
@@ -56,8 +58,10 @@ public class ExceptionController {
 	@ResponseBody
 	public Object KeycloakExceptionResolver(HttpServletRequest req, KeyCloakException e) {
 		RtnVO vo = new RtnVO();
-		vo.setCode(ZcpErrorCode.KEYCLOAK_ERROR);
-		vo.setMsg(e.getMessage());
+		String code = String.format("%d", ZcpErrorCode.KEYCLOAK_UNKNOWN_ERROR.getCode());
+		vo.setCode(code);
+		vo.setMsg(ZcpErrorCode.KEYCLOAK_UNKNOWN_ERROR.toString());
+		vo.setData(e.getMessage());
 		return vo;
 	}
 	
