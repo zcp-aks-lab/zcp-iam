@@ -165,6 +165,7 @@ public class MetricService {
 
 			ZcpNode zcpNode = new ZcpNode();
 			zcpNode.setNodeName(nodeName);
+			zcpNode.setNodeType(labels.get("ibm-cloud.kubernetes.io/machine-type"));
 			setNodeStatus(node, zcpNode);
 			zcpNode.setCreationTime(new Date(node.getMetadata().getCreationTimestamp().getMillis()));
 			zcpNode.setAllocatableCpu(allocatableCpu);

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class ZcpNode {
 
 	private String nodeName;
+	private String nodeType;
 	private NodeStatus status;
 	@JsonIgnore
 	private BigDecimal allocatableCpu;
@@ -111,6 +112,14 @@ public class ZcpNode {
 
 	public void setNodeName(String nodeName) {
 		this.nodeName = nodeName;
+	}
+	
+	public String getNodeType() {
+		return nodeType;
+	}
+	
+	public void setNodeType(String nodeType) {
+		this.nodeType = nodeType;
 	}
 
 	public NodeStatus getStatus() {
