@@ -1,7 +1,10 @@
 package com.skcc.cloudz.zcp.iam.manager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.admin.client.Keycloak;
@@ -16,7 +19,17 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
 
 import com.skcc.cloudz.zcp.iam.common.exception.KeyCloakException;
 import com.skcc.cloudz.zcp.iam.common.model.CredentialActionType;
@@ -33,10 +46,18 @@ public class KeyCloakManager {
 	@Autowired
 	@Qualifier("keycloak")
 	private Keycloak keycloak;
-
+	
 	@Value("${zcp.keycloak.realm}")
 	private String realm;
-
+	
+	@Value("${zcp.keycloak.token-url:'/realms/{realm}/protocol/openid-connect/token'}")
+	private String tokenUrl;
+	
+	@Value("${keycloak.serverUrl}")
+	private String keycloakUrl;
+	
+	private RestTemplate restTemplate = new RestTemplate();
+	
 	public List<UserRepresentation> getUserList() {
 		return getUserList(null);
 	}
@@ -131,6 +152,7 @@ public class KeyCloakManager {
 		if (userRepresentation == null) {
 			throw new KeyCloakException("KK-000", "user does not exist");
 		}
+			
 		userResource.resetPassword(credentail);
 	}
 
@@ -183,5 +205,32 @@ public class KeyCloakManager {
 		}
 		userResource.logout();
 	}
-
+	
+	@SuppressWarnings("rawtypes")
+	public String getAccessToken(String id, String password) throws KeyCloakException {
+		try {
+			UserRepresentation user = getUser(id);
+			
+			MultiValueMap<String, String> body = new LinkedMultiValueMap<String, String>();
+			body.add("username", user.getUsername());
+			body.add("password", password);
+			body.add("grant_type", "password");
+			body.add("client_id", "admin-cli");
+			
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+			
+			HttpEntity<Map<?,?>> entity = new HttpEntity<Map<?,?>>(body, headers);
+			
+			// For print IO, change log-level(DEBUG) of RestTemplate or org.spring package.  
+			ResponseEntity<HashMap> res = restTemplate.exchange(keycloakUrl + tokenUrl, HttpMethod.POST, entity, HashMap.class, realm);
+			logger.debug("Success to get access_token.", res);
+			return Objects.toString(res.getBody().get("access_token"));
+		} catch (HttpStatusCodeException e) {
+			if(HttpStatus.valueOf(e.getRawStatusCode()) == HttpStatus.UNAUTHORIZED) {
+				throw new KeyCloakException("KK-002", "The password is incorrect.");
+			}
+			throw e;
+		}
+	}
 }

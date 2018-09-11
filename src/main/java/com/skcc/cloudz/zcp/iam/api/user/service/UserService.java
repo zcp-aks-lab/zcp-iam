@@ -419,6 +419,7 @@ public class UserService {
 	public void updateUserPassword(String id, UpdatePasswordVO vo) throws ZcpException {
 		// TODO check current password
 		try {
+			keyCloakManager.getAccessToken(id, vo.getCurrentPassword());
 			keyCloakManager.editUserPassword(id, getCredentialRepresentation(vo.getNewPassword(), Boolean.FALSE));
 		} catch (KeyCloakException e) {
 			throw new ZcpException("ZCP-000", e.getMessage());
