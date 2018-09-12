@@ -104,6 +104,10 @@ public class MetricService {
 			Map<String, Quantity> allocatable = node.getStatus().getAllocatable();
 			BigDecimal allocatableCpu = allocatable.get("cpu").getNumber();
 			BigDecimal allocatableMem = allocatable.get("memory").getNumber();
+			String roles = labels.keySet().stream()
+								.filter(k -> k.startsWith("node-role.kubernetes.io/"))
+								.map(k -> k.split("/")[1])
+								.collect(Collectors.joining(","));
 
 			// Map<String, Quantity> capacity = node.getStatus().getCapacity();
 			logger.debug("Node name is {}", nodeName);
@@ -166,6 +170,7 @@ public class MetricService {
 			ZcpNode zcpNode = new ZcpNode();
 			zcpNode.setNodeName(nodeName);
 			zcpNode.setNodeType(labels.get("ibm-cloud.kubernetes.io/machine-type"));
+			zcpNode.setNodeRoles(roles);
 			setNodeStatus(node, zcpNode);
 			zcpNode.setCreationTime(new Date(node.getMetadata().getCreationTimestamp().getMillis()));
 			zcpNode.setAllocatableCpu(allocatableCpu);

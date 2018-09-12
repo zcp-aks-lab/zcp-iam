@@ -10,6 +10,7 @@ public class ZcpNode {
 
 	private String nodeName;
 	private String nodeType;
+	private String nodeRoles;
 	private NodeStatus status;
 	@JsonIgnore
 	private BigDecimal allocatableCpu;
@@ -120,6 +121,14 @@ public class ZcpNode {
 	
 	public void setNodeType(String nodeType) {
 		this.nodeType = nodeType;
+	}
+	
+	public String getNodeRoles() {
+		return nodeRoles;
+	}
+	
+	public void setNodeRoles(String nodeRoles) {
+		this.nodeRoles = nodeRoles;
 	}
 
 	public NodeStatus getStatus() {
