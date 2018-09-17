@@ -39,3 +39,19 @@ zcp:
     realm: zcp
   kube:
     namespace: zcp-system
+
+role:
+  cluster:
+    cluster-admin:
+    - cluster-admin
+    member:
+  namespace:
+    admin:
+    - log-manager
+    - catalog-manager
+    - ${namespace}-admin
+    deploy-manager:
+    - log-manager
+    - ${namespace}-deploy-manager
+    developer:
+    - ${namespace}-developer

@@ -9,7 +9,10 @@ public enum ClusterRole {
 	EDIT("edit"), 
 	MEMBER("member"),
 	ADMIN("admin"), 
-	CLUSTER_ADMIN("cluster-admin");
+	CLUSTER_ADMIN("cluster-admin"),
+
+	DEPLOY_MANAGER("deploy-manager"),
+	DEVELOPER("developer");
 
 	private String role;
 
