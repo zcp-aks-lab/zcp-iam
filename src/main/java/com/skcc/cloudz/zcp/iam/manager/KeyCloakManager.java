@@ -1,13 +1,13 @@
 package com.skcc.cloudz.zcp.iam.manager;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
@@ -243,9 +243,9 @@ public class KeyCloakManager {
 		}
 	}
 	
-	public void createRealmRoles(String[] names){
+	public void createRealmRoles(Collection<String> collection){
 		RolesResource roles = keycloak.realm(realm).roles();
-		Stream.of(names)
+		collection.stream()
 			.map(name -> new RoleRepresentation(name, "", false))
 			.forEach(role -> {
 				try {
@@ -257,9 +257,9 @@ public class KeyCloakManager {
 			});
 	}
 	
-	public void deleteRealmRoles(String[] names){
+	public void deleteRealmRoles(Collection<String> names){
 		RolesResource roles = keycloak.realm(realm).roles();
-		Stream.of(names).forEach(name -> roles.deleteRole(name));
+		names.stream().forEach(name -> roles.deleteRole(name));
 	}
 	
 	public void addRealmRoles(String username, List<String> realmRoles, String tag) throws KeyCloakException {
@@ -316,7 +316,7 @@ public class KeyCloakManager {
 						if(create) {
 							// create needed realm role
 							logger.info("Create new RoleRepresentation '{}'.", name);
-							this.createRealmRoles(new String[] {name});
+							this.createRealmRoles(Lists.newArrayList(name));
 							return roles.get(name).toRepresentation();
 						}
 						throw e;

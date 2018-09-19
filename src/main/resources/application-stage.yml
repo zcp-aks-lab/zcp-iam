@@ -40,6 +40,12 @@ zcp:
   kube:
     namespace: zcp-system
 
+jenkins:
+  url: https://jenkins.cloudzcp.io
+  token: username:api-token
+  template: 
+    folder: classpath:jenkins/folder.xml
+
 role:
   cluster:
     cluster-admin:
@@ -55,3 +61,7 @@ role:
     - ${namespace}-deploy-manager
     developer:
     - ${namespace}-developer
+  jenkins:
+    admin: ${namespace}-admin
+    deploy-manager: ${namespace}-deploy-manager
+    developer: ${namespace}-developer

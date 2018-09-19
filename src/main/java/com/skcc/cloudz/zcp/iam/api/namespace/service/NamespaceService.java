@@ -70,7 +70,7 @@ public class NamespaceService {
 	private KubeRbacAuthzManager kubeRbacAuthzManager;
 
 	@Autowired
-	AddonService addonService;
+	private AddonService addonService;
 
 	@Value("${zcp.kube.namespace}")
 	private String zcpSystemNamespace;
@@ -328,7 +328,7 @@ public class NamespaceService {
 			
 			// add keycloak realm-roles
 			addonService.addNamespaceRoles(namespace, vo.getUsername(), vo.getClusterRole());
-		} catch (ApiException | KeyCloakException e) {
+		} catch (ApiException e) {
 			throw new ZcpException("N0002", e.getMessage());
 		}
 	}
@@ -354,8 +354,8 @@ public class NamespaceService {
 			kubeRbacAuthzManager.deleteRoleBinding(namespace, ResourcesNameManager.getRoleBindingName(data.getUsername()), deleteOptions);
 
 			// delete Keycloak Realm Roles
-			addonService.deleteNamspaceRoles(namespace, username, oldRoleName);
-		} catch (ApiException | KeyCloakException e) {
+			addonService.deleteNamspaceRoles(namespace, username, ClusterRole.valueOf(oldRoleName));
+		} catch (ApiException e) {
 			e.printStackTrace();
 			throw new ZcpException("N0002", e.getMessage());
 		}

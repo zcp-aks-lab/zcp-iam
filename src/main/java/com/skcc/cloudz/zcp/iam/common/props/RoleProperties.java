@@ -14,8 +14,23 @@ import com.skcc.cloudz.zcp.iam.common.model.ClusterRole;
 @Component
 @ConfigurationProperties(prefix = "role", ignoreUnknownFields = true)
 public class RoleProperties {
+	/**
+	 * Cluster 단위의 Role Mapping.
+	 * (Cluster-Role, Keycloak-Realm-Role)
+	 */
 	private Map<String, List<String>> cluster;
+
+	/**
+	 * Namespace 단위의 Role Mapping.
+	 * (Cluster-Role, Keycloak-Realm-Role)
+	 */
 	private Map<String, List<String>> namespace;
+
+	/**
+	 * Jenkins 폴더의 config 생성을 위한 Role Mapping.
+	 * 템플릿 XML 파일에서 변수로 활용된다.
+	 */
+	private Map<String, String> jenkins;
 	
 	/*
 	 * getter & setter
@@ -34,6 +49,14 @@ public class RoleProperties {
 	
 	public void setNamespace(Map<String, List<String>> namespace) {
 		this.namespace = namespace;
+	}
+	
+	public Map<String, String> getJenkins() {
+		return jenkins;
+	}
+	
+	public void setJenkins(Map<String, String> jenkins) {
+		this.jenkins = jenkins;
 	}
 	
 	/*
