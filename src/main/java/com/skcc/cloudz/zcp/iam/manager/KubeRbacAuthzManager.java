@@ -1,6 +1,8 @@
 package com.skcc.cloudz.zcp.iam.manager;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -12,10 +14,12 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Configuration;
 import io.kubernetes.client.apis.RbacAuthorizationV1Api;
+import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.models.V1ClusterRoleList;
 import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1Status;
@@ -41,6 +45,14 @@ public class KubeRbacAuthzManager {
 		log.debug("KubeRbacAuthzManager is initialized");
 	}
 
+	public V1ClusterRole getClusterRole(String clusterRoleName) throws ApiException {
+		return api.readClusterRole(clusterRoleName, pretty);
+	}
+
+	public V1ClusterRole createClusterRole(V1ClusterRole clusterRole) throws ApiException {
+		return api.createClusterRole(clusterRole, pretty);
+	}
+
 	public V1ClusterRoleList getClusterRoles(String type) throws ApiException {
 		String labelSelector = null;
 		if (StringUtils.equals(type, "cluster")) {
@@ -50,6 +62,37 @@ public class KubeRbacAuthzManager {
 		}
 
 		return api.listClusterRole(pretty, null, null, null, labelSelector, null, null, null, null);
+	}
+	
+	public V1ClusterRole addClusterRoleLabel(String clusterRoleName, Map<String, String> newLabel) throws ApiException {
+		V1ClusterRole role = api.readClusterRole(clusterRoleName, pretty);
+		V1ObjectMeta meta = role.getMetadata();
+
+		for(Entry<String, String> e : newLabel.entrySet())
+			meta.putLabelsItem(e.getKey(), e.getValue());
+
+		// use "api.patchClusterRole(...)"
+		// - https://github.com/kubernetes-client/java/issues/263#issuecomment-408806995
+		// - https://github.com/kubernetes-client/java/issues/263#issuecomment-408806995
+		return api.replaceClusterRole(clusterRoleName, role, pretty);
+	}
+
+	public V1ClusterRole removeClusterRoleLabel(String clusterRoleName, Map<String, String> newLabel) throws ApiException {
+		V1ClusterRole role = api.readClusterRole(clusterRoleName, pretty);
+		V1ObjectMeta meta = role.getMetadata();
+		
+		if(meta.getLabels() == null)
+			return role;
+
+		boolean modified = false;
+		for(String k : newLabel.keySet()) {
+			modified = meta.getLabels().remove(k) != null;
+		}
+		
+		if(!modified)
+			return role;
+
+		return api.replaceClusterRole(clusterRoleName, role, pretty);
 	}
 
 	public V1ClusterRoleBindingList getClusterRoleBindingList() throws ApiException {

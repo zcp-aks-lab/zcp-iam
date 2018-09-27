@@ -14,7 +14,7 @@ import com.skcc.cloudz.zcp.iam.common.vo.Response;
 
 @Profile("default")
 @RestController
-@RequestMapping("/addon")
+@RequestMapping("/iam")
 public class AddonController {
 
 	@SuppressWarnings("unused")
@@ -23,7 +23,7 @@ public class AddonController {
 	@Autowired
 	private JenkinsService jenkinsService;
 
-	@RequestMapping(value = "/jenkins/folder", method = RequestMethod.POST)
+	@RequestMapping(value = "/addon/jenkins/folder", method = RequestMethod.POST)
 	public Response<Object> createFolder(@RequestParam("namespace") String namespace) throws Exception {
 		Response<Object> response = new Response<>();
 		

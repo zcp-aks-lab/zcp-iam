@@ -3,8 +3,9 @@ package com.skcc.cloudz.zcp.iam.api.addon.service;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.util.Base64;
 import java.util.Map;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
@@ -17,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.support.BasicAuthorizationInterceptor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -24,15 +27,15 @@ import org.springframework.web.client.RestTemplate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
-import com.skcc.cloudz.zcp.iam.api.namespace.service.NamespaceEventListener;
+import com.skcc.cloudz.zcp.iam.api.addon.service.AddonService.NamespaceEventAdapter;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpException;
-import com.skcc.cloudz.zcp.iam.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.iam.common.props.RoleProperties;
 import com.skcc.cloudz.zcp.iam.manager.KeyCloakManager;
 
 @Service
-public class JenkinsService implements NamespaceEventListener {
+public class JenkinsService extends NamespaceEventAdapter {
 	private final String JENKINS_API_CREATE_FOLDER = "{jenkins}/createItem?mode=com.cloudbees.hudson.plugins.folder.Folder&name={ns}";
+	private final String JENKINS_API_GET_FOLDER = "{jenkins}/job/{ns}/config.xml";
 
 	private final Logger log = LoggerFactory.getLogger(JenkinsService.class);
 	private final RestTemplate rest = new RestTemplate();
@@ -54,6 +57,13 @@ public class JenkinsService implements NamespaceEventListener {
 
 	@Value("${jenkins.template.folder}")
 	private String templatePath;
+	
+	@PostConstruct
+	public void init() {
+		String[] account = jenkinsToken.split(":");
+		ClientHttpRequestInterceptor e = new BasicAuthorizationInterceptor(account[0], account[1]);
+		rest.getInterceptors().add(e);
+	}
 
 	public void onCreateNamespace(String namespace) throws ZcpException {
 		Map<String, String> roleMapping = getRoleMapping(namespace);
@@ -70,10 +80,32 @@ public class JenkinsService implements NamespaceEventListener {
 		Map<String, String> roles = getRoleMapping(namespace);
 		keyCloakManager.deleteRealmRoles(roles.values());
 	}
+	
+	public void verify(String namespace, Map<String, Object> ctx) throws ZcpException {
+		Map<String, String> roleMapping = getRoleMapping(namespace);
+		
+		// create namespace roles
+		if(!isDryRun(ctx)) {
+			keyCloakManager.createRealmRoles(roleMapping.values());
+		}
+		log(ctx, "Create realm roles for namespace. {0}", roleMapping.values());
 
-	public void addNamespaceRoles(String namespace, String username, ClusterRole role) throws ZcpException {}
+		// create jenkins folder
+		// add context variables
+		try {
+			Map<String, String> vars = ImmutableMap.of("jenkins", jenkinsUrl, "ns", namespace);
+			rest.getForEntity(JENKINS_API_GET_FOLDER, String.class, vars);
 
-	public void deleteNamspaceRoles(String namespace, String username, ClusterRole role) throws ZcpException {}
+			log(ctx, "Skip to create Jenkins Folder for [{0}].", namespace);
+		} catch(HttpClientErrorException e) {
+			if(in(e, HttpStatus.NOT_FOUND)) {
+				if(!isDryRun(ctx))
+					this.createJenkinsFolder(namespace, roleMapping);
+
+				log(ctx, "Create Jenkins Folder for [{0}].", namespace);
+			}
+		}
+	}
 
 	public void createJenkinsFolder(String namespace) throws ZcpException {
 		createJenkinsFolder(namespace, getRoleMapping(namespace));
@@ -96,7 +128,6 @@ public class JenkinsService implements NamespaceEventListener {
 			RequestEntity<String> req = RequestEntity
 					.post(uri)
 					.contentType(MediaType.APPLICATION_XML)
-					.header("Authorization", "Basic " + Base64.getEncoder().encodeToString(jenkinsToken.getBytes()))
 					.body(body);
 		
 			// send request

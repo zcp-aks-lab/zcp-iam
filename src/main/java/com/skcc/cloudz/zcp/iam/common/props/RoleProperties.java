@@ -8,12 +8,14 @@ import org.apache.commons.text.StringSubstitutor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.skcc.cloudz.zcp.iam.common.model.ClusterRole;
 
 @Component
 @ConfigurationProperties(prefix = "role", ignoreUnknownFields = true)
 public class RoleProperties {
+	public final List<String> NONE = ImmutableList.of();
 	/**
 	 * Cluster 단위의 Role Mapping.
 	 * (Cluster-Role, Keycloak-Realm-Role)
@@ -73,6 +75,10 @@ public class RoleProperties {
 	public List<String> getNamspaceUserRoles(String role, final String namespace){
 		//TODO: roles if null
 		List<String> roles = this.namespace.get(role);
+		if(roles == null)
+			return NONE;
+			//throw new IllegalArgumentException("There is no matched role mappings with '" + role + "'");
+		
 		return roles.stream()
 			.map(name -> {
 				return StringSubstitutor.replace(name, ImmutableMap.of("namespace", namespace));

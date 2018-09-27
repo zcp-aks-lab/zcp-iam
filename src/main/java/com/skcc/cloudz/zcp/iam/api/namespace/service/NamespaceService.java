@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.skcc.cloudz.zcp.iam.api.addon.service.AddonService;
 import com.skcc.cloudz.zcp.iam.api.namespace.vo.ItemList;
 import com.skcc.cloudz.zcp.iam.api.namespace.vo.NamespaceResourceDetailVO;
@@ -834,4 +836,23 @@ public class NamespaceService {
 		return labels;
 	}
 
+	public Object verify(String namespace, boolean dry) {
+		Map<String, Object> ctx = Maps.newHashMap();
+		ctx.put(NamespaceEventListener.DRY_RUN, dry);
+
+		try {
+			if("all".equals(namespace)) {
+				List<V1Namespace> ns = getNamespaces().getItems();
+				for(V1Namespace n : ns) {
+					addonService.verify(n.getMetadata().getName(), ctx);
+				}
+			} else {
+				addonService.verify(namespace, ctx);
+			}
+		} catch (Throwable e) {
+			ctx.put(NamespaceEventListener.ERROR, e.getMessage());
+		}
+		
+		return ctx;
+	}
 }

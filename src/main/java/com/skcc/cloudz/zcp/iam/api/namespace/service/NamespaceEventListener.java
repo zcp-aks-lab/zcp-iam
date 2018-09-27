@@ -1,9 +1,15 @@
 package com.skcc.cloudz.zcp.iam.api.namespace.service;
 
+import java.util.Map;
+
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.iam.common.model.ClusterRole;
 
 public interface NamespaceEventListener {
+	public static String DRY_RUN = "dry-run";
+	public static String ERROR = "error";
+	public static String LOG = "log";
+
 	/**
 	 * Namespace 생성 시 호출된다.
 	 * @param namespace
@@ -35,4 +41,12 @@ public interface NamespaceEventListener {
 	 * @throws ZcpException
 	 */
 	public void deleteNamspaceRoles(String namespace, String username, ClusterRole oldRole) throws ZcpException;
+
+	/**
+	 * Namespace 유효성 검증 요청 시 호출된다.
+	 * @param namespace
+	 * @param ctx 
+	 * @throws ZcpException
+	 */
+	public void verify(String namespace, Map<String, Object> ctx) throws ZcpException;
 }
