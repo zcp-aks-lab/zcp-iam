@@ -1,6 +1,8 @@
 package com.skcc.cloudz.zcp.iam.manager;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,7 @@ import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1ResourceQuotaList;
 import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1SecretList;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1ServiceAccountList;
 import io.kubernetes.client.models.V1Status;
@@ -81,6 +84,26 @@ public class KubeCoreManager {
 
 	public V1Secret getSecret(String namespace, String secretName) throws ApiException {
 		return api.readNamespacedSecret(secretName, namespace, pretty, null, null);
+	}
+
+	public V1SecretList getSecretList(String namespace, List<String> types) throws ApiException {
+		V1SecretList list = api.listNamespacedSecret(namespace, pretty, null, null, null, null, null, null, null, null);
+		
+		if(types == null || types.isEmpty())
+			return list;
+
+		// filter
+		Iterator<V1Secret> iter = list.getItems().iterator();
+		while(iter.hasNext()) {
+			if(!types.contains(iter.next().getType()))
+				iter.remove();
+		}
+		
+		return list;
+	}
+	
+	public V1Secret createSecret(String namespace, V1Secret secret) throws ApiException {
+		return api.createNamespacedSecret(namespace, secret, pretty);
 	}
 
 	public V1NamespaceList getNamespaceList() throws ApiException {
