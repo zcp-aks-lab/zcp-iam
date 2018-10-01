@@ -10,6 +10,9 @@ public enum ZcpErrorCode {
 	CLUSTERROLEBINDING_NOT_FOUND		            (10004, ""),
 	PERMISSION_DENY						            (10005, ""),
 	UNSUPPORTED_TYPE					            (10006, "error : Unsupported type"),
+	INVALID_ARGUMENT								(10007, "Invalid Arguments"),
+	INVALID_CONFIGURATION							(10008, "Invalid Configureation"),
+	NO_PERMISSON									(10009, "Has no permission."),
 	                                                
 	//app                                           
 	DEPOLYMENT_LIST_ERROR				            (11001, "error : Unauthorized"),
@@ -40,6 +43,13 @@ public enum ZcpErrorCode {
 	NAMESAPCE_LIST_ERROR				            (31014, "error : Namespace list"),
 	GET_NAMESPACE_ERROR					            (31015, "error : Get namespace"),
 	LABEL_INVALID_ERROR								(31016, "error : Label invalid"),
+
+	//namespace                                     
+	GET_SECRET_LIST									(32001, "Fail to load the list of namespace secrets"),
+	GET_SECRET										(32002, "Fail to load namespace secret"),
+	SECRET_DATA_KEY_NOT_FOUND				        (32003, "There is no data(key) in the secret"),
+	CREATE_SECRET_ERROR					            (32004, "Fail to create new secret"),
+	DELETE_SECRET_ERROR					            (32005, "error : Create namespace"),
 	
 	//rbac                                          
 	CLUSTER_ROLE_TYPE_ERROR				            (41001, "error : The type is null"),
@@ -66,6 +76,10 @@ public enum ZcpErrorCode {
 	ENABLE_USER_OTP_PASSWORD_ERROR					(51018, "error : Enable user otp password"),
 	LOGOUT_ERROR									(51019, "error : Logout"),
 	GET_SECRET_ERROR								(51020, "error : Get secret"),
+
+	//addon
+	ADD_USER_NAMESPACE_ROLE							(61001, "error : Mapped cluster role bindings"),
+	DELETE_USER_NAMESPCE_ROLE						(61002, "error : Mapped role binding"),
 	
 	;
 

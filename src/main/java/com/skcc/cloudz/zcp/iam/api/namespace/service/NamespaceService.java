@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.google.common.collect.Maps;
+import com.skcc.cloudz.zcp.iam.api.addon.service.AddonService;
 import com.skcc.cloudz.zcp.iam.api.namespace.vo.ItemList;
 import com.skcc.cloudz.zcp.iam.api.namespace.vo.NamespaceResourceDetailVO;
 import com.skcc.cloudz.zcp.iam.api.namespace.vo.NamespaceResourceVO;
@@ -69,9 +71,12 @@ public class NamespaceService {
 	@Autowired
 	private KubeRbacAuthzManager kubeRbacAuthzManager;
 
+	@Autowired
+	private AddonService addonService;
+
 	@Value("${zcp.kube.namespace}")
 	private String zcpSystemNamespace;
-
+	
 	public V1NamespaceList getNamespaces() throws ZcpException {
 		try {
 			return kubeCoreManager.getNamespaceList();
@@ -206,6 +211,8 @@ public class NamespaceService {
 		saveNamespaceResoruceQuota(vo.getResourceQuota(), namespaceName);
 
 		saveNamespaceLimitRange(vo.getLimitRange(), namespaceName);
+		
+		addonService.onCreateNamespace(namespaceName);
 	}
 
 	public void deleteNamespace(String namespace, String userId) throws ZcpException {
@@ -214,6 +221,8 @@ public class NamespaceService {
 
 		try {
 			kubeCoreManager.deleteNamespace(namespace);
+
+			addonService.onDeleteNamespace(namespace);
 		} catch (ApiException e) {
 			throw new ZcpException(ZcpErrorCode.DELETE_NAMESPACE_ERROR, e);
 		}
@@ -316,31 +325,36 @@ public class NamespaceService {
 
 		try {
 			roleBinding = kubeRbacAuthzManager.createRoleBinding(namespace, roleBinding);
+			
+			// add keycloak realm-roles
+			addonService.addNamespaceRoles(namespace, vo.getUsername(), vo.getClusterRole());
 		} catch (ApiException e) {
 			throw new ZcpException(ZcpErrorCode.CREATE_ROLE_BINDING_ERROR, e);
 		}
 	}
 
 	public void editRoleBinding(String namespace, RoleBindingVO vo) throws ZcpException {
-		V1RoleBinding roleBinding = makeRoleBinding(namespace, vo);
-
-		// 1.delete RoleBinding
+		// 1.delete RoleBinding & RealmRoles
 		deleteRoleBinding(namespace, vo);
 
-		// 2.create RoleBinding
-		try {
-			kubeRbacAuthzManager.createRoleBinding(namespace, roleBinding);
-		} catch (ApiException e) {
-			throw new ZcpException(ZcpErrorCode.CREATE_ROLE_BINDING_ERROR, e);
-		}
+		// 2.create RoleBinding and add RealmRoles
+		createRoleBinding(namespace, vo);
 	}
 
 	public void deleteRoleBinding(String namespace, RoleBindingVO data) throws ZcpException {
 		V1DeleteOptions deleteOptions = new V1DeleteOptions();
 		deleteOptions.setGracePeriodSeconds(0L);
 		try {
-			kubeRbacAuthzManager.deleteRoleBinding(namespace,
-					ResourcesNameManager.getRoleBindingName(data.getUsername()), deleteOptions);
+			String username = data.getUsername();
+
+			V1RoleBinding oldRoleBinding = kubeRbacAuthzManager.getRoleBindingByUserName(namespace, username);
+			String oldRoleName = oldRoleBinding.getRoleRef().getName();
+
+			// delete RoleBinding
+			kubeRbacAuthzManager.deleteRoleBinding(namespace, ResourcesNameManager.getRoleBindingName(data.getUsername()), deleteOptions);
+
+			// delete Keycloak Realm Roles
+			addonService.deleteNamspaceRoles(namespace, username, ClusterRole.valueOf(oldRoleName));
 		} catch (ApiException e) {
 			throw new ZcpException(ZcpErrorCode.DELETE_ROLE_BINDING_ERROR, e);
 		}
@@ -812,5 +826,24 @@ public class NamespaceService {
 
 		return labels;
 	}
+	
+	public Object verify(String namespace, boolean dry) {
+		Map<String, Object> ctx = Maps.newHashMap();
+		ctx.put(NamespaceEventListener.DRY_RUN, dry);
 
+		try {
+			if("all".equals(namespace)) {
+				List<V1Namespace> ns = getNamespaces().getItems();
+				for(V1Namespace n : ns) {
+					addonService.verify(n.getMetadata().getName(), ctx);
+				}
+			} else {
+				addonService.verify(namespace, ctx);
+			}
+		} catch (Throwable e) {
+			ctx.put(NamespaceEventListener.ERROR, e.getMessage());
+		}
+		
+		return ctx;
+	}
 }

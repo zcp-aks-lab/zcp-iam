@@ -136,4 +136,14 @@ public class NamespaceController {
 		return response;
 	}
 
+	@RequestMapping(value = "/namespace/{namespace}/verify", method = RequestMethod.GET)
+	public Response<Object> verify(
+			@PathVariable("namespace") String namespace,
+			@RequestParam(name="dry-run", required=false, defaultValue="true") boolean dry) throws Exception {
+		// Ref : https://spoqa.github.io/2013/06/11/more-restful-interface.html#controller
+		Response<Object> response = new Response<>();
+		Object data = namespaceService.verify(namespace, dry);
+		response.setData(data);
+		return response;
+	}
 }
