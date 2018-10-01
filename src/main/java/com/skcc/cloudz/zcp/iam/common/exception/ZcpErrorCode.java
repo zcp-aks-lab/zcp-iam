@@ -54,6 +54,7 @@ public enum ZcpErrorCode {
 	//rbac                                          
 	CLUSTER_ROLE_TYPE_ERROR				            (41001, "error : The type is null"),
 	CLUSTER_ROLE_ERROR								(41002, "error : Cluster role"),
+	ROLEBINDING_NOT_FOUND_ERROR						(41003, "error : Not found the role binding"),
 	
 	//user
 	MAPPED_CLUSTER_ROLE_BINDINGS_ERROR 				(51001, "error : Mapped cluster role bindings"),
