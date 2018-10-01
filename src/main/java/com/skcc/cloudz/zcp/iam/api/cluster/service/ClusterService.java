@@ -1,12 +1,23 @@
 package com.skcc.cloudz.zcp.iam.api.cluster.service;
 
+import static com.skcc.cloudz.zcp.iam.common.model.ClusterRole.ADMIN;
+import static com.skcc.cloudz.zcp.iam.common.model.ClusterRole.DEPLOY_MANAGER;
+import static com.skcc.cloudz.zcp.iam.common.model.ClusterRole.DEVELOPER;
+import static com.skcc.cloudz.zcp.iam.common.model.ClusterRole.EDIT;
+import static com.skcc.cloudz.zcp.iam.common.model.ClusterRole.VIEW;
+
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Table;
 import com.skcc.cloudz.zcp.iam.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.iam.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.iam.manager.ResourcesLabelManager;
@@ -17,13 +28,29 @@ import io.kubernetes.client.models.V1ObjectMeta;
 
 @Service
 public class ClusterService {
-	private static final boolean ENABLE  = true;
-	private static final boolean DISABLE = false;
+	private static Table<String, Boolean, Map<String, String>> LABEL = HashBasedTable.create();
 
-	private static Map<String, String> CS_ROLE_ENABLE  = getRoleLabel("cluster", ENABLE);
-	private static Map<String, String> CS_ROLE_DISABLE = getRoleLabel("cluster", DISABLE);
-	private static Map<String, String> NS_ROLE_ENABLE  = getRoleLabel("namespace", ENABLE);
-	private static Map<String, String> NS_ROLE_DISABLE = getRoleLabel("namespace", DISABLE);
+	private final Logger log = LoggerFactory.getLogger(ClusterService.class);
+
+	static {
+		Map<String, String> label = null;
+		
+		for(String type : Lists.newArrayList("cs", "ns")) {
+			for(Boolean enable : Lists.newArrayList(Boolean.TRUE, Boolean.FALSE)) {
+				if("cs".equals(type))
+					label = ResourcesLabelManager.getSystemClusterRoleLabels();
+				if("ns".equals(type))
+					label = ResourcesLabelManager.getSystemNamespaceRoleLabels();
+				
+				if(!enable)
+					label.replaceAll((k, v) -> "");
+				
+				label.putAll(ResourcesLabelManager.getSystemLabels());
+				
+				LABEL.put(type, enable, label);
+			}
+		}
+	}
 
 	@Autowired
 	private KubeRbacAuthzManager kubeRbacAuthzManager;
@@ -32,75 +59,56 @@ public class ClusterService {
 		Map<String, Object> data = Maps.newHashMap();
 
 		try {
-			if(!exist(ClusterRole.DEPLOY_MANAGER))
-				copyTo(ClusterRole.EDIT, ClusterRole.DEPLOY_MANAGER);
+			copy(EDIT, DEPLOY_MANAGER);
+			copy(VIEW, DEVELOPER);
 
-			if(!exist(ClusterRole.DEVELOPER))
-				copyTo(ClusterRole.VIEW, ClusterRole.DEVELOPER);
-
-			setClusterRole(DISABLE, ClusterRole.ADMIN);
-			setNamespaceRole(DISABLE, ClusterRole.EDIT);
-			setNamespaceRole(DISABLE, ClusterRole.VIEW);
-			setNamespaceRole(ENABLE,  ClusterRole.DEPLOY_MANAGER);
-			setNamespaceRole(ENABLE,  ClusterRole.DEVELOPER);
+			disable("cs", ADMIN);
+			disable("ns", EDIT, VIEW);
+			enable("ns", DEPLOY_MANAGER, DEVELOPER);
 
 			if(dry) {
-				setClusterRole(ENABLE, ClusterRole.ADMIN);
-				setNamespaceRole(ENABLE,  ClusterRole.EDIT);
-				setNamespaceRole(ENABLE,  ClusterRole.VIEW);
-				setNamespaceRole(DISABLE, ClusterRole.DEPLOY_MANAGER);
-				setNamespaceRole(DISABLE, ClusterRole.DEVELOPER);
+				enable("cs", ADMIN);
+				enable("ns", EDIT, VIEW);
+				disable("ns", DEPLOY_MANAGER, DEVELOPER);
 			}
 		} catch (ApiException e) {
-			e.printStackTrace();
+			log.error("", e);
+			data.put("code", e.getCode());
+			data.put("msg", e.getMessage());
 		}
 		
 		return data;
 	}
 
-	private boolean exist(ClusterRole role) throws ApiException {
+	private void enable(String type, ClusterRole... role) throws ApiException {
+		Map<String, String> label = LABEL.get(type, true);
+		for(ClusterRole r : role)
+			kubeRbacAuthzManager.addClusterRoleLabel(r.toString(), label);
+	}
+
+	private void disable(String type, ClusterRole... role) throws ApiException {
+		Map<String, String> label = LABEL.get(type, false);
+		for(ClusterRole r : role)
+			kubeRbacAuthzManager.addClusterRoleLabel(r.toString(), label);
+	}
+	
+	public void copy(ClusterRole from, ClusterRole to) throws ApiException {
+		boolean exist = false;
 		try {
-			kubeRbacAuthzManager.getClusterRole(role.toString());
-			return true;
+			exist = kubeRbacAuthzManager.getClusterRole(to.toString()) != null;
 		} catch (ApiException e) {
 			if(e.getCode() == HttpStatus.NOT_FOUND.value())
-				return false;
-
+				exist = false;
 			throw e;
-		}	
-	}
-	
-	private void copyTo(ClusterRole source, ClusterRole target) throws ApiException {
-		V1ClusterRole sourceRole = kubeRbacAuthzManager.getClusterRole(source.toString());	
-		V1ObjectMeta meta = sourceRole.getMetadata();
-		meta.name(target.toString());
-		meta.setResourceVersion("");
+		}
 		
-		kubeRbacAuthzManager.createClusterRole(sourceRole);
-	}
-	
-	private V1ClusterRole setClusterRole(boolean enable, ClusterRole role) throws ApiException {
-		Map<String, String> label = enable ? CS_ROLE_ENABLE : CS_ROLE_DISABLE; 
-		return kubeRbacAuthzManager.addClusterRoleLabel(role.toString(), label);
-	}
-
-	private V1ClusterRole setNamespaceRole(boolean enable, ClusterRole role) throws ApiException {
-		Map<String, String> label = enable ? NS_ROLE_ENABLE : NS_ROLE_DISABLE; 
-		return kubeRbacAuthzManager.addClusterRoleLabel(role.toString(), label);
-	}
-
-	private static Map<String, String> getRoleLabel(String type, boolean enable){
-		Map<String, String> label = null;
-		if("cluster".equals(type))
-			label = ResourcesLabelManager.getSystemClusterRoleLabels();
-		else if("namespace".equals(type))
-			label = ResourcesLabelManager.getSystemNamespaceRoleLabels();
-		
-		if(!enable)
-			label.replaceAll((k, v) -> "");
-		
-		label.putAll(ResourcesLabelManager.getSystemLabels());
-		
-		return label;
+		if(!exist) {
+			V1ClusterRole sourceRole = kubeRbacAuthzManager.getClusterRole(from.toString());	
+			V1ObjectMeta meta = sourceRole.getMetadata();
+			meta.name(to.toString());
+			meta.setResourceVersion("");
+			
+			kubeRbacAuthzManager.createClusterRole(sourceRole);
+		}
 	}
 }

@@ -2,7 +2,6 @@ package com.skcc.cloudz.zcp.iam.api.addon.service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,16 +27,15 @@ public class KubeRbacService extends NamespaceEventAdapter {
 
 	public void verify(String namespace, Map<String, Object> ctx) throws ZcpException {
 		// Load roleBindings
-		List<V1RoleBinding> binding = Lists.newArrayList();
+		List<V1RoleBinding> binding = null;
 		try {
 			binding = kubeRbacAuthzManager.getRoleBindingListByNamespace(namespace).getItems();
-			List<String> names = binding.stream()
-					.map(rb -> rb.getMetadata().getName())
-					.collect(Collectors.toList());
+			List<String> names = Lists.transform(binding, rb -> rb.getMetadata().getName());
 			log(ctx, "Load roleBindings. [namespace={0}, rb={1}]", namespace, names);
 		} catch (ApiException e) {
 			log.error("", e);
 			log(ctx, "Fail to load roleBinding. [namespace={0}]", namespace);
+			return;
 		}
 		
 		// Change clusterRole
@@ -58,14 +56,16 @@ public class KubeRbacService extends NamespaceEventAdapter {
 			if(!isDryRun(ctx)) {
 				try {
 					kubeRbacAuthzManager.deleteRoleBinding(namespace, rb.getMetadata().getName(), options);
-					
+
 					rb.getMetadata().resourceVersion("");
 					kubeRbacAuthzManager.createRoleBinding(namespace, rb);
 				} catch (ApiException e) {
 					log.error("", e);
+					log.error("{}", e.getCode());
+					log.error("{}", e.getResponseBody());
 					Object[] args = { username, oldRole, newRole, namespace };
 					log(ctx, "Fail to a change roleBinding. [username={0}, role={1}->{2}, namespace={3}]", args);
-					break;
+					continue;
 				}
 			}
 			
@@ -80,7 +80,8 @@ public class KubeRbacService extends NamespaceEventAdapter {
 			return "deploy-manager";
 		case "view":
 			return "developer";
-		default:     return old;
+		default:
+			return old;
 		}
 	}
 }
