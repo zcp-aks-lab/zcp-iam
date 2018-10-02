@@ -61,6 +61,11 @@ spec:
               secretKeyRef:
                 name: zcp-iam-secret
                 key: KEYCLOAK_MASTER_PASSWORD
+          - name: JENKINS_USER_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: zcp-iam-secret
+                key: JENKINS_USER_TOKEN
       serviceAccount: zcp-system-admin
       serviceAccountName: zcp-system-admin
 ---

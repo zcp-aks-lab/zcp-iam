@@ -60,7 +60,7 @@ public class KeyCloakManager {
 	@Value("${zcp.keycloak.realm}")
 	private String realm;
 	
-	@Value("${zcp.keycloak.token-url:'/realms/{realm}/protocol/openid-connect/token'}")
+	@Value("${zcp.keycloak.token-url}")
 	private String tokenUrl;
 	
 	@Value("${keycloak.serverUrl}")

@@ -33,6 +33,7 @@ server:
 zcp:
   keycloak:
     realm: zcp
+    token-url: /realms/zcp/protocol/openid-connect/token
   kube:
     namespace: zcp-system
 

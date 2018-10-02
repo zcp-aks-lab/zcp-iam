@@ -335,7 +335,13 @@ public class NamespaceService {
 
 	public void editRoleBinding(String namespace, RoleBindingVO vo) throws ZcpException {
 		// 1.delete RoleBinding & RealmRoles
-		deleteRoleBinding(namespace, vo);
+		try {
+			deleteRoleBinding(namespace, vo);
+		} catch (ZcpException e) {
+			// if this is new authorization
+			if(e.getCode() != ZcpErrorCode.DELETE_ROLE_BINDING_ERROR)
+				throw e;
+		}
 
 		// 2.create RoleBinding and add RealmRoles
 		createRoleBinding(namespace, vo);
