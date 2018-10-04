@@ -344,6 +344,12 @@ public class UserService {
 		}
 		
 		// create a rolebinding of default namespace
+		// doesn't create default namespace rolebiding 2018-10-04
+//		createDefaultNamespaceRolebinding(userRepresentation);
+	}
+
+	@SuppressWarnings("unused")
+	private void createDefaultNamespaceRolebinding(UserRepresentation userRepresentation) throws ZcpException {
 		ZcpUser zcpUser = convertUser(userRepresentation);
 		String defaultNamespace = "default"; // this is a default namespace of k8s
 		if (StringUtils.isEmpty(zcpUser.getDefaultNamespace())) {
