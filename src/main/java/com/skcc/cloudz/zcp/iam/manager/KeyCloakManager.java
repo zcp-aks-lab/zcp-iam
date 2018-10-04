@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -41,6 +42,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.skcc.cloudz.zcp.iam.common.exception.KeyCloakException;
 import com.skcc.cloudz.zcp.iam.common.model.CredentialActionType;
 
@@ -271,8 +273,9 @@ public class KeyCloakManager {
 		roles.add(rolesToAdd);
 		
 		UserRepresentation data = user.toRepresentation();
-		Map<String, List<String>> attr = data.getAttributes();
+		Map<String, List<String>> attr = ObjectUtils.defaultIfNull(data.getAttributes(), Maps.newHashMap());
 		attr.put("role-" + tag, realmRoles);
+		data.setAttributes(attr);
 		this.editUser(data);
 	}
 
@@ -281,8 +284,9 @@ public class KeyCloakManager {
 		UserRepresentation data = user.toRepresentation();
 
 		// remove deleted roles from User Meta
-		Map<String, List<String>> attr = data.getAttributes();
+		Map<String, List<String>> attr = ObjectUtils.defaultIfNull(data.getAttributes(), Maps.newHashMap());
 		attr.remove("role-" + tag);
+		data.setAttributes(attr);
 		
 		// merge all namespace's realm-roles
 		Set<String> remainRoles = attr.entrySet().stream()
