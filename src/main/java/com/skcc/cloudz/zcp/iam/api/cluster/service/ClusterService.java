@@ -74,23 +74,24 @@ public class ClusterService {
 			// change admin->member
 			V1ClusterRoleBindingList crbList = kubeRbacAuthzManager.getClusterRoleBindingList();
 			for(V1ClusterRoleBinding crb : crbList.getItems()) {
-				String username = usernameOf(crb);
 				ClusterRole oldRole = roleOf(crb);
-				ClusterRole newRole = ClusterRole.MEMBER;
 
 				if(oldRole != ADMIN) {
 					continue;
 				}
 
-				if(!dry) {
-					crb.getRoleRef().setName(newRole.getRole());
-					edit(crb);
-				}
+				String username = usernameOf(crb);
+				ClusterRole newRole = ClusterRole.MEMBER;
+				crb.getRoleRef().setName(newRole.getRole());
 
-				VerifyContext.print("ClusterRole was changed. [role={}->{}, username={}]", oldRole, newRole, username);
+				if(edit(crb))
+					VerifyContext.print("ClusterRole was changed. [role={}->{}, username={}]", oldRole, newRole, username);
+				else
+					VerifyContext.print("Fail to change ClusterRole. [role={}->{}, username={}]", oldRole, newRole, username);
 			}
 		} catch (ApiException e) {
 			log.error("", e);
+			log.error("{}", e.getResponseBody());
 		}
 		
 		return VerifyContext.getContext();
@@ -124,9 +125,11 @@ public class ClusterService {
 		try {
 			exist = kubeRbacAuthzManager.getClusterRole(to.toString()) != null;
 		} catch (ApiException e) {
-			if(e.getCode() == HttpStatus.NOT_FOUND.value())
+			if(e.getCode() == HttpStatus.NOT_FOUND.value()) {
 				exist = false;
-			throw e;
+			} else {
+				throw e;
+			}
 		}
 		
 		if(exist) {
@@ -162,10 +165,23 @@ public class ClusterService {
 		return crb.getMetadata().getLabels().get(SYSTEM_USERNAME_LABEL_NAME);
 	}
 
-	public void edit(V1ClusterRoleBinding crb) throws ApiException {
-		crb.getMetadata().setResourceVersion("");
+	public boolean edit(V1ClusterRoleBinding crb) throws ApiException {
+		if(VerifyContext.isDryRun())
+			return true;
 
-		String name = crb.getMetadata().getName();
-		kubeRbacAuthzManager.editClusterRoleBinding(name, crb);
+		try {
+			crb.getMetadata().setResourceVersion("");
+
+			String name = crb.getMetadata().getName();
+//			kubeRbacAuthzManager.editClusterRoleBinding(name, crb);
+			kubeRbacAuthzManager.deleteClusterRoleBinding(name);
+			kubeRbacAuthzManager.createClusterRoleBinding(crb);
+		} catch (ApiException e) {
+			log.error("{}", e.getResponseBody());
+			log.error("", e);
+			return false;
+		}
+		
+		return true;
 	}
 }
