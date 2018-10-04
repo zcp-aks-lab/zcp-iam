@@ -360,7 +360,7 @@ public class NamespaceService {
 			kubeRbacAuthzManager.deleteRoleBinding(namespace, ResourcesNameManager.getRoleBindingName(data.getUsername()), deleteOptions);
 
 			// delete Keycloak Realm Roles
-			addonService.deleteNamspaceRoles(namespace, username, ClusterRole.valueOf(oldRoleName));
+			addonService.deleteNamspaceRoles(namespace, username, ClusterRole.getClusterRole(oldRoleName));
 		} catch (ApiException e) {
 			throw new ZcpException(ZcpErrorCode.DELETE_ROLE_BINDING_ERROR, e);
 		}

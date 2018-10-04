@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.google.common.collect.Lists;
 import com.skcc.cloudz.zcp.iam.api.addon.service.AddonService.NamespaceEventAdapter;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpException;
+import com.skcc.cloudz.zcp.iam.common.model.ClusterRole;
 import com.skcc.cloudz.zcp.iam.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.iam.manager.ResourcesLabelManager;
 
@@ -75,11 +76,11 @@ public class KubeRbacService extends NamespaceEventAdapter {
 	}
 	
 	private String toConvertNewRole(String old) {
-		switch(old) {
-		case "edit":
-			return "deploy-manager";
-		case "view":
-			return "developer";
+		switch(ClusterRole.getClusterRole(old)) {
+		case EDIT:
+			return ClusterRole.CICD_MANAGER.getRole();
+		case VIEW:
+			return ClusterRole.DEVELOPER.getRole();
 		default:
 			return old;
 		}

@@ -11,7 +11,7 @@ public enum ClusterRole {
 	ADMIN("admin"), 
 	CLUSTER_ADMIN("cluster-admin"),
 
-	DEPLOY_MANAGER("deploy-manager"),
+	CICD_MANAGER("cicd-manager"),
 	DEVELOPER("developer");
 
 	private String role;

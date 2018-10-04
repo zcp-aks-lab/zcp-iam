@@ -10,11 +10,13 @@ public class SecretTlsVO implements SecretVO {
 
 	private String type = "kubernetes.io/tls";
 
+	private String description;
+
 	@NotNull
 	private MultipartFile crt;
 	@NotNull
 	private MultipartFile key;
-	
+
 	public String getName() {
 		return name;
 	}
@@ -38,5 +40,11 @@ public class SecretTlsVO implements SecretVO {
 	}
 	public void setKey(MultipartFile key) {
 		this.key = key;
+	}
+	public String getDescription() {
+		return description;
+	}
+	public void setDescription(String description) {
+		this.description = description;
 	}
 }

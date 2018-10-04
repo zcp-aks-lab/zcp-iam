@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -28,6 +29,7 @@ import io.kubernetes.client.models.V1SecretList;
 
 @Service
 public class NamespaceSecretService {
+	private String DESC = "cloudzcp.io/description";
 
 	private final Logger log = LoggerFactory.getLogger(NamespaceSecretService.class);
 
@@ -49,8 +51,25 @@ public class NamespaceSecretService {
 
 	public V1Secret getSecret(String namespace, String name) throws ZcpException {
 		try {
-			return kubeCoreManager.getSecret(namespace, name);
-		} catch (ApiException e) {
+			V1Secret secret = kubeCoreManager.getSecret(namespace, name);
+			
+			if("kubernetes.io/dockerconfigjson".equals(secret.getType())) {
+				byte[] data = secret.getData().get(".dockerconfigjson");
+				JsonNode root = mapper.readTree(new String(data));
+				String server = root.get("auths").fieldNames().next();
+				JsonNode raw = root.at("/auths/" + server);
+
+				secret.putStringDataItem("server", server);
+				secret.putStringDataItem("username", raw.get("username").textValue());
+				secret.putStringDataItem("password", raw.get("password").textValue());
+				secret.putStringDataItem("email", raw.get("email").textValue());
+			} else if("kubernetes.io/tls".equals(secret.getType())) {
+				secret.putStringDataItem("tls.crt", "");
+				secret.putStringDataItem("tls.key", "");
+			}
+			
+			return secret;
+		} catch (ApiException | IOException e) {
 			log.error("", e);
 			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
 		}
@@ -88,6 +107,7 @@ public class NamespaceSecretService {
 		try {
 			V1Secret secret = toSecret(vo, namespace);
 			secret.putDataItem(".dockerconfigjson", toJson(data).getBytes());
+			secret.getMetadata().putAnnotationsItem(DESC, vo.getDescription());
 
 			return kubeCoreManager.createSecret(namespace, secret);
 		} catch (ApiException e) {
@@ -102,6 +122,8 @@ public class NamespaceSecretService {
 			V1Secret secret = toSecret(vo, namespace);
 			secret.putDataItem("tls.crt", vo.getCrt().getBytes());
 			secret.putDataItem("tls.key", vo.getKey().getBytes());
+
+			secret.getMetadata().putAnnotationsItem(DESC, vo.getDescription());
 
 			return kubeCoreManager.createSecret(namespace, secret);
 		} catch (IOException e) {

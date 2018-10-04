@@ -106,11 +106,11 @@ public class KeycloakService extends NamespaceEventAdapter {
 	}
 
 	private String toConvertNewRole(String old) {
-		switch(old) {
-		case "edit":
-			return "deploy-manager";
-		case "view":
-			return "developer";
+		switch(ClusterRole.getClusterRole(old)) {
+		case EDIT:
+			return ClusterRole.CICD_MANAGER.getRole();
+		case VIEW:
+			return ClusterRole.DEVELOPER.getRole();
 		default:
 			return old;
 		}

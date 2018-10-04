@@ -35,7 +35,7 @@
       <permission>hudson.model.View.Configure:${admin}</permission>
       <permission>hudson.model.View.Create:${admin}</permission>
       <permission>hudson.model.View.Delete:${admin}</permission>
-      <permission>hudson.model.View.Delete:${deploy-manager}</permission>
+<!--       <permission>hudson.model.View.Delete:${deploy-manager}</permission> -->
       <permission>hudson.model.View.Read:${admin}</permission>
       <permission>hudson.model.View.Read:${deploy-manager}</permission>
       <permission>hudson.model.View.Read:${developer}</permission>

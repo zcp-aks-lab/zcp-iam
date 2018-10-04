@@ -7,6 +7,8 @@ public class SecretDockerVO implements SecretVO {
 	private String name;
 
 	private String type = "kubernetes.io/dockerconfigjson";
+	
+	private String description;
 
 	@NotNull
 	private String server;
@@ -52,5 +54,11 @@ public class SecretDockerVO implements SecretVO {
 	}
 	public void setPassword(String password) {
 		this.password = password;
+	}
+	public String getDescription() {
+		return description;
+	}
+	public void setDescription(String description) {
+		this.description = description;
 	}
 }

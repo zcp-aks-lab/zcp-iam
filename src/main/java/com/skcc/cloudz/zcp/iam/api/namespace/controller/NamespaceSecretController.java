@@ -40,9 +40,25 @@ public class NamespaceSecretController {
 	public Response<V1SecretList> getSecrets(@PathVariable("namespace") String namespace) throws Exception {
 		Response<V1SecretList> response = new Response<>();
 
-		List<String> types = Lists.newArrayList("kubernetes.io/dockerconfigjson", "kubernetes.io/dockercfg", "kubernetes.io/tls");
+		List<String> types = Lists.newArrayList("kubernetes.io/dockerconfigjson", "kubernetes.io/tls");
 		response.setData(secretService.getSecrets(namespace, types));
 
+		return response;
+	}
+
+	@RequestMapping(value = "/namespace/{namespace}/secret/{secret}", method = RequestMethod.GET)
+	public Response<Object> getSecret(
+			@PathVariable("namespace") String namespace,
+			@PathVariable("secret") String name) throws Exception {
+		Response<Object> response = new Response<>();
+
+		V1Secret secret = secretService.getSecret(namespace, name);
+		if("kubernetes.io/tls".equals(secret.getType())) {
+			secret.getStringData()
+				.replaceAll( (k,v) -> String.format("/iam/namespace/%s/secret/%s/data/%s", namespace, name, k) );
+		}
+
+		response.setData(secret);
 		return response;
 	}
 	
