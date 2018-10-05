@@ -272,6 +272,8 @@ public class KeyCloakManager {
 		List<RoleRepresentation> rolesToAdd = this.getRealmRoles(realmRoles, true);
 		roles.add(rolesToAdd);
 		
+		logger.debug("Add Roles :: {}", realmRoles);
+		
 		UserRepresentation data = user.toRepresentation();
 		Map<String, List<String>> attr = ObjectUtils.defaultIfNull(data.getAttributes(), Maps.newHashMap());
 		attr.put("role-" + tag, realmRoles);
@@ -309,11 +311,10 @@ public class KeyCloakManager {
 	}
 	
 	public List<RoleRepresentation> getRealmRoles(List<String> realmRoles, boolean create) {
-		logger.debug("Convert realm-roles-name to RoleRepresentation. [names={}]", realmRoles);
+		logger.trace("Convert realm-roles-name to RoleRepresentation. [names={}]", realmRoles);
 		RolesResource roles = keycloak.realm(realm).roles();
 		return realmRoles.stream()
 				.map(name -> {
-					logger.debug("Convert realm-roles-name to RoleRepresentation. [names={}]", realmRoles);
 					try {
 						return roles.get(name).toRepresentation();
 					} catch(NotFoundException e) {

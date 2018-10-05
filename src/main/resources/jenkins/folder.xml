@@ -6,40 +6,53 @@
     <com.cloudbees.hudson.plugins.folder.properties.AuthorizationMatrixProperty>
       <inheritanceStrategy class="org.jenkinsci.plugins.matrixauth.inheritance.InheritParentStrategy"/>
       <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Create:${admin}</permission>
+      <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Create:${cicd-manager}</permission>
       <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Delete:${admin}</permission>
+      <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Delete:${cicd-manager}</permission>
       <permission>com.cloudbees.plugins.credentials.CredentialsProvider.ManageDomains:${admin}</permission>
+      <permission>com.cloudbees.plugins.credentials.CredentialsProvider.ManageDomains:${cicd-manager}</permission>
       <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Update:${admin}</permission>
+      <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Update:${cicd-manager}</permission>
       <permission>com.cloudbees.plugins.credentials.CredentialsProvider.View:${admin}</permission>
-      <permission>com.cloudbees.plugins.credentials.CredentialsProvider.View:${deploy-manager}</permission>
+      <permission>com.cloudbees.plugins.credentials.CredentialsProvider.View:${cicd-manager}</permission>
       <permission>com.cloudbees.plugins.credentials.CredentialsProvider.View:${developer}</permission>
       <permission>hudson.model.Item.Build:${admin}</permission>
-      <permission>hudson.model.Item.Build:${deploy-manager}</permission>
+      <permission>hudson.model.Item.Build:${cicd-manager}</permission>
       <permission>hudson.model.Item.Cancel:${admin}</permission>
-      <permission>hudson.model.Item.Cancel:${deploy-manager}</permission>
+      <permission>hudson.model.Item.Cancel:${cicd-manager}</permission>
       <permission>hudson.model.Item.Configure:${admin}</permission>
+      <permission>hudson.model.Item.Configure:${cicd-manager}</permission>
       <permission>hudson.model.Item.Create:${admin}</permission>
+      <permission>hudson.model.Item.Create:${cicd-manager}</permission>
       <permission>hudson.model.Item.Delete:${admin}</permission>
+      <permission>hudson.model.Item.Delete:${cicd-manager}</permission>
       <permission>hudson.model.Item.Discover:${admin}</permission>
-      <permission>hudson.model.Item.Discover:${deploy-manager}</permission>
+      <permission>hudson.model.Item.Discover:${cicd-manager}</permission>
       <permission>hudson.model.Item.Discover:${developer}</permission>
       <permission>hudson.model.Item.Move:${admin}</permission>
+      <permission>hudson.model.Item.Move:${cicd-manager}</permission>
       <permission>hudson.model.Item.Read:${admin}</permission>
-      <permission>hudson.model.Item.Read:${deploy-manager}</permission>
+      <permission>hudson.model.Item.Read:${cicd-manager}</permission>
       <permission>hudson.model.Item.Read:${developer}</permission>
       <permission>hudson.model.Item.Workspace:${admin}</permission>
-      <permission>hudson.model.Item.Workspace:${deploy-manager}</permission>
+      <permission>hudson.model.Item.Workspace:${cicd-manager}</permission>
       <permission>hudson.model.Run.Delete:${admin}</permission>
+      <permission>hudson.model.Run.Delete:${cicd-manager}</permission>
       <permission>hudson.model.Run.Replay:${admin}</permission>
+      <permission>hudson.model.Run.Replay:${cicd-manager}</permission>
       <permission>hudson.model.Run.Update:${admin}</permission>
-      <permission>hudson.model.Run.Update:${deploy-manager}</permission>
+      <permission>hudson.model.Run.Update:${cicd-manager}</permission>
       <permission>hudson.model.View.Configure:${admin}</permission>
+      <permission>hudson.model.View.Configure:${cicd-manager}</permission>
       <permission>hudson.model.View.Create:${admin}</permission>
+      <permission>hudson.model.View.Create:${cicd-manager}</permission>
       <permission>hudson.model.View.Delete:${admin}</permission>
-<!--       <permission>hudson.model.View.Delete:${deploy-manager}</permission> -->
+      <permission>hudson.model.View.Delete:${cicd-manager}</permission>
       <permission>hudson.model.View.Read:${admin}</permission>
-      <permission>hudson.model.View.Read:${deploy-manager}</permission>
+      <permission>hudson.model.View.Read:${cicd-manager}</permission>
       <permission>hudson.model.View.Read:${developer}</permission>
       <permission>hudson.scm.SCM.Tag:${admin}</permission>
+      <permission>hudson.scm.SCM.Tag:${cicd-manager}</permission>
     </com.cloudbees.hudson.plugins.folder.properties.AuthorizationMatrixProperty>
   </properties>
 </com.cloudbees.hudson.plugins.folder.Folder>

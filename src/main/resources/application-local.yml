@@ -57,12 +57,12 @@ role:
     - log-manager
     - catalog-manager
     - ${namespace}-admin
-    deploy-manager:
+    cicd-manager:
     - log-manager
-    - ${namespace}-deploy-manager
+    - ${namespace}-cicd-manager
     developer:
     - ${namespace}-developer
   jenkins:
     admin: ${namespace}-admin
-    deploy-manager: ${namespace}-deploy-manager
+    cicd-manager: ${namespace}-cicd-manager
     developer: ${namespace}-developer
