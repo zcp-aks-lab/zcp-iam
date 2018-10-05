@@ -104,6 +104,7 @@ public class JenkinsService extends NamespaceEventAdapter {
 					this.createJenkinsFolder(namespace, roleMapping);
 
 				log(ctx, "Create Jenkins Folder for [{0}].", namespace);
+				return;
 			}
 
 			log.trace("", e);

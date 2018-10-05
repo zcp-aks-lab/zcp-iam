@@ -25,6 +25,7 @@ import com.skcc.cloudz.zcp.iam.common.vo.Response;
 
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1SecretList;
+import io.kubernetes.client.models.V1Status;
 
 @RestController
 @RequestMapping("/iam")
@@ -91,5 +92,15 @@ public class NamespaceSecretController {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + key + "\"")
                 .body(resource);
+	}
+
+	@RequestMapping(value = "/namespace/{namespace}/secret/{secret}", method = RequestMethod.DELETE)
+	public Response<Object> deleteSecret(@PathVariable("namespace") String namespace, @PathVariable("secret") String name) throws Exception {
+		Response<Object> response = new Response<>();
+
+		V1Status status = secretService.deleteSecret(namespace, name);
+
+		response.setData(status);
+		return response;
 	}
 }
