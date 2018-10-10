@@ -47,7 +47,7 @@ public class NamespaceSecretController {
 		return response;
 	}
 
-	@RequestMapping(value = "/namespace/{namespace}/secret/{secret}", method = RequestMethod.GET)
+	@RequestMapping(value = "/namespace/{namespace}/secret/{secret:.+}", method = RequestMethod.GET)
 	public Response<Object> getSecret(
 			@PathVariable("namespace") String namespace,
 			@PathVariable("secret") String name) throws Exception {
@@ -79,7 +79,7 @@ public class NamespaceSecretController {
 		return response;
 	}
 
-	@RequestMapping(value = "/namespace/{namespace}/secret/{secret}/data/{key:.+}", method = RequestMethod.GET)
+	@RequestMapping(value = "/namespace/{namespace}/secret/{secret:.+}/data/{key:.+}", method = RequestMethod.GET)
 	public ResponseEntity<Resource> getTlsSecretData(@PathVariable("namespace") String namespace,
 			@PathVariable("secret") String secret,
 			@PathVariable("key") String key) throws Exception {
@@ -94,7 +94,7 @@ public class NamespaceSecretController {
                 .body(resource);
 	}
 
-	@RequestMapping(value = "/namespace/{namespace}/secret/{secret}", method = RequestMethod.DELETE)
+	@RequestMapping(value = "/namespace/{namespace}/secret/{secret:.+}", method = RequestMethod.DELETE)
 	public Response<Object> deleteSecret(@PathVariable("namespace") String namespace, @PathVariable("secret") String name) throws Exception {
 		Response<Object> response = new Response<>();
 
