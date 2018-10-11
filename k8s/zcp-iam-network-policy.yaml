@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: zcp-iam-network-policy
+  namespace: zcp-system
+spec:
+  podSelector:
+    matchLabels:
+      component: zcp-iam
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          cloudz-system-ns: "true"
+    - podSelector:
+        matchExpressions:
+        - key: component
+          operator: In
+          values:
+          - zcp-portal-uid
+          - zcp-alertmanager
+        - key: app
+          operator: In
+          values:
+          - zdb-portal-server
+    ports:
+    - protocol: TCP
+      port: 8181
+  egress:
+  - {}
