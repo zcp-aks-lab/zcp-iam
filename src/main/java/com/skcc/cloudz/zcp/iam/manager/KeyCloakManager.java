@@ -275,7 +275,7 @@ public class KeyCloakManager {
 		logger.debug("Add Roles :: {}", realmRoles);
 		
 		UserRepresentation data = user.toRepresentation();
-		Map<String, List<String>> attr = ObjectUtils.defaultIfNull(data.getAttributes(), Maps.newHashMap());
+		Map<String, List<String>> attr = ObjectUtils.defaultIfNull(data.getAttributes(), new HashMap<String, List<String>>());
 		attr.put("role-" + tag, realmRoles);
 		data.setAttributes(attr);
 		this.editUser(data);
@@ -286,7 +286,7 @@ public class KeyCloakManager {
 		UserRepresentation data = user.toRepresentation();
 
 		// remove deleted roles from User Meta
-		Map<String, List<String>> attr = ObjectUtils.defaultIfNull(data.getAttributes(), Maps.newHashMap());
+		Map<String, List<String>> attr = ObjectUtils.defaultIfNull(data.getAttributes(), new HashMap<String, List<String>>());
 		attr.remove("role-" + tag);
 		data.setAttributes(attr);
 		
