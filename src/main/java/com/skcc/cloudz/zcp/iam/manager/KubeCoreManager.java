@@ -106,6 +106,12 @@ public class KubeCoreManager {
 		return api.createNamespacedSecret(namespace, secret, pretty);
 	}
 
+	public V1Status deleteSecret(String namespace, String secretName) throws ApiException {
+		V1DeleteOptions deleteOptions = new V1DeleteOptions();
+		deleteOptions.setGracePeriodSeconds(0l);
+		return api.deleteNamespacedSecret(secretName, namespace, deleteOptions, pretty, null, null, null);
+	}
+
 	public V1NamespaceList getNamespaceList() throws ApiException {
 		String labelSelector = ResourcesLabelManager.getSystemLabelSelector();
 		return api.listNamespace(pretty, null, null, null, labelSelector, null, null,

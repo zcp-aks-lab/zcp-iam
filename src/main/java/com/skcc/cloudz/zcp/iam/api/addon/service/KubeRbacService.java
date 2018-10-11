@@ -78,6 +78,7 @@ public class KubeRbacService extends NamespaceEventAdapter {
 	private String toConvertNewRole(String old) {
 		switch(ClusterRole.getClusterRole(old)) {
 		case EDIT:
+		case DEPLOY_MANAGER:
 			return ClusterRole.CICD_MANAGER.getRole();
 		case VIEW:
 			return ClusterRole.DEVELOPER.getRole();

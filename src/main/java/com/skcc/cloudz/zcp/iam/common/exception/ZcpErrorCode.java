@@ -44,12 +44,12 @@ public enum ZcpErrorCode {
 	GET_NAMESPACE_ERROR					            (31015, "error : Get namespace"),
 	LABEL_INVALID_ERROR								(31016, "error : Label invalid"),
 
-	//namespace                                     
+	//secret
 	GET_SECRET_LIST									(32001, "Fail to load the list of namespace secrets"),
 	GET_SECRET										(32002, "Fail to load namespace secret"),
 	SECRET_DATA_KEY_NOT_FOUND				        (32003, "There is no data(key) in the secret"),
 	CREATE_SECRET_ERROR					            (32004, "Fail to create new secret"),
-	DELETE_SECRET_ERROR					            (32005, "error : Create namespace"),
+	DELETE_SECRET_ERROR					            (32005, "error : Delete namespace secret"),
 	
 	//rbac                                          
 	CLUSTER_ROLE_TYPE_ERROR				            (41001, "error : The type is null"),

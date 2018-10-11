@@ -26,6 +26,7 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1SecretList;
+import io.kubernetes.client.models.V1Status;
 
 @Service
 public class NamespaceSecretService {
@@ -132,6 +133,18 @@ public class NamespaceSecretService {
 		} catch (ApiException e) {
 			log.error("", e);
 			throw new ZcpException(ZcpErrorCode.CREATE_SECRET_ERROR, e.getMessage());
+		}
+	}
+
+	public V1Status deleteSecret(String namespace, String name) throws ZcpException {
+		try {
+			return kubeCoreManager.deleteSecret(namespace, name);
+		} catch (ApiException e) {
+			log.error("{}", e.getMessage());
+			log.debug("", e);
+			log.debug("", e.getResponseBody());
+
+			throw new ZcpException(ZcpErrorCode.DELETE_SECRET_ERROR, e.getMessage());
 		}
 	}
 	

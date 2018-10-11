@@ -220,23 +220,14 @@ public class MetricService {
 		String userClusterRole = userClusterRoleBinding.getRoleRef().getName();
 		boolean isClusterAdmin = StringUtils.equals(userClusterRole, ClusterRole.CLUSTER_ADMIN.getRole()) ? true
 				: false;
-		boolean isAdmin = StringUtils.equals(userClusterRole, ClusterRole.ADMIN.getRole()) ? true : false;
-
-		if (!isClusterAdmin && !isAdmin) {
-			throw new ZcpException(ZcpErrorCode.PERMISSION_DENY,
-					"The user(" + userId + ") does not have a permission for namespace list");
-		}
 
 		// get namespace list of admin user
 		List<String> userNamespaces = new ArrayList<>();
-		if (!isClusterAdmin && isAdmin) {
+		try {
 			List<V1RoleBinding> userRoleBindings = null;
-			try {
+			if(!isClusterAdmin) {
 				userRoleBindings = kubeRbacAuthzManager.getRoleBindingListByUsername(username).getItems();
-			} catch (ApiException e1) {
-				throw new ZcpException(ZcpErrorCode.ROLE_BINDING_LIST_ERROR, e1);
 			}
-
 			if (userRoleBindings != null && !userRoleBindings.isEmpty()) {
 				for (V1RoleBinding roleBinding : userRoleBindings) {
 					if (roleBinding.getRoleRef().getName().equals(ClusterRole.ADMIN.getRole())) {
@@ -244,6 +235,8 @@ public class MetricService {
 					}
 				}
 			}
+		} catch (ApiException e1) {
+			throw new ZcpException(ZcpErrorCode.ROLE_BINDING_LIST_ERROR, e1);
 		}
 
 		// get all namespace list
@@ -334,13 +327,16 @@ public class MetricService {
 						NumberUtils.percent(usedLimitsMemory.doubleValue(), hardLimitsMemory.doubleValue()));
 			}
 
-			if (!isClusterAdmin && isAdmin) {
-				if (userNamespaces.contains(namespace.getMetadata().getName())) {
-					zcpNamespaces.add(zcpNamespace);
-				}
-			} else {
+//			if (!isClusterAdmin && isAdmin) {
+//				if (userNamespaces.contains(namespace.getMetadata().getName())) {
+//					zcpNamespaces.add(zcpNamespace);
+//				}
+//			} else {
+//				zcpNamespaces.add(zcpNamespace);
+//			}
+			
+			if(isClusterAdmin || userNamespaces.contains(zcpNamespace.getName()))
 				zcpNamespaces.add(zcpNamespace);
-			}
 		}
 
 		return new ZcpNamespaceList(zcpNamespaces);
