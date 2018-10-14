@@ -46,4 +46,15 @@ public enum ClusterRole {
 		throw new IllegalArgumentException("[" +role + "] is invalid");
 	}
 
+	// Group Function
+	private static final ClusterRole[] CLUSTER_ROLES = {CLUSTER_ADMIN, MEMBER};
+	private static final ClusterRole[] NAMESPACE_ROLES = {ADMIN, CICD_MANAGER, DEVELOPER};
+
+	public static ClusterRole[] getClusterGroup() {
+		return CLUSTER_ROLES;
+	}
+
+	public static ClusterRole[] getNamespaceGroup() {
+		return NAMESPACE_ROLES;
+	}
 }

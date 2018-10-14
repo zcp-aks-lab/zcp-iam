@@ -81,6 +81,8 @@ public enum ZcpErrorCode {
 	//addon
 	ADD_USER_NAMESPACE_ROLE							(61001, "error : Mapped cluster role bindings"),
 	DELETE_USER_NAMESPCE_ROLE						(61002, "error : Mapped role binding"),
+	ADD_USER_CLUSTER_ROLE							(61003, "error : Mapped cluster role bindings"),
+	DELETE_USER_CLUSTER_ROLE						(61004, "error : Mapped role binding"),
 	
 	;
 

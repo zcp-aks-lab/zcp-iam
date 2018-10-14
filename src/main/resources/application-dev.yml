@@ -46,7 +46,9 @@ jenkins:
 role:
   cluster:
     cluster-admin:
-    - cluster-admin
+    - catalog-manager
+    - log-manager
+    - cicd-manager
     member:
   namespace:
     admin:

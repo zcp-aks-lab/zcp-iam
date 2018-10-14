@@ -7,6 +7,7 @@ import static com.skcc.cloudz.zcp.iam.common.model.ClusterRole.EDIT;
 import static com.skcc.cloudz.zcp.iam.common.model.ClusterRole.VIEW;
 import static com.skcc.cloudz.zcp.iam.manager.ResourcesLabelManager.SYSTEM_USERNAME_LABEL_NAME;
 
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -19,6 +20,8 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.skcc.cloudz.zcp.iam.common.model.ClusterRole;
+import com.skcc.cloudz.zcp.iam.common.props.RoleProperties;
+import com.skcc.cloudz.zcp.iam.manager.KeyCloakManager;
 import com.skcc.cloudz.zcp.iam.manager.KubeRbacAuthzManager;
 import com.skcc.cloudz.zcp.iam.manager.ResourcesLabelManager;
 
@@ -59,6 +62,12 @@ public class ClusterService {
 	@Autowired
 	private KubeRbacAuthzManager kubeRbacAuthzManager;
 	
+	@Autowired
+	private KeyCloakManager keycloakManager;
+	
+	@Autowired
+	private RoleProperties roleProperties;
+	
 	public Map<String, Object> verify(String cluster, final boolean dry) {
 		VerifyContext.setDryRun(dry);
 
@@ -88,6 +97,16 @@ public class ClusterService {
 					VerifyContext.print("ClusterRole was changed. [role={}->{}, username={}]", oldRole, newRole, username);
 				else
 					VerifyContext.print("Fail to change ClusterRole. [role={}->{}, username={}]", oldRole, newRole, username);
+			}
+			
+			// create keycloak roles
+			for(ClusterRole cr : ClusterRole.getClusterGroup()) {
+				List<String> roles = roleProperties.getClusterUserRoles(cr);
+				
+				if(!VerifyContext.isDryRun())
+					keycloakManager.createRealmRoles(roles);
+
+				VerifyContext.print("Create keycloak roles for ClusterRole '{}'. [role={}]", cr, roles);
 			}
 		} catch (ApiException e) {
 			log.error("", e);
