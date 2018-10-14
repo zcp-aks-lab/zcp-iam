@@ -30,7 +30,7 @@ spec:
                 - "management"
       containers:
       - name: zcp-iam
-        image: cloudzcp/zcp-iam:latest
+        image: cloudzcp/zcp-iam:1.0.0
         imagePullPolicy: Always
         ports:
         - name: cont-port

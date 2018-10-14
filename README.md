@@ -48,7 +48,6 @@ clusters:
 
 #### ConfigMap 에 `api-server endpoint` 정보 변경
 ```
-$ cd site/
 $ vi zcp-iam-config.yaml
 apiVersion: v1
 kind: ConfigMap
