@@ -803,7 +803,7 @@ public class MetricService {
 	private Map<ClusterRole, UserStatusMetric> getUserStatusMap() {
 		Map<ClusterRole, UserStatusMetric> statuesMetrics = new HashMap<>();
 
-		for (ClusterRole role : ClusterRole.values()) {
+		for (ClusterRole role : ClusterRole.getMetricGroup()) {
 			UserStatusMetric usm = new UserStatusMetric();
 			usm.setRole(role);
 			usm.setCount(0);

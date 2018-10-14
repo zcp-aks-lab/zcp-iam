@@ -49,6 +49,7 @@ public enum ClusterRole {
 	// Group Function
 	private static final ClusterRole[] CLUSTER_ROLES = {CLUSTER_ADMIN, MEMBER};
 	private static final ClusterRole[] NAMESPACE_ROLES = {ADMIN, CICD_MANAGER, DEVELOPER};
+	private static final ClusterRole[] METRIC_ROLES = {CLUSTER_ADMIN, MEMBER, ADMIN, CICD_MANAGER, DEVELOPER, NONE};
 
 	public static ClusterRole[] getClusterGroup() {
 		return CLUSTER_ROLES;
@@ -56,5 +57,9 @@ public enum ClusterRole {
 
 	public static ClusterRole[] getNamespaceGroup() {
 		return NAMESPACE_ROLES;
+	}
+
+	public static ClusterRole[] getMetricGroup() {
+		return METRIC_ROLES;
 	}
 }
