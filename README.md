@@ -60,6 +60,8 @@ data:
   KEYCLOAK_MASTER_CLIENTID: master-realm
   KEYCLOAK_SERVER_URL: https://lawai-iam.cloudzcp.io/auth/
   KUBE_APISERVER_URL: https://169.56.69.242:30439
+  JENKINS_SERVER_URL: https://jenkins.cloudzcp.io
+  JENKINS_TEMPLATE_PATH: classpath:jenkins/folder.xml
 ```
 
 #### ConfigMap 생성
@@ -81,6 +83,7 @@ data:
   KEYCLOAK_MASTER_CLIENT_SECRET: NjcyNDVhOWYtY2JjMy00YmJhLWE2NGYtMTc1MDM3Y2Y3YmI5  
   KEYCLOAK_MASTER_USERNAME: Y2xvdWR6Y3AtYWRtaW4=
   KEYCLOAK_MASTER_PASSWORD: Y2xvdWR6Y3AhMjMk
+  JENKINS_USER_TOKEN: dXNlcm5hbWU6YXBpLXRva2Vu # username:api-token
 ```
 
 ##### KeyCloak 의 master realm client 의 secret 정보를 확인하는 방법
@@ -112,6 +115,14 @@ $ echo -n "secret of master realm client" | base64
 KeyCloak 설치 시 설정한 admin id/password (KEYCLOAK_ADMIN_ID, KEYCLOAK_ADMIN_PWD) 도 base64 encoding 한 후, 각각 `KEYCLOAK_MASTER_USERNAME`, `KEYCLOAK_MASTER_PASSWORD` 의 value 값을 변경한다.
 
 (:white_check_mark: KeyCloak 설치 시 admin id/password 변경하지 않은 경우 그대로 사용하면 됨)
+
+##### Jenkins 의 api-token 정보를 확인하는 방법
+
+* Jenkins에 로그인 한다. (폴더 생성권한 필요)
+* 우측 상단의 사용자 이름을 클릭한다.
+* 좌측 메뉴의 설정 페이지로 이동한다.
+* API Token > Legacy API Token 버튼을 클릭하여 값을 확인한다.
+* Secret 정보를 복사 한 후 base64로 incoding 한다.
 
 #### Secret 생성
 
