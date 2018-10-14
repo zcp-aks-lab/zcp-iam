@@ -26,6 +26,7 @@ import io.kubernetes.client.models.V1RoleBinding;
 @Service
 public class KeycloakService extends NamespaceEventAdapter {
 	private final Logger log = LoggerFactory.getLogger(KeycloakService.class);
+	private final String CLUSTER = "cluster";
 	
 	@Autowired
 	private KeyCloakManager keyCloakManager;
@@ -35,6 +36,26 @@ public class KeycloakService extends NamespaceEventAdapter {
 
 	@Autowired
 	private RoleProperties roleMapping;
+	
+	public void addClusterRoles(String username, ClusterRole role) throws ZcpException {
+		try {
+			List<String> realmRoles = roleMapping.getClusterUserRoles(role);
+			keyCloakManager.addRealmRoles(username, realmRoles, CLUSTER);
+		} catch (KeyCloakException e) {
+			log.error("", e);
+			throw new ZcpException(ZcpErrorCode.ADD_USER_CLUSTER_ROLE, e.getMessage());
+		}
+	}
+
+	public void deleteClusterRoles(String username, ClusterRole role) throws ZcpException {
+		try {
+			List<String> realmRoles = roleMapping.getClusterUserRoles(role);
+			keyCloakManager.deleteRealmRoles(username, realmRoles, CLUSTER);
+		} catch (KeyCloakException e) {
+			log.error("", e);
+			throw new ZcpException(ZcpErrorCode.DELETE_USER_CLUSTER_ROLE, e.getMessage());
+		}
+	}
 	
 	public void addNamespaceRoles(String namespace, String username, ClusterRole role) throws ZcpException {
 		try {

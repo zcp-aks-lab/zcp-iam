@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.skcc.cloudz.zcp.iam.api.addon.service.KeycloakService;
 import com.skcc.cloudz.zcp.iam.api.user.vo.MemberVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.ResetCredentialVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.ResetPasswordVO;
@@ -68,6 +69,9 @@ public class UserService {
 
 	@Autowired
 	private KubeRbacAuthzManager kubeRbacAuthzManager;
+	
+	@Autowired
+	private KeycloakService keycloakService;
 
 	@Value("${zcp.kube.namespace}")
 	private String zcpSystemNamespace;
@@ -346,6 +350,14 @@ public class UserService {
 		// create a rolebinding of default namespace
 		// doesn't create default namespace rolebiding 2018-10-04
 //		createDefaultNamespaceRolebinding(userRepresentation);
+		
+		if(clusterRoleBindingList != null && !clusterRoleBindingList.getItems().isEmpty()) {
+			V1ClusterRoleBinding crb = clusterRoleBindingList.getItems().get(0);
+			String oldRole = crb.getRoleRef().getName();
+			
+			keycloakService.deleteClusterRoles(username, ClusterRole.getClusterRole(oldRole));
+			keycloakService.addClusterRoles(username, vo.getClusterRole());
+		}
 	}
 
 	@SuppressWarnings("unused")
