@@ -64,6 +64,10 @@ public class RoleProperties {
 	/*
 	 * util
 	 */
+	public List<String> getClusterUserRoles(ClusterRole role){
+		return getClusterUserRoles(role.toString());
+	}
+
 	public List<String> getClusterUserRoles(String role){
 		return this.cluster.get(role);
 	}
