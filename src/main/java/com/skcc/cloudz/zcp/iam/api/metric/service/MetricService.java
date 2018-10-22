@@ -223,6 +223,9 @@ public class MetricService {
 
 		// get namespace list of admin user
 		List<String> userNamespaces = new ArrayList<>();
+		List<String> adminRoles = new ArrayList<>();
+		adminRoles.add(ClusterRole.ADMIN.getRole());
+		adminRoles.add(ClusterRole.CICD_MANAGER.getRole());
 		try {
 			List<V1RoleBinding> userRoleBindings = null;
 			if(!isClusterAdmin) {
@@ -230,7 +233,7 @@ public class MetricService {
 			}
 			if (userRoleBindings != null && !userRoleBindings.isEmpty()) {
 				for (V1RoleBinding roleBinding : userRoleBindings) {
-					if (roleBinding.getRoleRef().getName().equals(ClusterRole.ADMIN.getRole())) {
+					if (adminRoles.contains(roleBinding.getRoleRef().getName())) {
 						userNamespaces.add(roleBinding.getMetadata().getNamespace());
 					}
 				}
