@@ -2,19 +2,27 @@ package com.skcc.cloudz.zcp.iam.common.config;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Atomics;
 import com.squareup.okhttp.MediaType;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.ws.WebSocket;
+import com.squareup.okhttp.ws.WebSocketCall;
 
 import org.apache.commons.io.IOUtils;
 import org.springframework.context.annotation.Bean;
@@ -36,6 +44,7 @@ import org.springframework.web.socket.server.support.HttpSessionHandshakeInterce
 import org.springframework.web.util.UriComponentsBuilder;
 
 import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.Pair;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.WebSockets;
 import io.kubernetes.client.util.WebSockets.SocketListener;
@@ -57,7 +66,51 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
 	@Bean
 	public WebSocketHandler relayHandler() {
-		return new RelayHandler().init();
+		//return new RelayHandler().init();
+        AbstractRelayHandler handler = new RelayHandler(){
+            @Override
+            protected void handleTextMessage(WebSocketSession in, TextMessage message) throws Exception {
+                System.out.print("<<< ");
+                System.out.println(message.getPayload());
+            }
+
+            protected void handleBinaryMessage(WebSocketSession in, BinaryMessage message) {
+                try {
+                    System.out.print("<<< ");
+                    System.out.println( new String(message.getPayload().array()) );
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }.init();
+
+        try {
+            WebSocketSession out = handler.createSession();
+            String body = "ls -al\r";
+
+            //case: SPDY
+            //byte[] stream = new byte[]{ (byte) 0 };  //stdin
+            //byte[] data = ArrayUtils.addAll(stream, body.getBytes());
+            //BinaryMessage message = new BinaryMessage(data);
+            //out.sendMessage(message);
+
+            // https://github.com/kubernetes-client/java/blob/master/util/src/test/java/io/kubernetes/client/ExecTest.java#L74
+            ByteBuffer data = ByteBuffer.allocate(10);
+            data.putInt(0).put("ls ".getBytes());
+            out.sendMessage(new BinaryMessage(data.array()));
+
+            data.clear();
+            data.putInt(0).put("-al \r".getBytes());
+            out.sendMessage(new BinaryMessage(data.array()));
+
+            //case: Base64
+            //String payload = "0" + Base64.encodeBase64String(body.getBytes());
+            //TextMessage message = new TextMessage(payload);
+            //out.sendMessage(message);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return handler;
     }
 
     public class RelayHandler extends AbstractRelayHandler {
@@ -122,6 +175,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
                 client = ClientBuilder.standard().build();
                 //client.setApiKey(token);
                 //client.setApiKeyPrefix("Bearer");
+                client.setDebugging(true);
 
                 return this;
             } catch(Exception e){
@@ -190,12 +244,14 @@ public class WebSocketConfig implements WebSocketConfigurer {
                         return;
                     }
 
+                    System.out.println(">>> " + new String(payload));
+
                     if(!isOpen()){
                         return;
                     }
 
 					RequestBody body = RequestBody.create(type, payload);
-					_socket.get().sendMessage(body);
+                    _socket.get().sendMessage(body);
                 }
             };
             
@@ -227,9 +283,82 @@ public class WebSocketConfig implements WebSocketConfigurer {
                     }
                 }
             };
-			WebSockets.stream(uri, "GET", client, listener);
+            //WebSockets.stream(uri, "GET", client, listener);
+            /*
+            Exec exec = new Exec(client);
+            Process sh = exec.exec("console", "web-ssh", new String[] { "sh" }, true, false);
+            Thread redirection = new DirectedStream(sh.getInputStream(), System.err);
+            sh.getOutputStream().write("ls".getBytes());
+            */
+
+            String path = uri;
+            String method = "GET";
+            List<Pair> queryParams = new ArrayList<Pair>();
+
+            HashMap<String, String> headers = new HashMap<String, String>();
+            headers.put(WebSockets.STREAM_PROTOCOL_HEADER, WebSockets.V4_STREAM_PROTOCOL);
+            headers.put(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE);
+            headers.put(HttpHeaders.UPGRADE, WebSockets.SPDY_3_1);
+
+            //headers.put(WebSockets.STREAM_PROTOCOL_HEADER, "base64.channel.k8s.io");
+            //headers.put(HttpHeaders.UPGRADE, "websocket");
+
+            String[] localVarAuthNames = new String[] {"BearerToken"};
+
+            Request request =
+                client.buildRequest(
+                    path,
+                    method,
+                    queryParams,
+                    new ArrayList<Pair>(),
+                    null,
+                    headers,
+                    new HashMap<String, Object>(),
+                    localVarAuthNames,
+                    null);
+            OkHttpClient internalClient = client.getHttpClient();
+            internalClient.setReadTimeout(0, TimeUnit.NANOSECONDS);  // https://github.com/square/okhttp/issues/1930#issue-111840160
+            WebSocketCall.create(internalClient, request).enqueue(new WebSockets.Listener(listener));
 
             return out;
+        }
+    }
+
+    /**
+     * A Thread extension dedicated to redirecting InputStreams
+     * to given OutputStreams. Feeds into the given OutputStream
+     * during the lifetime of this Thread.
+     *
+     * @author Isaac Whitfield
+     * @version 10/05/2014
+     */
+    public static class DirectedStream extends Thread {
+
+        public DirectedStream(final InputStream in, final OutputStream out){
+            super(handler(in, out));
+            start();
+        }
+
+        public DirectedStream(final InputStream in, final OutputStream out, final boolean daemon){
+            super(handler(in, out));
+            setDaemon(daemon);
+            start();
+        }
+
+        private static Runnable handler(final InputStream in, final OutputStream out){
+            return new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        int d;
+                        while ((d = in.read()) != -1) {
+                            out.write(d);
+                        }
+                    } catch (IOException ex) {
+                        // Stream failure
+                    }
+                }
+            };
         }
     }
 }
