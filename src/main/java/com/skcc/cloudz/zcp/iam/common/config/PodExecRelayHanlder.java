@@ -90,13 +90,13 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
         ExecSession out = new ExecSession();
         out.handler = this;
         out.protocol = this.protocol;
+        out.attr.put(DIRECTION, DIRECTION_OUT);
+        out.attr.put(RELAY_SESSION, in);
         
         if(WebSockets.SPDY_3_1.equals(protocol)){
             WebSockets.stream(path, "GET", client, out);
         } else if("base64.channel.k8s.io".equals(protocol)){
             // When need to change protocol (eg. base64.channel.k8s.io + websocket)
-            String method = "GET";
-
             HashMap<String, String> headers = new HashMap<String, String>();
             headers.put(WebSockets.STREAM_PROTOCOL_HEADER, "base64.channel.k8s.io");
             headers.put(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE);
@@ -214,6 +214,24 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
             socket.sendMessage(body);
         }
 
+        public void close(CloseStatus status) throws IOException {
+            try {
+                if(this.socket != null){
+                    this.socket.close(0, "....");
+                    this.socket = null;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            try {
+                this.handler.afterConnectionClosed(this, CloseStatus.NORMAL);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            //TODO: send close message to browser.
+        }
+
         /*
          * for SocketListener (kube-client util)
          */
@@ -221,11 +239,16 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
         public void open(String protocol, WebSocket socket) {
             this.socket = socket;
 
-            sendSystemMessage(this, "web ssh is prepared.");
+            WebSocketSession in = (WebSocketSession) this.attr.get(RELAY_SESSION);
+            sendSystemMessage(in, "web ssh is prepared.");
         }
         public void close() {
-            this.socket = null;
-            //TODO: send close message to browser.
+            try {
+                // ambiguous call between SocketListener and WebSocketSession
+                this.close(null);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         public void textMessage(Reader in) {
