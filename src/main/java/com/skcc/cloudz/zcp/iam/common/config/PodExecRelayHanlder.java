@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
 import com.skcc.cloudz.zcp.iam.common.config.WebSocketConfig.AbstractRelayHandler;
 import com.squareup.okhttp.MediaType;
@@ -75,11 +76,16 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
     protected WebSocketSession createSession(WebSocketSession in) throws Exception {
         sendSystemMessage(in, "creating...");
 
+        CharSequence query = in.getUri().getQuery();
+        final Map<String, String> vars = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(query);
+
+        /*
         Map<String, Object> vars = Maps.newHashMap();
         vars.put("ns", "console");
         vars.put("pod", "web-ssh");
         vars.put("con", "alpine");
         vars.put("shell", "sh");
+        */
         
         //String uri = UriComponentsBuilder.fromUriString(server)
         String path = UriComponentsBuilder.newInstance()
