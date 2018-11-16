@@ -2,11 +2,15 @@ package com.skcc.cloudz.zcp.iam.manager;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.reflect.MethodUtils;
+import org.apache.el.util.ReflectionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +22,7 @@ import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyAuth;
 
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.apis.CoreApi;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.auth.Authentication;
 import io.kubernetes.client.models.V1Secret;
@@ -68,5 +73,22 @@ public class KubeResourceManager {
 		}
 
 		return list;
+	}
+
+	public <T> T getList(String namespace, String kind)  throws ApiException {
+		//api.listNamespacedConfigMap(namespace, pretty, _continue, fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch)
+		//api.listNamespacedSecret   (namespace, pretty, _continue, fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch)
+
+		try {
+			return (T) MethodUtils.invokeMethod(api, "listNamespaced" + kind, namespace, pretty, null, null, null, null, null, null, null, null);
+			//Method method = ReflectionUtils.findMethod(CoreV1Api.class, "listNamespaced" + kind);
+			//return (T) method.invoke(api, namespace);
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		}
+
+		return null;
 	}
 }
