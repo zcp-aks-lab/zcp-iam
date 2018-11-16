@@ -53,9 +53,11 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
     public void init() {
         try {
             client = ClientBuilder.standard().build();
-            client.setDebugging(true);
             //https://github.com/square/okhttp/issues/1930#issue-111840160
             client.getHttpClient().setReadTimeout(0, TimeUnit.NANOSECONDS);
+
+            if(log.isTraceEnabled())
+                client.setDebugging(true);
         } catch(Exception e){
             throw new RuntimeException(e);
         }
@@ -88,13 +90,14 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
 
         // Exec.exec(...)
         ExecSession out = new ExecSession();
+        out.id = vars.get("pod") + "-" + in.getId();
         out.handler = this;
         out.protocol = this.protocol;
-        out.attr.put(DIRECTION, DIRECTION_OUT);
-        out.attr.put(RELAY_SESSION, in);
+        out.attr.put(DIRECTION.val(), DIRECTION_OUT.val());
+        out.attr.put(RELAY_SESSION.val(), in);
         
         if(WebSockets.SPDY_3_1.equals(protocol)){
-            WebSockets.stream(path, "GET", client, out);
+            //WebSockets.stream(path, "GET", client, out);
         } else if("base64.channel.k8s.io".equals(protocol)){
             // When need to change protocol (eg. base64.channel.k8s.io + websocket)
             HashMap<String, String> headers = new HashMap<String, String>();
@@ -117,7 +120,24 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
                     form,
                     localVarAuthNames,
                     null);    // progress
-            WebSocketCall.create(client.getHttpClient(), request).enqueue(new WebSockets.Listener(out));
+            WebSocketCall.create(client.getHttpClient(), request).enqueue(new WebSockets.Listener(out){
+                public void onClose(int code, String reason) {
+                    try {
+                        // relay session is aleady closed.
+                        if(!out.isOpen()) return;
+
+                        Thread.currentThread().setName("OkHttp WebSocket Close Replay");
+                        log.info("Pod exec connection is closed. ({} :: {})", code, reason);
+
+                        if(code < 1000) code += 2000;
+                        CloseStatus status = new CloseStatus(code, reason);
+                        out.socket = null;
+                        out.close(status);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
         }
 
         return out;
@@ -128,14 +148,12 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
         try {
             PodExecRelayHanlder handler = new PodExecRelayHanlder(){
                 protected void handleTextMessage(WebSocketSession in, TextMessage message) throws Exception {
-                    System.out.print("<<< ");
-                    System.out.println(message.getPayload());
+                    log.trace("<<< {}", message.getPayload());
                 }
 
                 protected void handleBinaryMessage(WebSocketSession in, BinaryMessage message) {
                     try {
-                        System.out.print("<<< ");
-                        System.out.println( new String(message.getPayload().array()) );
+                        log.trace("<<< {}", new String(message.getPayload().array()) );
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -178,14 +196,11 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
          */
         private WebSocketHandler handler;
         private Map<String, Object> attr = Maps.newHashMap();
+        private String id;
 
-        public boolean isOpen() {
-            return socket != null;
-        }
-
-        public Map<String, Object> getAttributes() {
-            return attr;
-        }
+        public String getId() { return id; }
+        public boolean isOpen() { return socket != null; }
+        public Map<String, Object> getAttributes() { return attr; }
 
         public void sendMessage(WebSocketMessage<?> message) throws IOException {
             MediaType type = WebSocket.TEXT;
@@ -208,7 +223,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
             }
 
             payload = "0" + Base64.encodeBase64String(payload.getBytes());
-            System.out.println(">>> " + new String(payload));
+            log.trace(">>> {}",new String(payload));
 
             RequestBody body = RequestBody.create(type, payload);
             socket.sendMessage(body);
@@ -217,11 +232,16 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
         public void close(CloseStatus status) throws IOException {
             try {
                 if(this.socket != null){
-                    this.socket.close(0, "....");
+                    WebSocket socket = this.socket;
                     this.socket = null;
+
+                    socket.close(0, "....");
+
+                    log.info("Close exec connection of {}({}).", DIRECTION.of(this), this.getId());
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (IOException | IllegalStateException e) {
+                log.info("kube exec connection is closed with error({} :: {}).", e.getMessage(), e.getClass().getSimpleName());
+                log.trace("", e); 
             }
 
             try {
@@ -239,16 +259,12 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
         public void open(String protocol, WebSocket socket) {
             this.socket = socket;
 
-            WebSocketSession in = (WebSocketSession) this.attr.get(RELAY_SESSION);
+            WebSocketSession in = RELAY_SESSION.of(this);
             sendSystemMessage(in, "web ssh is prepared.");
         }
         public void close() {
-            try {
-                // ambiguous call between SocketListener and WebSocketSession
-                this.close(null);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            // ambiguous call between SocketListener and WebSocketSession
+            throw new IllegalStateException("Unsupported method.");
         }
 
         public void textMessage(Reader in) {
@@ -256,7 +272,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
                 String body = IOUtils.toString(in);
                 byte[] buf = Base64.decodeBase64(body.substring(1));
 
-                System.out.println("<<< " + body);
+                log.trace("<<< {}", body);
                 TextMessage message = new TextMessage(new String(buf));
                 handler.handleMessage(this, message);
             } catch (Exception e) {
@@ -268,7 +284,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
                 byte[] buf = IOUtils.toByteArray(in);
                 String body = new String(buf).substring(1);
 
-                System.out.println("<<< " + body);
+                log.trace("<<< {}", body);
                 BinaryMessage message = new BinaryMessage(body.getBytes());
                 handler.handleMessage(this, message);
             } catch (Exception e) {
