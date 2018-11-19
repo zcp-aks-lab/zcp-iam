@@ -48,6 +48,8 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
     private String PATH = "/api/v1/namespaces/{ns}/pods/{pod}/exec";
     private String QUERY = "container={con}&stdin=1&stdout=1&stderr=1&tty=1&command={shell}";
 
+    protected Attr POD_NAME = new Attr("__pod_name__");
+
     private ApiClient client;
 
     @PostConstruct
@@ -77,12 +79,13 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
         sendSystemMessage(in, "creating...");
 
         CharSequence query = in.getUri().getQuery();
-        final Map<String, String> vars = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(query);
+        Map<String, String> vars = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(query);
+        vars = Maps.newHashMap(vars);
+        vars.put("pod", POD_NAME.of(in, vars.get("pod")));
 
         /*
         Map<String, Object> vars = Maps.newHashMap();
         vars.put("ns", "console");
-        vars.put("pod", "web-ssh");
         vars.put("con", "alpine");
         vars.put("shell", "sh");
         */

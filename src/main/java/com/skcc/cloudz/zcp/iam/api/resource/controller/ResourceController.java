@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.skcc.cloudz.zcp.iam.api.resource.service.ResourceService;
 import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyHolder;
 
+import org.apache.commons.text.CaseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,7 @@ import io.kubernetes.client.custom.IntOrString;
 @RestController
 @RequestMapping("/iam")
 public class ResourceController {
-	private final Logger logger = LoggerFactory.getLogger(ResourceController.class);
+	private final Logger log = LoggerFactory.getLogger(ResourceController.class);
 
 	@Autowired
 	private ResourceService resourceService;
@@ -32,17 +33,23 @@ public class ResourceController {
 	@Value("${zcp.kube.namespace}")
 	private String zcpSystemNamespace;
 
+	@RequestMapping(value = "rbac/{username}/namespace", method = RequestMethod.GET)
+	public Object namespaces(@PathVariable String username) throws Exception {
+		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
+		return resourceService.getList("", "namespace");
+	}
+
 	@RequestMapping(value = "rbac/{username}/namespace/{namespace}/{kind}", method = RequestMethod.GET)
-	public Object list(@PathVariable String namespace, @PathVariable String username, @PathVariable String kind) throws Exception {
-		//Response<Object> response = new Response<>();
+	public Object list(@PathVariable String namespace,
+			@PathVariable String username,
+			@PathVariable String kind) throws Exception {
 
 		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
 
+		kind = resourceService.toKind(kind);
 		Object xxx = resourceService.getList(namespace, kind);
-		System.out.println(xxx.getClass());
+		log.debug("Response Type :: {}", xxx.getClass());
 
-		//response.setData(xxx);
-		//return response;
 		return xxx;
 	}
 

@@ -22,15 +22,8 @@ public class ResourceService {
 	@Autowired
 	private KubeResourceManager kubeResourceManager;
 
-	public V1SecretList getSecrets(String namespace, List<String> types) throws ZcpException {
-		try {
-			// kubectl get secret | grep -v account-token | grep -v Opaque | grep -v istio
-			return kubeResourceManager.getSecretList(namespace, types);
-		} catch (ApiException e) {
-			log.info("{}({})", e.getMessage(), e.getCode());
-			log.debug("{}", e.getResponseBody());
-			throw new ZcpException(ZcpErrorCode.GET_SECRET_LIST, e.getMessage());
-		}
+	public String toKind(String shortName) throws ZcpException {
+		return kubeResourceManager.toKind(shortName);
 	}
 
 	public <T> T getList(String namespace, String kind) throws ZcpException {

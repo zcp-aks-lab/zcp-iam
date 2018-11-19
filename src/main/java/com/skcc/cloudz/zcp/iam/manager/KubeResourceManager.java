@@ -3,28 +3,28 @@ package com.skcc.cloudz.zcp.iam.manager;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import com.google.common.collect.Maps;
+import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyAuth;
 
 import org.apache.commons.lang3.reflect.MethodUtils;
-import org.apache.el.util.ReflectionUtil;
+import org.apache.commons.text.CaseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 
-import com.google.common.collect.Maps;
-import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyAuth;
-
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CoreApi;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.auth.Authentication;
+import io.kubernetes.client.models.V1APIResourceList;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1SecretList;
 import io.kubernetes.client.util.ClientBuilder;
@@ -75,11 +75,31 @@ public class KubeResourceManager {
 		return list;
 	}
 
+	public String toKind(String shortName) {
+		String cand = CaseUtils.toCamelCase(shortName, true);
+		try {
+			V1APIResourceList list = api.getAPIResources();
+			Optional<String> kind = list.getResources().stream()
+				.filter(r -> r.getShortNames() != null && r.getShortNames().contains(shortName))
+				.map(r -> r.getKind())
+				.findFirst();
+
+			return kind.orElse(cand);
+		} catch (ApiException e) {
+			e.printStackTrace();
+		}
+
+		return cand;
+	}
+
 	public <T> T getList(String namespace, String kind)  throws ApiException {
 		//api.listNamespacedConfigMap(namespace, pretty, _continue, fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch)
 		//api.listNamespacedSecret   (namespace, pretty, _continue, fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch)
 
 		try {
+			if("namespace".equalsIgnoreCase(kind)){
+				return (T) api.listNamespace(pretty, null, null, null, null, null, null, null, null);
+			}
 			return (T) MethodUtils.invokeMethod(api, "listNamespaced" + kind, namespace, pretty, null, null, null, null, null, null, null, null);
 			//Method method = ReflectionUtils.findMethod(CoreV1Api.class, "listNamespaced" + kind);
 			//return (T) method.invoke(api, namespace);

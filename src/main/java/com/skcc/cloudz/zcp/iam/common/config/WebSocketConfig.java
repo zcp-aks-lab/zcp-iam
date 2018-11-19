@@ -29,7 +29,11 @@ public class WebSocketConfig implements WebSocketConfigurer {
 	@Override
 	public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         HandshakeInterceptor interceptors = new HttpSessionHandshakeInterceptor();
-		registry.addHandler(handler(), "/iam/shell")
+		//registry.addHandler(handler(), "/iam/exec")
+        //        .addInterceptors(interceptors)
+        //        .addHandler(handler2(), "/iam/web-ssh")
+        //        .addInterceptors(interceptors);
+        registry.addHandler(handler2(), "/iam/exec")
                 .addInterceptors(interceptors);
 	}
 
@@ -37,6 +41,11 @@ public class WebSocketConfig implements WebSocketConfigurer {
 	public WebSocketHandler handler() {
         //PodExecRelayHanlder.test();
         return new PodExecRelayHanlder();
+    }
+
+	@Bean
+	public WebSocketHandler handler2() {
+        return new WebSshHandler();
     }
 
     /*
