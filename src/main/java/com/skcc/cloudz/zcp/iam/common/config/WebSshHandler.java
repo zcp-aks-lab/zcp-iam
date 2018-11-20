@@ -10,6 +10,7 @@ import com.google.common.io.Resources;
 import com.skcc.cloudz.zcp.iam.common.config.WebSocketConfig.AbstractRelayHandler;
 import com.skcc.cloudz.zcp.iam.manager.KubeCoreManager;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,10 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.util.Yaml;
 
 public class WebSshHandler extends PodExecRelayHanlder {
@@ -68,6 +72,12 @@ public class WebSshHandler extends PodExecRelayHanlder {
         vars.put("namespace", namespace);
         //vars.put("name.suffix", Integer.toString(RandomUtils.nextInt(0, 1000)) );
         vars.put("name.suffix", "10");
+
+        V1ServiceAccount sa = manager.getServiceAccount("zcp-system", "zcp-system-sa-cloudzcp-admin");
+        V1ObjectReference ref = sa.getSecrets().get(0);
+        V1Secret secret = manager.getSecret("zcp-system", ref.getName());
+        byte[] token = secret.getData().get("token");
+        vars.put("token", new String(token));
 
         // read config.xml template
         StringBuffer template = new StringBuffer();

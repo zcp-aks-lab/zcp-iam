@@ -4,7 +4,8 @@ metadata:
   name: web-ssh-${name.suffix}
   namespace: ${namespace}
 spec:
-  #serviceAccountName: zcp-system-sa-cloudzcp-admin
+  #serviceAccountName: zcp-system:zcp-system-sa-cloudzcp-admin
+  #automountServiceAccountToken: false
   #securityContext:
   #  runAsUser: 1000
   containers:
@@ -14,20 +15,34 @@ spec:
     args:
     - "-c"
     - |
+        apk add curl;
+        curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl;
+        chmod 744 ./kubectl;
+        mv ./kubectl /usr/local/bin/kubectl;
+
+        sa=/run/secrets/kubernetes.io/serviceaccount
+        kubectl config set-credentials user --token=${token}
+        kubectl config set-cluster kube --server=https://kubernetes.default --certificate-authority=$sa/ca.crt
+        kubectl config set-context ctx --user=user --namespace=$(cat $sa/namespace) --cluster=kube
+        kubectl config use-context ctx
+
         echo 'OK' > status;
         cmd='cat status';
 
         while true; do
-
         res=$(eval $cmd);
-        if [ "$res" != 'OK' ]; then;
+        if [ "$res" != 'OK' ]; then
         echo "Terminate process (status: $res).";
+        kubectl delete pod $(hostname);
         exit;
         fi;
 
         echo hello;
         sleep 10;
         done
+    #env:
+    #- name: KUBE_TOKEN
+    #  value: ${token}
     securityContext:
       #runAsUser: 0  #root
       allowPrivilegeEscalation: false
