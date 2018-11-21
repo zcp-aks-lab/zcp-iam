@@ -56,7 +56,7 @@ public class KubeCoreManager {
 		return api.createNamespacedPod(namespace, body, pretty);
 	}
 
-	public V1Pod readPod(String namespace, String name) throws ApiException {
+	public V1Pod getPod(String namespace, String name) throws ApiException {
 		return api.readNamespacedPod(name, namespace, pretty, null, null);
 	}
 

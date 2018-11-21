@@ -13,14 +13,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
-
-import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
 import com.skcc.cloudz.zcp.iam.common.config.WebSocketConfig.AbstractRelayHandler;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
 import com.squareup.okhttp.ws.WebSocket;
 import com.squareup.okhttp.ws.WebSocketCall;
 
@@ -50,10 +48,9 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
 
     protected Attr POD_NAME = new Attr("__pod_name__");
 
-    private ApiClient client;
+    protected ApiClient client;
 
-    @PostConstruct
-    public void init() {
+    public PodExecRelayHanlder() {
         try {
             client = ClientBuilder.standard().build();
             //https://github.com/square/okhttp/issues/1930#issue-111840160
@@ -76,19 +73,11 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
     }
 
     protected WebSocketSession createSession(WebSocketSession in) throws Exception {
-        sendSystemMessage(in, "creating...");
+        sendSystemMessage(in, "connection...");
 
-        CharSequence query = in.getUri().getQuery();
-        Map<String, String> vars = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(query);
-        vars = Maps.newHashMap(vars);
-        vars.put("pod", POD_NAME.of(in, vars.get("pod")));
-
-        /*
-        Map<String, Object> vars = Maps.newHashMap();
-        vars.put("ns", "console");
-        vars.put("con", "alpine");
-        vars.put("shell", "sh");
-        */
+        Map<String, String> vars = getQueryParams(in);
+        String podName = POD_NAME.of(in, vars.get("pod"));
+        vars.put("pod", podName);
         
         //String uri = UriComponentsBuilder.fromUriString(server)
         String path = UriComponentsBuilder.newInstance()
@@ -99,7 +88,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
 
         // Exec.exec(...)
         ExecSession out = new ExecSession();
-        out.id = vars.get("pod") + "-" + in.getId();
+        out.id = podName + "-" + in.getId();
         out.handler = this;
         out.protocol = this.protocol;
         out.attr.put(DIRECTION.val(), DIRECTION_OUT.val());
@@ -146,56 +135,25 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
                         e.printStackTrace();
                     }
                 }
+
+                public void onFailure(IOException e, Response res) {
+                    try {
+                        int code = res.code();
+                        String message = res.message();
+
+                        Thread.currentThread().setName("OkHttp WebSocket Failure Replay");
+                        log.info("Fail to create pod exec connection. ({} :: {})", code, message);
+
+                        CloseStatus status = new CloseStatus(code + 2000, message);
+                        out.close(status);
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                }
             });
         }
 
         return out;
-    }
-
-
-	public static void test() {
-        try {
-            PodExecRelayHanlder handler = new PodExecRelayHanlder(){
-                protected void handleTextMessage(WebSocketSession in, TextMessage message) throws Exception {
-                    log.trace("<<< {}", message.getPayload());
-                }
-
-                protected void handleBinaryMessage(WebSocketSession in, BinaryMessage message) {
-                    try {
-                        log.trace("<<< {}", new String(message.getPayload().array()) );
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            };
-            handler.init();
-            WebSocketSession out = handler.createSession(null);
-
-
-            //case: SPDY
-            //String body = "ls -al\r";
-            //byte[] stream = new byte[]{ (byte) 0 };  //stdin
-            //byte[] data = ArrayUtils.addAll(stream, body.getBytes());
-            //BinaryMessage message = new BinaryMessage(data);
-            //out.sendMessage(message);
-
-            // https://github.com/kubernetes-client/java/blob/master/util/src/test/java/io/kubernetes/client/ExecTest.java#L74
-            ByteBuffer data = ByteBuffer.allocate(10);
-            data.putInt(0).put("ls ".getBytes());
-            out.sendMessage(new BinaryMessage(data));
-
-            data.clear();
-            data.putInt(0).put("-al \r".getBytes());
-            out.sendMessage(new BinaryMessage(data));
-
-            //case: Base64
-            //String body = "ls -al\r";
-            //String payload = "0" + Base64.encodeBase64String(body.getBytes());
-            //TextMessage message = new TextMessage(payload);
-            //out.sendMessage(message);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     public class ExecSession extends EmptyWebSocketSession implements SocketListener {

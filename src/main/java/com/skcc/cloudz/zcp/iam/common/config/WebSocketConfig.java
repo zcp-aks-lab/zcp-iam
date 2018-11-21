@@ -1,6 +1,7 @@
 package com.skcc.cloudz.zcp.iam.common.config;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Configuration
 @EnableWebSocket
@@ -58,6 +60,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
         protected static final Attr DIRECTION_OUT = new Attr("OUT");
         protected static final Attr STATUS = new Attr("__status__");
         protected static final Attr STATUS_CLOSE = new Attr("CLOSE");
+        protected static final Attr QUERY_PARAM = new Attr("__query_param_map__");
+        protected static final Attr HANDLER = new Attr("__handler__");
 
         public static class Attr {
             private String val;
@@ -167,8 +171,17 @@ public class WebSocketConfig implements WebSocketConfigurer {
             return out;
         }
 
-        protected Object attr(WebSocketSession session, String key){
-            return session.getAttributes().get(key);
+        protected Map<String, String> getQueryParams(WebSocketSession session){
+            Map<String, String> vars = QUERY_PARAM.of(session);
+            if(vars == null){
+                vars = UriComponentsBuilder.fromUri(session.getUri())
+                    .build()
+                    .getQueryParams()
+                    .toSingleValueMap();
+                QUERY_PARAM.to(session, vars);
+            }
+
+            return vars;
         }
 
         abstract protected WebSocketSession createSession(WebSocketSession in) throws Exception;
