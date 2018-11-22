@@ -3,11 +3,14 @@ kind: Pod
 metadata:
   name: web-ssh-${name.suffix}
   namespace: ${namespace}
+  labels:
+    app: web-ssh
 spec:
   #serviceAccountName: zcp-system:zcp-system-sa-cloudzcp-admin
   #automountServiceAccountToken: false
   #securityContext:
   #  runAsUser: 1000
+  restartPolicy: OnFailure
   containers:
   - name: alpine
     image: alpine:latest
@@ -32,8 +35,6 @@ spec:
         while true; do
         res=$(eval $cmd);
         if [ "$res" != 'OK' ]; then
-        echo "Terminate process (status: $res).";
-        kubectl delete pod $(hostname);
         exit;
         fi;
 
