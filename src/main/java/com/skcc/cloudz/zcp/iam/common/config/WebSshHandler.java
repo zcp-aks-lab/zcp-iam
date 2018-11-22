@@ -1,15 +1,18 @@
 package com.skcc.cloudz.zcp.iam.common.config;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
 import com.google.common.reflect.TypeToken;
@@ -59,25 +62,28 @@ public class WebSshHandler extends PodExecRelayHanlder {
     protected WebSocketSession createSession(WebSocketSession in) throws Exception {
         Map<String, String> vars = getQueryParams(in);
 
-        try {
-            String namespace = vars.get("ns");
-            String podName = StrSubstitutor.replace("web-ssh-${username}", vars);
+        String namespace = vars.get("ns");
+        String podName = StrSubstitutor.replace("web-ssh-${username}", vars);
 
+        try {
             HANDLER.to(in, this);
             POD_NAME.to(in, podName);
 
             watcher.register(podName, in);
-            manager.getPod(namespace, podName);
+            V1Pod pod = manager.getPod(namespace, podName);
+            if("Running".equals(pod.getStatus().getPhase()))
+                return super.createSession(in);
 
-            return super.createSession(in);
+            return EMPTY;
         } catch(ApiException e) {
             if(e.getCode() == 404){
-                createPod(in);
+                int rank = watcher.sessions(podName).indexOf(in);
+                if(rank == 0)
+                    createPod(in);
                 return EMPTY;
             }
             throw e;
         }
-
     }
 
     private V1Pod createPod(WebSocketSession in) throws ApiException, IOException {
@@ -113,17 +119,17 @@ public class WebSshHandler extends PodExecRelayHanlder {
 
     @Override
     public void afterConnectionClosed(WebSocketSession in, CloseStatus status) throws Exception {
-        watcher.unregister(POD_NAME.of(in));
+        watcher.unregister(POD_NAME.of(in), in);
         super.afterConnectionClosed(in, status);
     }
 
     private ConnectionWatcher watcher = new ConnectionWatcher(); 
-    private class ConnectionWatcher implements Runnable{
+    private class ConnectionWatcher implements Runnable {
         // https://github.com/kubernetes-client/java/issues/178#issuecomment-387602250
         // Watch.createWatch(client, call, watchType);
         private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-        private Map<String, WebSocketSession> status = Maps.newConcurrentMap();
+        private Map<String, List<WebSocketSession>> status = Maps.newConcurrentMap();
 
         private Watch<V1Pod> watch;
         private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
@@ -144,13 +150,13 @@ public class WebSshHandler extends PodExecRelayHanlder {
         }
 
         public void run() {
-            log.debug("%s WatchHandler Runnable", new Date());
+            log.trace("{}", new Date());
 
             watch.forEach(res -> {
                 V1Pod pod = res.object;
                 String name = pod.getMetadata().getName();
                 String status = pod.getStatus().getPhase();
-                System.out.format("watchEvent=%s, name=%s, status=%s\n", res.type, name, status);
+                log.info("watchEvent={}, name={}, status={}\n", res.type, name, status);
 
                 connect(res, pod, name, status);
             });
@@ -167,14 +173,16 @@ public class WebSshHandler extends PodExecRelayHanlder {
                 }
 
                 if("Running".equals(status)){
-                    WebSocketSession in = lookup(name);
-                    if(in == null){
+                    List<WebSocketSession> sessions = sessions(name);
+                    if(sessions.isEmpty()){
                         //TODO: delete unused ssh pod
                         return;
                     }
 
-                    AbstractRelayHandler handler = HANDLER.of(in);
-                    handler.getRelaySession(in);
+                    for(WebSocketSession in : sessions) {
+                        AbstractRelayHandler handler = HANDLER.of(in);
+                        handler.getRelaySession(in);
+                    }
                 }
             } catch (ApiException e) {
                 log.error("{}", e.getMessage());
@@ -189,29 +197,46 @@ public class WebSshHandler extends PodExecRelayHanlder {
         /*
          * for Connection Mapping
          */
-        public WebSocketSession lookup(String name) {
-            return status.get(name);
+        private List<WebSocketSession> sessions(String name) {
+            List<WebSocketSession> list = status.get(name);
+            if(list == null){
+                // list = Lists.newArrayList();
+                // list = Collections.synchronizedList(list);
+                list = Lists.newCopyOnWriteArrayList();
+                status.put(name, list);
+            }
+            return list;
         }
 
-        public void register(String name, WebSocketSession session) {
-            status.put(name, session);
+        // public WebSocketSession lookup(String name) {
+        //     return sessions(name).get(name);
+        // }
+
+        public void register(String name, WebSocketSession in) throws InterruptedException {
+            List<WebSocketSession> list = sessions(name);
+            if(!list.contains(in))
+                list.add(in);
         }
         
-        public WebSocketSession unregister(String name){
+        public WebSocketSession unregister(String name, WebSocketSession in){
             if(name == null)
                 return null;
 
-            WebSocketSession in = status.remove(name);
+            List<WebSocketSession> list = sessions(name);
+            list.remove(in);
 
-            try {
-                // TODO: delete unused ssh pod
-                Process ps = new Exec(client).exec("console", name, "echo 'ERROR' > /status".split(" "), false);
-                //System.out.println(IOUtils.toString(ps.getInputStream()));
-                System.out.println(IOUtils.toString(ps.getErrorStream()));
-            } catch (ApiException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+            if(list.isEmpty()){
+                try {
+                    // TODO: delete unused ssh pod
+                    Process ps = new Exec(client).exec("console", name, new String[]{"sh", "-c", "echo ERROR > /status && echo OK"}, true);
+                    System.out.println(ps.isAlive());
+                    System.out.println(IOUtils.toString(ps.getErrorStream()));
+                    System.out.println(IOUtils.toString(ps.getInputStream()));
+                } catch (ApiException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             return in;

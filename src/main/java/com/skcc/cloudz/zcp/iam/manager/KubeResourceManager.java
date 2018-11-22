@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -25,8 +23,6 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.auth.Authentication;
 import io.kubernetes.client.models.V1APIResourceList;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1SecretList;
 import io.kubernetes.client.util.ClientBuilder;
 
 @Component
@@ -59,22 +55,6 @@ public class KubeResourceManager {
 		logger.debug("KubeCoreManager is initialized");
 	}
 
-	public V1SecretList getSecretList(String namespace, List<String> types) throws ApiException {
-		V1SecretList list = api.listNamespacedSecret(namespace, pretty, null, null, null, null, null, null, null, null);
-
-		if (types == null || types.isEmpty())
-			return list;
-
-		// filter
-		Iterator<V1Secret> iter = list.getItems().iterator();
-		while (iter.hasNext()) {
-			if (!types.contains(iter.next().getType()))
-				iter.remove();
-		}
-
-		return list;
-	}
-
 	public String toKind(String shortName) {
 		String cand = CaseUtils.toCamelCase(shortName, true);
 		try {
@@ -92,7 +72,7 @@ public class KubeResourceManager {
 		return cand;
 	}
 
-	public <T> T getList(String namespace, String kind)  throws ApiException {
+	public <T> T getList(String namespace, String kind) throws ApiException {
 		//api.listNamespacedConfigMap(namespace, pretty, _continue, fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch)
 		//api.listNamespacedSecret   (namespace, pretty, _continue, fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch)
 

@@ -36,7 +36,7 @@ public class ResourceController {
 	@RequestMapping(value = "rbac/{username}/namespace", method = RequestMethod.GET)
 	public Object namespaces(@PathVariable String username) throws Exception {
 		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
-		return resourceService.getList("", "namespace");
+		return resourceService.getListNamespace(username);
 	}
 
 	@RequestMapping(value = "rbac/{username}/namespace/{namespace}/{kind}", method = RequestMethod.GET)
