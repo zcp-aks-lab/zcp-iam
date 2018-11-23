@@ -3,8 +3,6 @@ package com.skcc.cloudz.zcp.iam.common.config;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +66,7 @@ public class WebSshHandler extends PodExecRelayHanlder {
         try {
             HANDLER.to(in, this);
             POD_NAME.to(in, podName);
+            POD_CONTAINER.to(in, "alpine");
 
             watcher.register(podName, in);
             V1Pod pod = manager.getPod(namespace, podName);
@@ -156,7 +155,7 @@ public class WebSshHandler extends PodExecRelayHanlder {
                 V1Pod pod = res.object;
                 String name = pod.getMetadata().getName();
                 String status = pod.getStatus().getPhase();
-                log.info("watchEvent={}, name={}, status={}\n", res.type, name, status);
+                log.info("watchEvent={}, name={}, status={}", res.type, name, status);
 
                 connect(res, pod, name, status);
             });
@@ -228,7 +227,9 @@ public class WebSshHandler extends PodExecRelayHanlder {
             if(list.isEmpty()){
                 try {
                     // TODO: delete unused ssh pod
-                    Process ps = new Exec(client).exec("console", name, new String[]{"sh", "-c", "echo ERROR > /status && echo OK"}, true);
+                    Map<String, String> vars = getQueryParams(in);
+                    String namespace = vars.get("ns");
+                    Process ps = new Exec(client).exec(namespace, name, new String[]{"sh", "-c", "echo ERROR > /status && echo OK"}, true);
                     System.out.println(ps.isAlive());
                     System.out.println(IOUtils.toString(ps.getErrorStream()));
                     System.out.println(IOUtils.toString(ps.getInputStream()));

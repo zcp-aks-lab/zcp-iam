@@ -31,11 +31,9 @@ public class WebSocketConfig implements WebSocketConfigurer {
 	@Override
 	public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         HandshakeInterceptor interceptors = new HttpSessionHandshakeInterceptor();
-		//registry.addHandler(handler(), "/iam/exec")
-        //        .addInterceptors(interceptors)
-        //        .addHandler(handler2(), "/iam/web-ssh")
-        //        .addInterceptors(interceptors);
-        registry.addHandler(handler2(), "/iam/exec")
+		registry.addHandler(handler(), "/iam/exec")
+                .addInterceptors(interceptors)
+                .addHandler(handler2(), "/iam/wsh")
                 .addInterceptors(interceptors);
 	}
 

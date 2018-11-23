@@ -47,6 +47,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
     private String QUERY = "container={con}&stdin=1&stdout=1&stderr=1&tty=1&command={shell}";
 
     protected Attr POD_NAME = new Attr("__pod_name__");
+    protected Attr POD_CONTAINER = new Attr("__pod_container__");
 
     protected ApiClient client;
 
@@ -77,7 +78,9 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
 
         Map<String, String> vars = getQueryParams(in);
         String podName = POD_NAME.of(in, vars.get("pod"));
+        String container = POD_CONTAINER.of(in, vars.get("con"));
         vars.put("pod", podName);
+        vars.put("con", container);
         
         //String uri = UriComponentsBuilder.fromUriString(server)
         String path = UriComponentsBuilder.newInstance()
@@ -199,10 +202,9 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
         public void close(CloseStatus status) throws IOException {
             try {
                 if(this.socket != null){
-                    WebSocket socket = this.socket;
+                    this.sendMessage(new TextMessage("exit"));
+                    //WebSocket socket = this.socket;
                     this.socket = null;
-
-                    socket.close(0, "....");
 
                     log.info("Close exec connection of {}({}).", DIRECTION.of(this), this.getId());
                 }

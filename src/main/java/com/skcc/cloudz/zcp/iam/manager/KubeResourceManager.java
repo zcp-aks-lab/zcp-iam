@@ -60,7 +60,14 @@ public class KubeResourceManager {
 		try {
 			V1APIResourceList list = api.getAPIResources();
 			Optional<String> kind = list.getResources().stream()
-				.filter(r -> r.getShortNames() != null && r.getShortNames().contains(shortName))
+				.filter(r -> {
+					if (r.getName().equalsIgnoreCase(shortName))
+						return true;
+					if (r.getShortNames() != null && r.getShortNames().contains(shortName))
+						return true;
+					
+					return false;
+				})
 				.map(r -> r.getKind())
 				.findFirst();
 
