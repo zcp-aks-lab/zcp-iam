@@ -202,8 +202,21 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
         public void close(CloseStatus status) throws IOException {
             try {
                 if(this.socket != null){
-                    this.sendMessage(new TextMessage("exit"));
-                    //WebSocket socket = this.socket;
+                    /*
+                     * http://polarhome.com/service/man/?qf=ps&af=0&sf=0&of=Alpinelinux&tf=2
+                     * http://polarhome.com/service/man/?qf=pkill&af=0&sf=0&of=Alpinelinux&tf=2
+                     * 
+                     * watch ps -o pgid,ppid,pid,comm,time,tty,vsz,sid,stat,rss
+                     * pkill -l
+                     * pgrep -s <session_id>
+                     * pkill -s <session_id> -9
+                     */
+                    String sid = "ps -o pid,sid | grep $$ | awk '{print $2}' | head -n 1";
+                    String kill = String.format("pkill -9 -s $(%s) \r", sid);
+                    String cmd = String.format("nohup %s 2>&1 1>/tmp/pkill.$$.log &", kill);
+                    this.sendMessage(new TextMessage(cmd));
+
+                    WebSocket socket = this.socket;
                     this.socket = null;
 
                     log.info("Close exec connection of {}({}).", DIRECTION.of(this), this.getId());
