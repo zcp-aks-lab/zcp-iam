@@ -3,6 +3,9 @@ package com.skcc.cloudz.zcp.iam.common.config;
 import java.io.IOException;
 import java.util.Map;
 
+import com.skcc.cloudz.zcp.iam.common.config.websocket.PodExecRelayHanlder;
+import com.skcc.cloudz.zcp.iam.common.config.websocket.WebSshHandler;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -180,6 +183,11 @@ public class WebSocketConfig implements WebSocketConfigurer {
             }
 
             return vars;
+        }
+
+        protected String getQueryParams(WebSocketSession session, String key){
+            Map<String, String> vars = getQueryParams(session);
+            return vars.get(key);
         }
 
         abstract protected WebSocketSession createSession(WebSocketSession in) throws Exception;

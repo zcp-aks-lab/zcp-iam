@@ -1,4 +1,4 @@
-package com.skcc.cloudz.zcp.iam.common.config;
+package com.skcc.cloudz.zcp.iam.common.config.websocket;
 
 import java.io.IOException;
 import java.io.InputStream;
