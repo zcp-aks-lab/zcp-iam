@@ -47,6 +47,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
     private String QUERY = "container={con}&stdin=1&stdout=1&stderr=1&tty=1&command={shell}";
 
     protected Attr POD_NAME = new Attr("__pod_name__");
+    protected Attr POD_NAMESPACE = new Attr("__pod_namespace__");
     protected Attr POD_CONTAINER = new Attr("__pod_container__");
 
     protected ApiClient client;

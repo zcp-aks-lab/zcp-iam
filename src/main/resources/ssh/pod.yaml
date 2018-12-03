@@ -30,7 +30,8 @@ spec:
         kubectl config set-context ctx --user=user --namespace=$(cat $sa/namespace) --cluster=kube
         kubectl config use-context ctx
 
-        echo 'conn=1' > .env;
+        echo 'conn=1' >> .env;
+        echo 'token=${token}' >> .env;
         cmd='echo $conn';
 
         while true; do
@@ -44,9 +45,7 @@ spec:
         exit;
         fi;
 
-        kubectl config set-credentials user --token= ;
-        kubectl config view ;
-        kubectl config set-credentials user --token=${token} ;
+        kubectl config set-credentials user --token=$token ;
         sleep 10;
         done
     #env:

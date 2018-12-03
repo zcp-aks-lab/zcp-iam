@@ -9,11 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimaps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.google.common.collect.Tables;
 import com.google.common.io.Resources;
@@ -58,8 +59,9 @@ public class WebSshHandler extends PodExecRelayHanlder {
     // https://www.baeldung.com/guava-multimap
     // https://github.com/google/guava/wiki/NewCollectionTypesExplained#multimap
     // ( pod-name, [sessions] )
-    private ListMultimap<String, WebSocketSession> connections
-        = Multimaps.synchronizedListMultimap(LinkedListMultimap.create());
+    //private ListMultimap<String, WebSocketSession> connections
+    //    = Multimaps.synchronizedListMultimap(LinkedListMultimap.create());
+    private MultimapTable<String, String, WebSocketSession> conns = MultimapTable.cretae();
 
     // https://www.baeldung.com/guava-table
     // ( pod-name, env-key, env-val )
@@ -84,10 +86,10 @@ public class WebSshHandler extends PodExecRelayHanlder {
         try {
             HANDLER.to(in, this);
             POD_NAME.to(in, podName);
+            POD_NAMESPACE.to(in, namespace);
             POD_CONTAINER.to(in, "alpine");
 
-            if(!connections.containsValue(in))
-                connections.put(podName, in);
+            conns.putValue(podName, namespace, in);
                 
             V1Pod pod = manager.getPod(namespace, podName);
             if("Running".equals(pod.getStatus().getPhase()))
@@ -96,7 +98,7 @@ public class WebSshHandler extends PodExecRelayHanlder {
             return EMPTY;
         } catch(ApiException e) {
             if(e.getCode() == 404){
-                int rank = connections.get(podName).indexOf(in);
+                int rank = conns.indexOf(podName, namespace, in);
                 if(rank == 0)
                     createPod(in);
                 return EMPTY;
@@ -139,8 +141,11 @@ public class WebSshHandler extends PodExecRelayHanlder {
     @Override
     public void afterConnectionClosed(WebSocketSession in, CloseStatus status) throws Exception {
         String podName = POD_NAME.of(in);
-        updateEnv(podName);
-        connections.remove(podName, in);
+        boolean removed = conns.removeAll(podName, in);
+
+        if(removed){
+            updateEnv(podName, null);
+        }
 
         super.afterConnectionClosed(in, status);
     }
@@ -160,12 +165,12 @@ public class WebSshHandler extends PodExecRelayHanlder {
             String name = secret.getMetadata().getName();
             String user = StringUtils.substringBetween(name, "zcp-system-sa-", "-token");
             String podName = "web-ssh-" + user;
-            if(!connections.containsKey(podName))
+            if(!conns.containsRow(podName))
                 return;
 
             String token = new String(secret.getData().get("token"));
             envs.put(podName, "token", token);
-            updateEnv(podName);
+            updateEnv(podName, null);
         }
     }; 
 
@@ -183,6 +188,7 @@ public class WebSshHandler extends PodExecRelayHanlder {
 
         public void forEach(V1Pod pod, Response<V1Pod> res) {
             try {
+                String ns = pod.getMetadata().getNamespace();
                 String name = pod.getMetadata().getName();
                 String status = pod.getStatus().getPhase();
 
@@ -191,13 +197,11 @@ public class WebSshHandler extends PodExecRelayHanlder {
                 }
 
                 if("Running".equals(status)){
-                    boolean noPod = !connections.containsKey(name); 
-                    boolean noSession = noPod && !connections.get(name).isEmpty();
-                    if(noSession){
+                    if(conns.get(name, ns).isEmpty()) {
                         return;
                     }
 
-                    for(WebSocketSession in : connections.get(name)) {
+                    for(WebSocketSession in : conns.get(name, ns)) {
                         WebSshHandler handler = HANDLER.of(in);
                         handler.getRelaySession(in);
                     }
@@ -213,24 +217,33 @@ public class WebSshHandler extends PodExecRelayHanlder {
         }
     };
 
-    public void updateEnv(String podName){
+    public void updateEnv(String podName, String namespace){
         String stdin = null;
         String stderr = null;
         try {
-            List<WebSocketSession> list = connections.get(podName);
-            WebSocketSession in = list.get(0);
-            String namespace = getQueryParams(in, "ns");
+            // update connetion counts
+            Map<String, List<WebSocketSession>> pods = conns.row(podName);
+            for(String ns: pods.keySet()) {
+                int size = conns.get(podName, ns).size();
+                envs.put(podName, "conn." + ns, String.valueOf(size));
+            }
 
-            envs.put(podName, "conn", String.valueOf(list.size()));
+            // create env file
             StringBuilder content = new StringBuilder();
             Map<String, String> env = envs.row(podName);
             for(Entry<String, String> e : env.entrySet()){
                 content.append(e.getKey()).append("=").append(e.getValue()).append("\n");
             }
 
-            File meta = new File(".env");
-            Process ps = new Exec(client).exec(namespace, podName, new String[]{"sh", "-c", "tar xf - -C /"}, true);
-            writeFileAsTar(ps.getOutputStream(), meta, content.toString().getBytes());
+            // update matched pod
+            for(String ns: pods.keySet()) {
+                if(namespace != null && !ns.equals(namespace))
+                    continue;
+
+                File meta = new File(".env");
+                Process ps = new Exec(client).exec(ns, podName, new String[]{"sh", "-c", "tar xf - -C /"}, true);
+                writeFileAsTar(ps.getOutputStream(), meta, content.toString().getBytes());
+            }
 
             //stdin = IOUtils.toString(ps.getInputStream());
             //stderr = IOUtils.toString(ps.getErrorStream());
