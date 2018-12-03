@@ -30,9 +30,9 @@ spec:
         kubectl config set-context ctx --user=user --namespace=$(cat $sa/namespace) --cluster=kube
         kubectl config use-context ctx
 
-        echo 'conn=1' >> .env;
+        echo 'conn_${namespace}=1' >> .env;
         echo 'token=${token}' >> .env;
-        cmd='echo $conn';
+        cmd='echo $conn_${namespace}';
 
         while true; do
         export $(grep -v '^#' .env | xargs);

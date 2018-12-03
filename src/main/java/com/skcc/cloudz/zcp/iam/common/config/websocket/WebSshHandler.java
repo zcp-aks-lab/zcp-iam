@@ -225,7 +225,7 @@ public class WebSshHandler extends PodExecRelayHanlder {
             Map<String, List<WebSocketSession>> pods = conns.row(podName);
             for(String ns: pods.keySet()) {
                 int size = conns.get(podName, ns).size();
-                envs.put(podName, "conn." + ns, String.valueOf(size));
+                envs.put(podName, "conn_" + ns, String.valueOf(size));
             }
 
             // create env file
