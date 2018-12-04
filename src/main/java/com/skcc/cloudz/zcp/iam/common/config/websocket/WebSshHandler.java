@@ -9,12 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.google.common.collect.Tables;
 import com.google.common.io.Resources;
@@ -58,9 +54,7 @@ public class WebSshHandler extends PodExecRelayHanlder {
 
     // https://www.baeldung.com/guava-multimap
     // https://github.com/google/guava/wiki/NewCollectionTypesExplained#multimap
-    // ( pod-name, [sessions] )
-    //private ListMultimap<String, WebSocketSession> connections
-    //    = Multimaps.synchronizedListMultimap(LinkedListMultimap.create());
+    // ( pod-name, namespace, [sessions] )
     private MultimapTable<String, String, WebSocketSession> conns = MultimapTable.cretae();
 
     // https://www.baeldung.com/guava-table
@@ -92,8 +86,10 @@ public class WebSshHandler extends PodExecRelayHanlder {
             conns.putValue(podName, namespace, in);
                 
             V1Pod pod = manager.getPod(namespace, podName);
-            if("Running".equals(pod.getStatus().getPhase()))
+            if("Running".equals(pod.getStatus().getPhase())){
+                updateEnv(podName, namespace);
                 return super.createSession(in);
+            }
 
             return EMPTY;
         } catch(ApiException e) {
@@ -140,14 +136,16 @@ public class WebSshHandler extends PodExecRelayHanlder {
 
     @Override
     public void afterConnectionClosed(WebSocketSession in, CloseStatus status) throws Exception {
-        String podName = POD_NAME.of(in);
-        boolean removed = conns.removeAll(podName, in);
+        try {
+            super.afterConnectionClosed(in, status);
+        } finally {
+            String podName = POD_NAME.of(in);
+            boolean removed = conns.removeAll(podName, in);
 
-        if(removed){
-            updateEnv(podName, null);
+            if(removed){
+                updateEnv(podName, null);
+            }
         }
-
-        super.afterConnectionClosed(in, status);
     }
 
     private ResourceWatcher<V1Secret> secretWatcher = new ResourceWatcher<V1Secret>(client) {
@@ -161,12 +159,15 @@ public class WebSshHandler extends PodExecRelayHanlder {
             return watchType;
         }
 
-        public void forEach(V1Secret secret, Response<V1Secret> res){
+        public void forEach(V1Secret secret, Response<V1Secret> res) throws Exception{
             String name = secret.getMetadata().getName();
             String user = StringUtils.substringBetween(name, "zcp-system-sa-", "-token");
-            String podName = "web-ssh-" + user;
-            if(!conns.containsRow(podName))
+            if(user == null)
                 return;
+
+            String podName = "web-ssh-" + user;
+            //if(!conns.containsRow(podName))
+            //    return;
 
             String token = new String(secret.getData().get("token"));
             envs.put(podName, "token", token);
@@ -186,33 +187,24 @@ public class WebSshHandler extends PodExecRelayHanlder {
             return watchType;
         }
 
-        public void forEach(V1Pod pod, Response<V1Pod> res) {
-            try {
-                String ns = pod.getMetadata().getNamespace();
-                String name = pod.getMetadata().getName();
-                String status = pod.getStatus().getPhase();
+        public void forEach(V1Pod pod, Response<V1Pod> res) throws Exception {
+            String ns = pod.getMetadata().getNamespace();
+            String name = pod.getMetadata().getName();
+            String status = pod.getStatus().getPhase();
 
-                if("Succeeded".equals(status)){
-                    manager.deletePod(pod.getMetadata().getNamespace(), name);
+            if(!"DELETE".equals(res.type) && "Succeeded".equals(status)){
+                manager.deletePod(pod.getMetadata().getNamespace(), name);
+            }
+
+            if("Running".equals(status)){
+                if(conns.get(name, ns).isEmpty()) {
+                    return;
                 }
 
-                if("Running".equals(status)){
-                    if(conns.get(name, ns).isEmpty()) {
-                        return;
-                    }
-
-                    for(WebSocketSession in : conns.get(name, ns)) {
-                        WebSshHandler handler = HANDLER.of(in);
-                        handler.getRelaySession(in);
-                    }
+                for(WebSocketSession in : conns.get(name, ns)) {
+                    WebSshHandler handler = HANDLER.of(in);
+                    handler.getRelaySession(in);
                 }
-            } catch (ApiException e) {
-                log.error("{}", e.getMessage());
-                log.debug("{}", e.getCode());
-                log.debug("{}", e.getResponseBody());
-            } catch (Exception e) {
-                log.error("{}", e.getMessage());
-                log.debug("", e);
             }
         }
     };
@@ -243,6 +235,7 @@ public class WebSshHandler extends PodExecRelayHanlder {
                 File meta = new File(".env");
                 Process ps = new Exec(client).exec(ns, podName, new String[]{"sh", "-c", "tar xf - -C /"}, true);
                 writeFileAsTar(ps.getOutputStream(), meta, content.toString().getBytes());
+                ps.destroy();
             }
 
             //stdin = IOUtils.toString(ps.getInputStream());

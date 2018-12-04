@@ -1,5 +1,6 @@
 package com.skcc.cloudz.zcp.iam.common.config.websocket;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Date;
 import java.util.concurrent.Executors;
@@ -24,14 +25,20 @@ public abstract class ResourceWatcher<T> implements Runnable {
 
     //TODO: detect change of secret and inject a new token
     protected Watch<T> watch;
+    private Type watchType;
+    private Type paramType;
     private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 
     public ResourceWatcher(ApiClient client) {
         try {
             CoreV1Api coreV1Api = new CoreV1Api(client);
             Call call = createWatchCall(coreV1Api);
-            Type watchType = watchType();
+            watchType = watchType();
             watch = Watch.createWatch(client, call, watchType);
+
+            if(watchType instanceof ParameterizedType){
+                paramType = ParameterizedType.class.cast(watchType).getActualTypeArguments()[0];
+            }
 
             service.scheduleWithFixedDelay(this, 0, 5, TimeUnit.SECONDS);
         } catch (ApiException e) {
@@ -41,7 +48,7 @@ public abstract class ResourceWatcher<T> implements Runnable {
 
     abstract public Call createWatchCall(CoreV1Api coreV1Api) throws ApiException;
     abstract public Type watchType();
-    abstract public void forEach(T object, Response<T> res);
+    abstract public void forEach(T object, Response<T> res) throws Exception;
 
     public void run(){
         log.trace("{}", new Date());
@@ -50,6 +57,15 @@ public abstract class ResourceWatcher<T> implements Runnable {
             try {
                 forEach(res.object, res);
             } catch(Exception e){
+                if(e instanceof ApiException){
+                    ApiException ae = (ApiException) e;
+                    //if(ae.getCode() != 404){
+                        log.error("Fail to handle watch event. [type={}, msg={}({})]", paramType, ae.getMessage(), ae.getCode());
+                        log.debug("Fail to handle watch event. [type={}, body]\n{}", paramType, ae.getResponseBody());
+                    //}
+                    return;
+                }
+
                 log.error("{}", e.getMessage());
                 log.debug("", e);
             }

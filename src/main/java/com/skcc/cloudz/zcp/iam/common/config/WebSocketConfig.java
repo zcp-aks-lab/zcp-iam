@@ -108,12 +108,13 @@ public class WebSocketConfig implements WebSocketConfigurer {
         protected void handleBinaryMessage(WebSocketSession in, BinaryMessage message) {
             try {
                 WebSocketSession out = getRelaySession(in);
-                if(out == null){ return; }
 
-                if(log.isTraceEnabled()){
+                //if(log.isTraceEnabled()){
                     String msg = new String(message.getPayload().array());
                     log.trace("{} -> {} >>> {}", DIRECTION.of(in), DIRECTION.of(out), msg);
-                }
+                //}
+
+                if(out == null){ return; }
 
                 message = new BinaryMessage(message.getPayload());
                 out.sendMessage(message);
@@ -136,10 +137,14 @@ public class WebSocketConfig implements WebSocketConfigurer {
             log.info("{}({}) connection is closed.", DIRECTION.of(in), in.getId());
             STATUS.to(in, STATUS_CLOSE); 
 
-            WebSocketSession out = getRelaySession(in);
-            if(out != null && out.isOpen()){
-                log.debug("Try to close relay connection {}({}).", DIRECTION.of(out), out.getId());
-                out.close(status);
+            WebSocketSession out = RELAY_SESSION.of(in);
+            if(!STATUS_CLOSE.equals(STATUS.of(out))){
+                STATUS.to(out, STATUS_CLOSE);
+
+                if(out.isOpen()){
+                    log.debug("Try to close relay connection {}({}).", DIRECTION.of(out), out.getId());
+                    out.close(status);
+                }
             }
         }
 
@@ -153,7 +158,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
             }
 
             if(STATUS_CLOSE.equals(STATUS.of(in))) {
-                log.debug("{}({}) is closing. Skip creating relay.", DIRECTION.of(in), in.getId());
+                log.debug("{}({}) is closing.", DIRECTION.of(in), in.getId());
                 return null;
             }
 

@@ -15,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Maps;
 import com.skcc.cloudz.zcp.iam.common.config.WebSocketConfig.AbstractRelayHandler;
+import com.squareup.okhttp.ConnectionPool;
+import com.squareup.okhttp.Dispatcher;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
@@ -57,6 +59,15 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
             client = ClientBuilder.standard().build();
             //https://github.com/square/okhttp/issues/1930#issue-111840160
             client.getHttpClient().setReadTimeout(0, TimeUnit.NANOSECONDS);
+
+            // https://square.github.io/okhttp/3.x/okhttp/okhttp3/ConnectionPool.html
+            int maxIdleConnections = 50;
+            long keepAliveDuration = 5 * 60 * 1000; // 5 min;
+            ConnectionPool pool = new ConnectionPool(maxIdleConnections, keepAliveDuration);
+            client.getHttpClient().setConnectionPool(pool);
+
+            Dispatcher dispather = client.getHttpClient().getDispatcher();
+            dispather.setMaxRequestsPerHost(dispather.getMaxRequests());
 
             if(log.isTraceEnabled())
                 client.setDebugging(true);
@@ -123,6 +134,10 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
                     localVarAuthNames,
                     null);    // progress
             WebSocketCall.create(client.getHttpClient(), request).enqueue(new WebSockets.Listener(out){
+                public void onOpen(WebSocket webSocket, Response response) {
+                    out.res = response;
+                    super.onOpen(webSocket, response);
+                }
                 public void onClose(int code, String reason) {
                     try {
                         // relay session is aleady closed.
@@ -148,6 +163,8 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
                         Thread.currentThread().setName("OkHttp WebSocket Failure Replay");
                         log.info("Fail to create pod exec connection. ({} :: {})", code, message);
 
+                        res.body().close();
+
                         CloseStatus status = new CloseStatus(code + 2000, message);
                         out.close(status);
                     } catch (IOException e1) {
@@ -168,9 +185,10 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
         private WebSocketHandler handler;
         private Map<String, Object> attr = Maps.newHashMap();
         private String id;
+        private boolean open = false;
 
         public String getId() { return id; }
-        public boolean isOpen() { return socket != null; }
+        public boolean isOpen() { return open; }
         public Map<String, Object> getAttributes() { return attr; }
 
         public void sendMessage(WebSocketMessage<?> message) throws IOException {
@@ -202,6 +220,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
 
         public void close(CloseStatus status) throws IOException {
             try {
+                this.open = false;
                 if(this.socket != null){
                     /*
                      * http://polarhome.com/service/man/?qf=ps&af=0&sf=0&of=Alpinelinux&tf=2
@@ -217,8 +236,8 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
                     String cmd = String.format("nohup %s 2>&1 1>/tmp/pkill.$$.log &", kill);
                     this.sendMessage(new TextMessage(cmd));
 
-                    WebSocket socket = this.socket;
-                    this.socket = null;
+                    //this.socket.close(10, "reason");
+                    this.res.body().close();
 
                     log.info("Close exec connection of {}({}).", DIRECTION.of(this), this.getId());
                 }
@@ -239,7 +258,9 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
          * for SocketListener (kube-client util)
          */
         private WebSocket socket;
+        private Response res;
         public void open(String protocol, WebSocket socket) {
+            this.open = true;
             this.socket = socket;
 
             WebSocketSession in = RELAY_SESSION.of(this);

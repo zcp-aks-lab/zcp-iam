@@ -1,10 +1,13 @@
 package com.skcc.cloudz.zcp.iam.manager;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.Iterator;
 import java.util.List;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonSyntaxException;
+import com.squareup.okhttp.Call;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.ApiResponse;
 import io.kubernetes.client.Configuration;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1DeleteOptions;
@@ -63,6 +67,15 @@ public class KubeCoreManager {
 	public V1Status deletePod(String namespace, String name) throws ApiException {
 		V1DeleteOptions deleteOptions = new V1DeleteOptions();
 		deleteOptions.setGracePeriodSeconds(0l);
+
+		/*
+		 * https://github.com/kubernetes-client/java/issues/86#issuecomment-334981383
+		 * CoreV1Api.deleteNamespacedPodWithHttpInfo(...)
+		 */
+		// Call call = api.deleteNamespacedPodCall(name, namespace, deleteOptions, pretty, null, null, null, null, null);
+        // Type localVarReturnType = new TypeToken<V1Pod>(){}.getType();
+		// ApiResponse<V1Pod> resp = client.execute(call, localVarReturnType);
+		// return resp.getData();
 		return api.deleteNamespacedPod(name, namespace, deleteOptions, pretty, null, null, null);
 	}
 
