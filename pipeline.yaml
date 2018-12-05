@@ -16,5 +16,5 @@ env:
 
 agent:
   profile: [maven, docker, kubectl]
-  volume:
+  volumes:
   - pvc:zcp-jenkins-mvn-repo: /root/.m2
