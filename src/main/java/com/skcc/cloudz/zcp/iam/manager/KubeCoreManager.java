@@ -64,7 +64,7 @@ public class KubeCoreManager {
 		return api.readNamespacedPod(name, namespace, pretty, null, null);
 	}
 
-	public V1Status deletePod(String namespace, String name) throws ApiException {
+	public V1Pod deletePod(String namespace, String name) throws ApiException {
 		V1DeleteOptions deleteOptions = new V1DeleteOptions();
 		deleteOptions.setGracePeriodSeconds(0l);
 
@@ -72,11 +72,11 @@ public class KubeCoreManager {
 		 * https://github.com/kubernetes-client/java/issues/86#issuecomment-334981383
 		 * CoreV1Api.deleteNamespacedPodWithHttpInfo(...)
 		 */
-		// Call call = api.deleteNamespacedPodCall(name, namespace, deleteOptions, pretty, null, null, null, null, null);
-        // Type localVarReturnType = new TypeToken<V1Pod>(){}.getType();
-		// ApiResponse<V1Pod> resp = client.execute(call, localVarReturnType);
-		// return resp.getData();
-		return api.deleteNamespacedPod(name, namespace, deleteOptions, pretty, null, null, null);
+		Call call = api.deleteNamespacedPodCall(name, namespace, deleteOptions, pretty, null, null, null, null, null);
+        Type localVarReturnType = new TypeToken<V1Pod>(){}.getType();
+		ApiResponse<V1Pod> resp = client.execute(call, localVarReturnType);
+		return resp.getData();
+		// return api.deleteNamespacedPod(name, namespace, deleteOptions, pretty, null, null, null);
 	}
 
 	public V1ServiceAccount createServiceAccount(String namespace, V1ServiceAccount serviceAccount)

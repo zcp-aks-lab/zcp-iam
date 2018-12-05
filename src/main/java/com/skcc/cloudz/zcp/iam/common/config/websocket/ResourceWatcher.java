@@ -59,10 +59,10 @@ public abstract class ResourceWatcher<T> implements Runnable {
             } catch(Exception e){
                 if(e instanceof ApiException){
                     ApiException ae = (ApiException) e;
-                    //if(ae.getCode() != 404){
-                        log.error("Fail to handle watch event. [type={}, msg={}({})]", paramType, ae.getMessage(), ae.getCode());
-                        log.debug("Fail to handle watch event. [type={}, body]\n{}", paramType, ae.getResponseBody());
-                    //}
+                    if(ae.getCode() != 404){
+                        log.error("Fail to handle watch event. [type={}, msg={}({})]", paramType.getTypeName(), ae.getMessage(), ae.getCode());
+                        log.debug("Fail to handle watch event. [type={}, body]\n{}", paramType.getTypeName(), ae.getResponseBody());
+                    }
                     return;
                 }
 

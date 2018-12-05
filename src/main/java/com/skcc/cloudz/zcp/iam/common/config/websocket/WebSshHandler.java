@@ -3,6 +3,7 @@ package com.skcc.cloudz.zcp.iam.common.config.websocket;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.google.common.collect.Tables;
@@ -17,6 +19,7 @@ import com.google.common.io.Resources;
 import com.google.common.reflect.TypeToken;
 import com.skcc.cloudz.zcp.iam.manager.KubeCoreManager;
 import com.squareup.okhttp.Call;
+import com.squareup.okhttp.ws.WebSocket;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -28,6 +31,7 @@ import org.apache.commons.text.TextStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -43,12 +47,12 @@ import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Yaml;
 
 public class WebSshHandler extends PodExecRelayHanlder {
-    //@Value("${jenkins.template.folder}")
+    // @Value("${jenkins.template.folder}")
     private String templatePath = "classpath:/ssh/pod.yaml";
 
     @Autowired
     private ApplicationContext context;
-    
+
     @Autowired
     private KubeCoreManager manager;
 
@@ -61,14 +65,13 @@ public class WebSshHandler extends PodExecRelayHanlder {
     // ( pod-name, env-key, env-val )
     private Table<String, String, String> envs = Tables.synchronizedTable(HashBasedTable.create());
 
-    private final WebSocketSession EMPTY = new EmptyWebSocketSession(){
+    private final WebSocketSession EMPTY = new EmptyWebSocketSession() {
         private Map<String, Object> attr = Maps.newHashMap();
-        public Map<String, Object> getAttributes() { return attr; }
+
+        public Map<String, Object> getAttributes() {
+            return attr;
+        }
     };
-
-    public WebSshHandler(){
-
-    }
 
     @Override
     protected WebSocketSession createSession(WebSocketSession in) throws Exception {
@@ -88,7 +91,26 @@ public class WebSshHandler extends PodExecRelayHanlder {
             V1Pod pod = manager.getPod(namespace, podName);
             if("Running".equals(pod.getStatus().getPhase())){
                 updateEnv(podName, namespace);
-                return super.createSession(in);
+
+                WebSocketSession out = super.createSession(in);
+                List<String> cleanup = Lists.newArrayList();
+                CLEAN_UP_MESSAGE.to(out, cleanup);
+                /*
+                    * http://polarhome.com/service/man/?qf=ps&af=0&sf=0&of=Alpinelinux&tf=2
+                    * http://polarhome.com/service/man/?qf=pkill&af=0&sf=0&of=Alpinelinux&tf=2
+                    * 
+                    * watch ps -o pgid,ppid,pid,comm,time,tty,vsz,sid,stat,rss
+                    * pkill -l
+                    * pgrep -s <session_id>
+                    * pkill -s <session_id> -9
+                    */
+                String sid = "ps -o pid,sid | grep $$ | awk '{print $2}' | head -n 1";
+                String kill = String.format("pkill -9 -s $(%s) \r", sid);
+                String cmd = String.format("nohup %s 2>&1 1>/tmp/pkill.$$.log &", kill);
+
+                cleanup.add(cmd);
+
+                return out;
             }
 
             return EMPTY;
@@ -236,6 +258,25 @@ public class WebSshHandler extends PodExecRelayHanlder {
                 Process ps = new Exec(client).exec(ns, podName, new String[]{"sh", "-c", "tar xf - -C /"}, true);
                 writeFileAsTar(ps.getOutputStream(), meta, content.toString().getBytes());
                 ps.destroy();
+
+                // close socket
+                Object target = ps;
+                String[] paths = new String[]{"streamHandler", "socket"};
+                for(String path : paths){
+                    Field field = ReflectionUtils.findField(target.getClass(), path);
+                    ReflectionUtils.makeAccessible(field);
+                    target = field.get(target);
+                }
+                WebSocket.class.cast(target).close(0, "done");
+                // Class<?> clazz = ps.getClass();
+                // Field handlerF = ReflectionUtils.findField(clazz, "streamHandler");
+                // ReflectionUtils.makeAccessible(handlerF);
+                // Object handler = handlerF.get(ps);
+
+                // Field socketF = ReflectionUtils.findField(WebSocketStreamHandler.class, "socket");
+                // ReflectionUtils.makeAccessible(socketF);
+                // WebSocket socket = (WebSocket) socketF.get(handler);
+                // socket.close(0, "done");
             }
 
             //stdin = IOUtils.toString(ps.getInputStream());
@@ -265,5 +306,6 @@ public class WebSshHandler extends PodExecRelayHanlder {
         tar.putArchiveEntry(entry);
         IOUtils.write(content, tar);
         tar.closeArchiveEntry();
+        tar.close();
     }
 }

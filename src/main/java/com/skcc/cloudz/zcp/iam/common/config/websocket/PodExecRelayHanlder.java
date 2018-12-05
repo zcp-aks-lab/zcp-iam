@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.skcc.cloudz.zcp.iam.common.config.WebSocketConfig.AbstractRelayHandler;
 import com.squareup.okhttp.ConnectionPool;
@@ -51,6 +52,8 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
     protected Attr POD_NAME = new Attr("__pod_name__");
     protected Attr POD_NAMESPACE = new Attr("__pod_namespace__");
     protected Attr POD_CONTAINER = new Attr("__pod_container__");
+
+    protected Attr CLEAN_UP_MESSAGE = new Attr("__pod_cleanup_message__");
 
     protected ApiClient client;
 
@@ -205,9 +208,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
                 return;
             }
 
-
-            if(!isOpen()){
-                //TODO: ...
+            if(this.socket == null){
                 return;
             }
 
@@ -220,28 +221,24 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
 
         public void close(CloseStatus status) throws IOException {
             try {
-                this.open = false;
-                if(this.socket != null){
-                    /*
-                     * http://polarhome.com/service/man/?qf=ps&af=0&sf=0&of=Alpinelinux&tf=2
-                     * http://polarhome.com/service/man/?qf=pkill&af=0&sf=0&of=Alpinelinux&tf=2
-                     * 
-                     * watch ps -o pgid,ppid,pid,comm,time,tty,vsz,sid,stat,rss
-                     * pkill -l
-                     * pgrep -s <session_id>
-                     * pkill -s <session_id> -9
-                     */
-                    String sid = "ps -o pid,sid | grep $$ | awk '{print $2}' | head -n 1";
-                    String kill = String.format("pkill -9 -s $(%s) \r", sid);
-                    String cmd = String.format("nohup %s 2>&1 1>/tmp/pkill.$$.log &", kill);
-                    this.sendMessage(new TextMessage(cmd));
+                if(this.open){
+                    this.open = false;
 
-                    //this.socket.close(10, "reason");
-                    this.res.body().close();
+                    List<String> cleanup = CLEAN_UP_MESSAGE.of(this);
+                    if(cleanup != null){
+                        for(String msg : cleanup){
+                            this.sendMessage(new TextMessage(msg));
+                        }
+                    }
+
+                    if(this.socket != null){
+                        this.socket.close(0, "user connection is closed.");
+                        this.socket = null;
+                    }
 
                     log.info("Close exec connection of {}({}).", DIRECTION.of(this), this.getId());
                 }
-            } catch (IOException | IllegalStateException e) {
+            } catch (Exception e) {
                 log.info("kube exec connection is closed with error({} :: {}).", e.getMessage(), e.getClass().getSimpleName());
                 log.trace("", e); 
             }

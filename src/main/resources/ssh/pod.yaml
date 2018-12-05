@@ -25,10 +25,11 @@ spec:
         mv ./kubectl /usr/local/bin/kubectl;
 
         sa=/run/secrets/kubernetes.io/serviceaccount
-        kubectl config set-credentials user --token=${token}
-        kubectl config set-cluster kube --server=https://kubernetes.default --certificate-authority=$sa/ca.crt
-        kubectl config set-context ctx --user=user --namespace=$(cat $sa/namespace) --cluster=kube
-        kubectl config use-context ctx
+        config=~/.kube/config
+        kubectl config --kubeconfig=$config set-credentials user --token=${token}
+        kubectl config --kubeconfig=$config set-cluster kube --server=https://kubernetes.default --certificate-authority=$sa/ca.crt
+        kubectl config --kubeconfig=$config set-context ctx --user=user --namespace=$(cat $sa/namespace) --cluster=kube
+        kubectl config --kubeconfig=$config use-context ctx
 
         echo 'conn_${namespace}=1' >> .env;
         echo 'token=${token}' >> .env;
@@ -45,7 +46,7 @@ spec:
         exit;
         fi;
 
-        kubectl config set-credentials user --token=$token ;
+        kubectl config --kubeconfig=$config set-credentials user --token=$token ;
         sleep 10;
         done
     #env:
