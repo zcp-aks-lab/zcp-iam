@@ -109,10 +109,10 @@ public class WebSocketConfig implements WebSocketConfigurer {
             try {
                 WebSocketSession out = getRelaySession(in);
 
-                //if(log.isTraceEnabled()){
+                if(log.isTraceEnabled()){
                     String msg = new String(message.getPayload().array());
                     log.trace("{} -> {} >>> {}", DIRECTION.of(in), DIRECTION.of(out), msg);
-                //}
+                }
 
                 if(out == null){ return; }
 
