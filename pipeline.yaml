@@ -1,0 +1,18 @@
+stage:
+- build
+
+build:
+- maven:
+  - mvn install
+- docker:
+  - cd docker && docker build . -t $image
+  - docker images | grep cloudzcp
+- docker.push:
+    imageName: $image
+    credentialsId: dockerhub
+
+env:
+  image: cloudzcp/zcp-iam:1.1.0-alpha
+
+agent:
+  profile: [maven, docker, kubectl]
