@@ -14,7 +14,7 @@ Build:
 
 Deploy:
 - kubectl:
-  - apk add bash && cd $yaml && bash template.sh
+  - apk add bash && cd $yaml && bash -x template.sh
   - kubectl apply -R -f $yaml/.tmp
   - kubectl scale deploy zcp-iam --replicas 1 -n $ns
 
