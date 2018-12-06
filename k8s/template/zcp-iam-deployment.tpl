@@ -1,0 +1,89 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: zcp-iam
+  namespace: ${namespace}
+spec:
+  replicas: 0
+  template:
+    metadata:
+      labels:
+        component: zcp-iam
+    spec:
+      tolerations:
+      - key: "management"
+        operator: "Equal"
+        value: 'true'
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - "amd64"
+              - key: role
+                operator: In
+                values:
+                - "management"
+      containers:
+      - name: zcp-iam
+        image: ${image}
+        imagePullPolicy: Always
+        ports:
+        - name: cont-port
+          containerPort: 8181
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1024Mi"
+            cpu: "800m"
+        envFrom:
+        - configMapRef:
+            name: zcp-iam-config
+        env:
+          - name: KEYCLOAK_MASTER_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: zcp-iam-secret
+                key: KEYCLOAK_MASTER_CLIENT_SECRET
+          - name: KEYCLOAK_MASTER_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: zcp-iam-secret
+                key: KEYCLOAK_MASTER_USERNAME
+          - name: KEYCLOAK_MASTER_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: zcp-iam-secret
+                key: KEYCLOAK_MASTER_PASSWORD
+          - name: JENKINS_USER_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: zcp-iam-secret
+                key: JENKINS_USER_TOKEN
+      serviceAccount: ${sa}
+      serviceAccountName: ${sa}
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: zcp-iam
+  labels:
+    name: zcp-iam
+  namespace: ${namespace}
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8181
+    protocol: TCP
+    name: http
+  selector:
+    component: zcp-iam
+

@@ -1,7 +1,8 @@
 stage:
-- build
+- Build
+- Deploy
 
-build:
+Build:
 - maven:
   - mvn clean install -Dmaven.repo.local=/root/.m2/${JOB_NAME}
 - docker:
@@ -11,8 +12,16 @@ build:
     imageName: $image
     credentialsId: dockerhub
 
+Deploy:
+- kubectl:
+  - cd $yaml && bash template.sh
+  - kubectl apply -f $yaml/*.yaml
+  - kubectl scale deploy zcp-iam --replicas 1
+
 env:
   image: cloudzcp/zcp-iam:1.1.0-alpha
+  ns: console
+  yaml: k8s/template
 
 agent:
   profile: [maven, docker, kubectl]
