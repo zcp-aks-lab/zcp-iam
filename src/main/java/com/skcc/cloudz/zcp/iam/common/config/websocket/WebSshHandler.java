@@ -184,6 +184,9 @@ public class WebSshHandler extends PodExecRelayHanlder {
         public void forEach(V1Secret secret, Response<V1Secret> res) throws Exception{
             String name = secret.getMetadata().getName();
             String user = StringUtils.substringBetween(name, "zcp-system-sa-", "-token");
+            
+            log.debug("Start to handle watch events. [type={}, object={}, status={}]", V1Secret.class.getSimpleName(), name, user);
+            
             if(user == null)
                 return;
 
@@ -258,6 +261,8 @@ public class WebSshHandler extends PodExecRelayHanlder {
                 if(namespace != null && !ns.equals(namespace))
                     continue;
 
+                log.debug("Update ssh pod env variables. [pod={}, ns={}]\n{}", podName, ns, content);
+                
                 File meta = new File(".env");
                 Process ps = new Exec(client).exec(ns, podName, new String[]{"sh", "-c", "tar xf - -C /"}, true);
                 writeFileAsTar(ps.getOutputStream(), meta, content.toString().getBytes());
