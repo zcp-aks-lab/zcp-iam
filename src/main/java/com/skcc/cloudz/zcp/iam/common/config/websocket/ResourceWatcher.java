@@ -51,7 +51,7 @@ public abstract class ResourceWatcher<T> implements Runnable {
     abstract public void forEach(T object, Response<T> res) throws Exception;
 
     public void run(){
-        log.trace("{}", new Date());
+        log.debug("Check watch events about {}", paramType.getTypeName());
 
         for(Response<T> res : watch) {
             try {

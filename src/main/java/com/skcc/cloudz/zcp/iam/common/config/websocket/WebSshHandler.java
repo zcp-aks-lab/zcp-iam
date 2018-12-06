@@ -214,7 +214,10 @@ public class WebSshHandler extends PodExecRelayHanlder {
             String name = pod.getMetadata().getName();
             String status = pod.getStatus().getPhase();
 
+            log.debug("Start to handle watch events. [type={}, object={}, status={}]", V1Pod.class.getSimpleName(), name, status);
+
             if(!"DELETE".equals(res.type) && "Succeeded".equals(status)){
+                log.info("Delete unused ssh pod({}, ns={})", name, ns);
                 manager.deletePod(pod.getMetadata().getNamespace(), name);
             }
 
@@ -223,6 +226,7 @@ public class WebSshHandler extends PodExecRelayHanlder {
                     return;
                 }
 
+                log.info("Start connecting to ssh pod({}, ns={})", name, ns);
                 for(WebSocketSession in : conns.get(name, ns)) {
                     WebSshHandler handler = HANDLER.of(in);
                     handler.getRelaySession(in);
