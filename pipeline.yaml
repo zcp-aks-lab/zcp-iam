@@ -4,7 +4,7 @@ stage:
 
 Build:
 - maven:
-  - mvn clean install -Dmaven.repo.local=/root/.m2/${JOB_NAME}
+  - mvn clean install -T 4 -Dmaven.repo.local=/root/.m2/${JOB_NAME}
 - docker:
   - cd docker && docker build . -t $image
   - docker images | grep cloudzcp
@@ -15,7 +15,7 @@ Build:
 Deploy:
 - kubectl:
   - apk add bash && cd $yaml && bash template.sh
-  - kubectl apply -f $yaml/*.yaml
+  - kubectl apply -f $yaml/.tmp/*.yaml
   - kubectl scale deploy zcp-iam --replicas 1
 
 env:
