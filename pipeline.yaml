@@ -16,12 +16,12 @@ Deploy:
 - kubectl:
   - apk add bash && cd $yaml && bash template.sh
   - kubectl apply -R -f $yaml/.tmp
-  - kubectl scale deploy zcp-iam --replicas 1
+  - kubectl scale deploy zcp-iam --replicas 1 -n $ns
 
 env:
   image: cloudzcp/zcp-iam:1.1.0-alpha
-  ns: console
   yaml: k8s/template
+  ns: console
 
 agent:
   profile: [maven, docker, kubectl]
