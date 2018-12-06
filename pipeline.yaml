@@ -14,8 +14,7 @@ Build:
 
 Deploy:
 - kubectl:
-  - apk add bash
-  - cd $yaml && keycloak_pwd=${keycloak_pwd} bash -x template.sh
+  - apk add bash && cd $yaml && keycloak_pwd=${keycloak_pwd} bash ${debug} template.sh
   - kubectl apply -R -f $yaml/.tmp
   - kubectl scale deploy zcp-iam --replicas 1 -n $ns
 
