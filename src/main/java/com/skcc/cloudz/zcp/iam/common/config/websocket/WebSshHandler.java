@@ -267,7 +267,7 @@ public class WebSshHandler extends PodExecRelayHanlder {
                 Process ps = new Exec(client).exec(ns, podName, new String[]{"sh", "-c", "tar xf - -C /"}, true);
                 writeFileAsTar(ps.getOutputStream(), meta, content.toString().getBytes());
                 ps.destroy();
-                log.debug("Finish to write env variables. [pod={}, ns={}]\n{}", podName, ns, content);
+                log.debug("Finish to write env variables. [pod={}, ns={}]", podName, ns);
 
                 // close socket
                 Object target = ps;
@@ -278,7 +278,7 @@ public class WebSshHandler extends PodExecRelayHanlder {
                     target = field.get(target);
                 }
                 WebSocket.class.cast(target).close(0, "done");
-                log.debug("Close websocket to update env variables. [pod={}, ns={}]\n{}", podName, ns, content);
+                log.debug("Close websocket to update env variables. [pod={}, ns={}]", podName, ns);
                 // Class<?> clazz = ps.getClass();
                 // Field handlerF = ReflectionUtils.findField(clazz, "streamHandler");
                 // ReflectionUtils.makeAccessible(handlerF);
