@@ -66,8 +66,15 @@ spec:
               secretKeyRef:
                 name: zcp-iam-secret
                 key: JENKINS_USER_TOKEN
+        volumeMounts:
+        - mountPath: /etc/localtime
+          name: timezone
       serviceAccount: zcp-system-admin
       serviceAccountName: zcp-system-admin
+      volumes:
+      - hostPath:
+          path: /usr/share/zoneinfo/Asia/Seoul
+        name: timezone
 ---
 
 apiVersion: v1
