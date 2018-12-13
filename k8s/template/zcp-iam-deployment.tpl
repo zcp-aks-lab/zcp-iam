@@ -4,7 +4,7 @@ metadata:
   name: zcp-iam
   namespace: ${namespace}
 spec:
-  replicas: 0
+  replicas: ${replicas}
   template:
     metadata:
       labels:

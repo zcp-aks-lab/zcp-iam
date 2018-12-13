@@ -9,7 +9,7 @@
 
 . ${1:-setenv.sh}
 out_dir=${out_dir:-.}
-mkdir $out_dir 2>/dev/null
+mkdir -p $out_dir 2>/dev/null
 
 # https://stackoverflow.com/a/42386902
 # https://wiki.kldp.org/HOWTO/html/Adv-Bash-Scr-HOWTO/parameter-substitution.html
