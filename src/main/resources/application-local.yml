@@ -6,7 +6,11 @@ keycloak:
     clientSecret: 237ef2ad-c5f3-491a-89ab-dab04c8bf268
     username: zcp-admin
     password: Password1!
-  
+
+endpoints:
+  prometheus:
+    sensitive: false
+
 logging:
   level:
     com:

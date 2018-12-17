@@ -9,6 +9,10 @@ spec:
     metadata:
       labels:
         component: zcp-iam
+        # https://www.weave.works/docs/cloud/latest/tasks/monitor/configuration-k8s/
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: /prometheus
+        prometheus.io/port: 8181
     spec:
       tolerations:
       - key: "management"

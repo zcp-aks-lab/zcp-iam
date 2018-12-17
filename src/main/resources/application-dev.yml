@@ -7,6 +7,10 @@ keycloak:
     password: admin1234
     username: 1800275@partner.skcc.com
 
+endpoints:
+  prometheus:
+    sensitive: false
+
 logging:
   level:
     com:

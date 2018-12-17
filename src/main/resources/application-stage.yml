@@ -6,7 +6,11 @@ keycloak:
     clientSecret: ${KEYCLOAK_MASTER_CLIENT_SECRET}
     username: ${KEYCLOAK_MASTER_USERNAME}
     password: ${KEYCLOAK_MASTER_PASSWORD}
-  
+
+endpoints:
+  prometheus:
+    sensitive: false
+
 logging:
   level:
     com:

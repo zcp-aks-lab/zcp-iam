@@ -23,6 +23,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
+		<micrometer.version>1.1.1</micrometer.version>
 	</properties>
 
 	<dependencies>
@@ -47,11 +48,6 @@
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-admin-client</artifactId>
-			<version>3.4.3.Final</version>
-		</dependency>
-		<dependency>
-			<groupId>org.keycloak</groupId>
-			<artifactId>keycloak-authz-client</artifactId>
 			<version>3.4.3.Final</version>
 		</dependency>
 
@@ -79,11 +75,6 @@
 			<groupId>io.kubernetes</groupId>
 			<artifactId>client-java-proto</artifactId>
 			<version>1.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.keycloak</groupId>
-			<artifactId>keycloak-admin-client</artifactId>
-			<version>3.4.3.Final</version>
 		</dependency>
 
 		<!-- <dependency> <groupId>com.google.code.gson</groupId> <artifactId>gson</artifactId> 
@@ -130,6 +121,22 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
 			<version>1.14</version>
+		</dependency>
+
+		<!-- for monitoring -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-spring-legacy</artifactId>
+			<version>${micrometer.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+			<version>${micrometer.version}</version>
 		</dependency>
 	</dependencies>
 
