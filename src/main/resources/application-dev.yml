@@ -7,9 +7,12 @@ keycloak:
     password: admin1234
     username: 1800275@partner.skcc.com
 
+# for actuator
 endpoints:
   prometheus:
     sensitive: false
+management:
+  port: 9000
 
 logging:
   level:

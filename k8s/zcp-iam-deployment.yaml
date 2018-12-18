@@ -9,10 +9,10 @@ spec:
     metadata:
       labels:
         component: zcp-iam
-        # https://www.weave.works/docs/cloud/latest/tasks/monitor/configuration-k8s/
-      annotations:
+        app: zcp-iam
+      annotations: # https://www.weave.works/docs/cloud/latest/tasks/monitor/configuration-k8s/
         prometheus.io/path: /prometheus
-        prometheus.io/port: '8181'
+        prometheus.io/port: '9000'
         prometheus.io/scrape: 'true'
     spec:
       tolerations:
@@ -40,6 +40,8 @@ spec:
         ports:
         - name: cont-port
           containerPort: 8181
+        - name: prometheus
+          containerPort: 9000
         resources:
           requests:
             memory: "512Mi"
