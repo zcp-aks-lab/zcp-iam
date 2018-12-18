@@ -35,6 +35,7 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
 
+import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Exec;
 import io.kubernetes.client.apis.CoreV1Api;
@@ -72,6 +73,9 @@ public class WebSshHandler extends PodExecRelayHanlder {
             return attr;
         }
     };
+
+    private ResourceWatcher<V1Secret> secretWatcher = new SecretWatcher(client);
+    private ResourceWatcher<V1Pod> podWatcher = new PodWatcher(client);
 
     @Override
     protected WebSocketSession createSession(WebSocketSession in) throws Exception {
@@ -170,80 +174,13 @@ public class WebSshHandler extends PodExecRelayHanlder {
         }
     }
 
-    private ResourceWatcher<V1Secret> secretWatcher = new ResourceWatcher<V1Secret>(client) {
-        public Call createWatchCall(CoreV1Api coreV1Api) throws ApiException {
-            Call call = coreV1Api.listSecretForAllNamespacesCall(null, null, null, null, null, null, null, null, Boolean.TRUE, null, null);
-            return call;
-        }
-
-        public Type watchType(){
-            Type watchType = new TypeToken<Watch.Response<V1Secret>>(){}.getType();
-            return watchType;
-        }
-
-        public void forEach(V1Secret secret, Response<V1Secret> res) throws Exception{
-            String name = secret.getMetadata().getName();
-            String user = StringUtils.substringBetween(name, "zcp-system-sa-", "-token");
-            
-            log.debug("Start to handle watch events. [type={}, object={}, status={}]", V1Secret.class.getSimpleName(), name, user);
-            
-            if(user == null)
-                return;
-
-            String podName = "web-ssh-" + user;
-            //if(!conns.containsRow(podName))
-            //    return;
-
-            String token = new String(secret.getData().get("token"));
-            envs.put(podName, "token", token);
-            updateEnv(podName, null);
-        }
-    }; 
-
-    private ResourceWatcher<V1Pod> podWatcher = new ResourceWatcher<V1Pod>(client){
-        public Call createWatchCall(CoreV1Api coreV1Api) throws ApiException {
-            String labelSelector = "app=web-ssh";
-            Call call = coreV1Api.listPodForAllNamespacesCall(null, null, null, labelSelector, null, null, null, null, Boolean.TRUE, null, null);
-            return call;
-        }
-
-        public Type watchType(){
-            Type watchType = new TypeToken<Watch.Response<V1Pod>>(){}.getType();
-            return watchType;
-        }
-
-        public void forEach(V1Pod pod, Response<V1Pod> res) throws Exception {
-            String ns = pod.getMetadata().getNamespace();
-            String name = pod.getMetadata().getName();
-            String status = pod.getStatus().getPhase();
-
-            log.debug("Start to handle watch events. [type={}, object={}, status={}]", V1Pod.class.getSimpleName(), name, status);
-
-            if(!"DELETE".equals(res.type) && "Succeeded".equals(status)){
-                log.info("Delete unused ssh pod({}, ns={})", name, ns);
-                manager.deletePod(pod.getMetadata().getNamespace(), name);
-            }
-
-            if("Running".equals(status)){
-                if(conns.get(name, ns).isEmpty()) {
-                    return;
-                }
-
-                log.info("Start connecting to ssh pod({}, ns={})", name, ns);
-                for(WebSocketSession in : conns.get(name, ns)) {
-                    WebSshHandler handler = HANDLER.of(in);
-                    handler.getRelaySession(in);
-                }
-            }
-        }
-    };
-
     public void updateEnv(String podName, String namespace){
         String stdin = null;
         String stderr = null;
         try {
             // update connetion counts
             Map<String, List<WebSocketSession>> pods = conns.row(podName);
+            System.out.println(pods);
             for(String ns: pods.keySet()) {
                 int size = conns.get(podName, ns).size();
                 envs.put(podName, "conn_" + ns, String.valueOf(size));
@@ -269,7 +206,7 @@ public class WebSshHandler extends PodExecRelayHanlder {
                 ps.destroy();
                 log.debug("Finish to write env variables. [pod={}, ns={}]", podName, ns);
 
-                // close socket
+                // close socket manually
                 Object target = ps;
                 String[] paths = new String[]{"streamHandler", "socket"};
                 for(String path : paths){
@@ -279,15 +216,6 @@ public class WebSshHandler extends PodExecRelayHanlder {
                 }
                 WebSocket.class.cast(target).close(0, "done");
                 log.debug("Close websocket to update env variables. [pod={}, ns={}]", podName, ns);
-                // Class<?> clazz = ps.getClass();
-                // Field handlerF = ReflectionUtils.findField(clazz, "streamHandler");
-                // ReflectionUtils.makeAccessible(handlerF);
-                // Object handler = handlerF.get(ps);
-
-                // Field socketF = ReflectionUtils.findField(WebSocketStreamHandler.class, "socket");
-                // ReflectionUtils.makeAccessible(socketF);
-                // WebSocket socket = (WebSocket) socketF.get(handler);
-                // socket.close(0, "done");
             }
 
             //stdin = IOUtils.toString(ps.getInputStream());
@@ -319,4 +247,81 @@ public class WebSshHandler extends PodExecRelayHanlder {
         tar.closeArchiveEntry();
         tar.close();
     }
+
+    /*
+     * private ResourceWatcher class
+     */
+    private class SecretWatcher extends ResourceWatcher<V1Secret>{
+        public SecretWatcher(ApiClient client) {
+            super(client);
+        }
+
+        public Call createWatchCall(CoreV1Api coreV1Api) throws ApiException {
+            Call call = coreV1Api.listSecretForAllNamespacesCall(null, null, null, null, null, null, null, null, Boolean.TRUE, null, null);
+            return call;
+        }
+
+        public Type watchType(){
+            Type watchType = new TypeToken<Watch.Response<V1Secret>>(){}.getType();
+            return watchType;
+        }
+
+        public void forEach(V1Secret secret, Response<V1Secret> res) throws Exception{
+            String name = secret.getMetadata().getName();
+            String user = StringUtils.substringBetween(name, "zcp-system-sa-", "-token");
+            
+            if(user == null || "DELETED".equals(res.type))
+                return;
+                
+            log.debug("'{}' is {}. update token of '{}'.", name, res.type, user);
+
+            String podName = "web-ssh-" + user;
+            //if(!conns.containsRow(podName))
+            //    return;
+
+            String token = new String(secret.getData().get("token"));
+            envs.put(podName, "token", token);
+            updateEnv(podName, null);
+        }
+    }; 
+
+    private class PodWatcher extends ResourceWatcher<V1Pod>{
+        public PodWatcher(ApiClient client) {
+            super(client);
+        }
+
+        public Call createWatchCall(CoreV1Api coreV1Api) throws ApiException {
+            String labelSelector = "app=web-ssh";
+            Call call = coreV1Api.listPodForAllNamespacesCall(null, null, null, labelSelector, null, null, null, null, Boolean.TRUE, null, null);
+            return call;
+        }
+
+        public Type watchType(){
+            Type watchType = new TypeToken<Watch.Response<V1Pod>>(){}.getType();
+            return watchType;
+        }
+
+        public void forEach(V1Pod pod, Response<V1Pod> res) throws Exception {
+            String ns = pod.getMetadata().getNamespace();
+            String name = pod.getMetadata().getName();
+            String status = pod.getStatus().getPhase();
+
+            if(!"DELETE".equals(res.type) && "Succeeded".equals(status)){
+                log.info("Delete unused ssh pod({}, ns={})", name, ns);
+                manager.deletePod(pod.getMetadata().getNamespace(), name);
+            }
+
+            if("Running".equals(status)){
+                if(conns.get(name, ns).isEmpty()) {
+                    return;
+                }
+
+                log.info("Start connecting to ssh pod({}, ns={})", name, ns);
+                for(WebSocketSession in : conns.get(name, ns)) {
+                    WebSshHandler handler = HANDLER.of(in);
+                    handler.getRelaySession(in);
+                }
+            }
+        }
+    };
 }
