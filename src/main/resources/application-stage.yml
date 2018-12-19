@@ -28,7 +28,7 @@ logging:
       keycloak: DEBUG
       springframework:
         security: DEBUG
-        web: DEBUG
+        web: INFO
         
 kube:
   client:

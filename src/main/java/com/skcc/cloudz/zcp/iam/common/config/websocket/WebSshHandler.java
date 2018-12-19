@@ -198,6 +198,18 @@ public class WebSshHandler extends PodExecRelayHanlder {
                 if(namespace != null && !ns.equals(namespace))
                     continue;
 
+                if("0".equals(envs.get(podName, "conn_" + ns))){
+                    /*
+                     * When try to send deleted pod, the thead is wait to connect forever with read-timeout zero(0).
+                     * So remove pod of namesapce from a connection registry.
+                     * 
+                     * Related source codes.
+                     * - WebSocketStreamHandler.open()  # this.notifyAll()
+                     * - WebSocketStreamHandler$WebSocketOutputStream.write()  # this.wait() when this.socket == null
+                     */
+                    conns.remove(podName, ns);
+                }
+
                 log.debug("Update ssh pod env variables. [pod={}, ns={}]\n{}", podName, ns, content);
                 
                 File meta = new File(".env");
