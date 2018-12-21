@@ -9,12 +9,6 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
@@ -23,6 +17,9 @@ import com.google.common.collect.Table;
 import com.google.common.collect.Tables;
 import com.google.common.io.Resources;
 import com.google.common.reflect.TypeToken;
+import com.skcc.cloudz.zcp.iam.common.config.websocket.WebSocketUtils.MultimapTable;
+import com.skcc.cloudz.zcp.iam.common.config.websocket.WebSocketUtils.ResourceWatcher;
+import com.skcc.cloudz.zcp.iam.common.config.websocket.WebSocketUtils.TimeoutExecutorService;
 import com.skcc.cloudz.zcp.iam.manager.KubeCoreManager;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.ws.WebSocket;
@@ -100,7 +97,7 @@ public class WebSshHandler2 extends PodExecRelayHanlder {
                 
             V1Pod pod = manager.getPod(namespace, podName);
             if("Running".equals(pod.getStatus().getPhase())){
-                updateEnv(podName, namespace);
+                syncEnv(podName, namespace);
 
                 WebSocketSession out = super.createSession(in);
                 List<String> cleanup = Lists.newArrayList();
@@ -175,38 +172,28 @@ public class WebSshHandler2 extends PodExecRelayHanlder {
             boolean removed = conns.removeAll(podName, in);
 
             if(removed){
-                updateEnv(podName, null);
+                syncEnv(podName, null);
             }
         }
     }
 
-    private ExecutorService pool = Executors.newCachedThreadPool();
-    public void updateEnv(String podName, String namespace){
+    public void syncEnv(String podName, String namespace){
         EnvSyncTask task = new EnvSyncTask();
         task.podName = podName;
         task.namespace = namespace;
-        FutureTask<Void> future = task.asFuture();
-
-        try {
-            pool.execute(future);
-            future.get(5, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.info("Fail to sync envs. [pod={}, ns={}, thread={}]", podName, namespace, task.t.getName());
-            log.debug("", e);
-            task.t.interrupt();
-		}
+        task.execute();
     }
 
-    private class EnvSyncTask implements Runnable {
+    private class EnvSyncTask extends TimeoutExecutorService {
         private String namespace, podName;
-        private Thread t;
 
-        public FutureTask<Void> asFuture(){
-            return new FutureTask(this, null);
+        protected void onFailure(Exception e) {
+            log.info("Fail to sync envs. [pod={}, ns={}, thread={}]", podName, namespace, current.getName());
+            super.onFailure(e);
         }
 
         public void run() {
-            t = Thread.currentThread();
+            current = Thread.currentThread();
             try {
                 // update connetion counts
                 Map<String, List<WebSocketSession>> pods = conns.row(podName);
@@ -319,7 +306,7 @@ public class WebSshHandler2 extends PodExecRelayHanlder {
 
             String token = new String(secret.getData().get("token"));
             envs.put(podName, "token", token);
-            updateEnv(podName, null);
+            syncEnv(podName, null);
         }
     }; 
 
