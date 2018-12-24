@@ -181,6 +181,7 @@ public class WebSshHandler2 extends PodExecRelayHanlder {
         EnvSyncTask task = new EnvSyncTask();
         task.podName = podName;
         task.namespace = namespace;
+        task.timeout = 5;  // seconds
         task.execute();
     }
 
@@ -301,8 +302,8 @@ public class WebSshHandler2 extends PodExecRelayHanlder {
             log.debug("'{}' is {}. update token of '{}'.", name, res.type, user);
 
             String podName = "web-ssh-" + user;
-            //if(!conns.containsRow(podName))
-            //    return;
+            if(!conns.containsRow(podName))
+               return;
 
             String token = new String(secret.getData().get("token"));
             envs.put(podName, "token", token);

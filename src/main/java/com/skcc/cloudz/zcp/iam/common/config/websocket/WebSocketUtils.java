@@ -126,11 +126,11 @@ public class WebSocketUtils {
                 if(watchType instanceof ParameterizedType){
                     paramType = ParameterizedType.class.cast(watchType).getActualTypeArguments()[0];
                 }
-
-                service.scheduleWithFixedDelay(this, 0, 5, TimeUnit.SECONDS);
             } catch (ApiException e) {
                 throw new RuntimeException(e);
             }
+
+            service.scheduleWithFixedDelay(this, 0, 5, TimeUnit.SECONDS);
         }
 
         abstract public Call createWatchCall(CoreV1Api coreV1Api) throws ApiException;
@@ -138,10 +138,13 @@ public class WebSocketUtils {
         abstract public void forEach(T object, Response<T> res) throws Exception;
 
         public void run(){
-            log.trace("Check watch events about {}", paramType.getTypeName());
+            try {
+                log.trace("Check watch events about {}", paramType.getTypeName());
 
-            for(Response<T> res : watch) {
-                try {
+                for(Response<T> res : watch) {
+                    if("DELETED".equals(res.type))
+                        throw new RuntimeException("Silent kill. Scheduled task will be blocked.");
+
                     if(log.isDebugEnabled()){
                         String type = "<unknown>";
                         String name = "<unknown>";
@@ -159,19 +162,19 @@ public class WebSocketUtils {
                     }
 
                     forEach(res.object, res);
-                } catch(Exception e){
-                    if(e instanceof ApiException){
-                        ApiException ae = (ApiException) e;
-                        if(ae.getCode() != 404){
-                            log.error("Fail to handle watch event. [type={}, msg={}({})]", paramType.getTypeName(), ae.getMessage(), ae.getCode());
-                            log.debug("Fail to handle watch event. [type={}, body]\n{}", paramType.getTypeName(), ae.getResponseBody());
-                        }
-                        return;
-                    }
-
-                    log.error("{}", e.getMessage());
-                    log.debug("", e);
                 }
+            } catch(Exception e){
+                if(e instanceof ApiException){
+                    ApiException ae = (ApiException) e;
+                    if(ae.getCode() != 404){
+                        log.error("Fail to handle watch event. [type={}, msg={}({})]", paramType.getTypeName(), ae.getMessage(), ae.getCode());
+                        log.debug("Fail to handle watch event. [type={}, body]\n{}", paramType.getTypeName(), ae.getResponseBody());
+                    }
+                    return;
+                }
+
+                log.error("{}", e.getMessage());
+                log.debug("", e);
             }
         }
     }
@@ -184,7 +187,7 @@ public class WebSocketUtils {
 
         protected Logger log = LoggerFactory.getLogger(this.getClass());
 
-        protected long timeout;
+        protected long timeout = 5;
         protected TimeUnit unit = TimeUnit.SECONDS;
         protected Thread current;
 
