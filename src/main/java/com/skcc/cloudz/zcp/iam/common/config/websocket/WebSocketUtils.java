@@ -1,5 +1,7 @@
 package com.skcc.cloudz.zcp.iam.common.config.websocket;
 
+import java.io.EOFException;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -22,6 +24,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.squareup.okhttp.Call;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
@@ -111,6 +114,8 @@ public class WebSocketUtils {
         private final Logger log = LoggerFactory.getLogger(this.getClass());
 
         //TODO: detect change of secret and inject a new token
+        private ApiClient client;
+        private Call call;
         protected Watch<T> watch;
         private Type watchType;
         private Type paramType;
@@ -118,8 +123,9 @@ public class WebSocketUtils {
 
         public ResourceWatcher(ApiClient client) {
             try {
+                this.client = client;
                 CoreV1Api coreV1Api = new CoreV1Api(client);
-                Call call = createWatchCall(coreV1Api);
+                call = createWatchCall(coreV1Api);
                 watchType = watchType();
                 watch = Watch.createWatch(client, call, watchType);
 
@@ -140,6 +146,11 @@ public class WebSocketUtils {
         public void run(){
             try {
                 log.trace("Check watch events about {}", paramType.getTypeName());
+
+                if(watch == null){
+                    log.info("Create new watch connection");
+                    watch = Watch.createWatch(client, call, watchType);
+                }
 
                 for(Response<T> res : watch) {
                     if("DELETED".equals(res.type))
@@ -171,6 +182,11 @@ public class WebSocketUtils {
                         log.debug("Fail to handle watch event. [type={}, body]\n{}", paramType.getTypeName(), ae.getResponseBody());
                     }
                     return;
+                }
+
+                if(e instanceof EOFException) {
+                    IOUtils.closeQuietly(watch);
+                    watch = null;
                 }
 
                 log.error("{}", e.getMessage());

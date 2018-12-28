@@ -13,7 +13,7 @@ image=cloudzcp/zcp-iam:1.1.0-alpha
 namespace=console
 sa=zcp-system-admin2
 
-replicas=1
+replicas=${replicas:-1}
 
 # for secret
 jenkins_user_token=$jenkins_user:$jenkins_token
