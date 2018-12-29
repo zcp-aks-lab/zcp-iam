@@ -152,9 +152,6 @@ public class WebSocketUtils {
                 }
 
                 for(Response<T> res : watch) {
-                    if("DELETED".equals(res.type))
-                        throw new RuntimeException("Silent kill. Scheduled task will be blocked.");
-
                     if(log.isDebugEnabled()){
                         String type = "<unknown>";
                         String name = "<unknown>";
