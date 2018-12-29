@@ -114,6 +114,7 @@ public class WebSocketUtils {
 
         //TODO: detect change of secret and inject a new token
         private ApiClient client;
+        private CoreV1Api coreV1Api;
         private Call call;
         protected Watch<T> watch;
         private Type watchType;
@@ -123,7 +124,7 @@ public class WebSocketUtils {
         public ResourceWatcher(ApiClient client) {
             try {
                 this.client = client;
-                CoreV1Api coreV1Api = new CoreV1Api(client);
+                coreV1Api = new CoreV1Api(client);
                 call = createWatchCall(coreV1Api);
                 watchType = watchType();
                 watch = Watch.createWatch(client, call, watchType);
@@ -148,6 +149,7 @@ public class WebSocketUtils {
 
                 if(watch == null){
                     log.info("Create new watch connection");
+                    call = createWatchCall(coreV1Api);
                     watch = Watch.createWatch(client, call, watchType);
                 }
 
