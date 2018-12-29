@@ -1,7 +1,6 @@
 package com.skcc.cloudz.zcp.iam.common.config.websocket;
 
 import java.io.EOFException;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -184,7 +183,7 @@ public class WebSocketUtils {
                     return;
                 }
 
-                if(e instanceof EOFException) {
+                if(e instanceof RuntimeException && e.getCause() instanceof EOFException) {
                     IOUtils.closeQuietly(watch);
                     watch = null;
                 }
