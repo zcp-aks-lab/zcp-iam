@@ -147,7 +147,8 @@ public class WebSshHandler2 extends PodExecRelayHanlder {
         V1ObjectReference ref = sa.getSecrets().get(0);
         V1Secret secret = manager.getSecret("zcp-system", ref.getName());
         byte[] token = secret.getData().get("token");
-        vars.put("token", new String(token));
+        String tokenStr = new String(token);
+        vars.put("token", tokenStr);
 
         // read config.xml template
         TextStringBuilder template = new TextStringBuilder();
@@ -158,6 +159,8 @@ public class WebSshHandler2 extends PodExecRelayHanlder {
         new StringSubstitutor(vars).replaceIn(template);
         V1Pod spec = Yaml.loadAs(template.asReader(), V1Pod.class);
         String podName = spec.getMetadata().getName();
+
+        envs.put(podName, "token", tokenStr);
 
         POD_NAME.to(in, podName);
         return manager.createPod(namespace, spec);
