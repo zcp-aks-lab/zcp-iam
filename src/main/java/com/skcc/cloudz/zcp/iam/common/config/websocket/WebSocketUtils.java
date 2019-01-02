@@ -4,8 +4,11 @@ import java.io.EOFException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,12 +24,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
+import com.google.common.collect.Tables;
 import com.squareup.okhttp.Call;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.web.socket.WebSocketSession;
 
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -225,6 +230,114 @@ public class WebSocketUtils {
         protected void onFailure(Exception e){
             log.debug("", e);
             current.interrupt();
+        }
+    }
+
+    /**
+     * 
+     */
+    public static class PodConnectionContext {
+        private final String SYNC_NS = "__do_sync_ns__";
+
+        // https://www.baeldung.com/guava-multimap
+        // https://github.com/google/guava/wiki/NewCollectionTypesExplained#multimap
+        // ( pod-name, namespace, [sessions] )
+        private MultimapTable<String, String, WebSocketSession> conns = MultimapTable.cretae();
+
+        // https://www.baeldung.com/guava-table
+        // ( pod-name, env-key, env-val )
+        private Table<String, String, String> envs = Tables.synchronizedTable(HashBasedTable.create());
+
+        /*
+         * for connections
+         */
+		public void putConnection(String podName, String namespace, WebSocketSession in) {
+            conns.putValue(podName, namespace, in);
+		}
+
+		public boolean isFirst(String podName, String namespace, WebSocketSession in) {
+			return conns.indexOf(podName, namespace, in) == 0;
+		}
+
+		public Set<String> getNamespaces(String podName) {
+			return conns.row(podName).keySet();
+		}
+
+        public boolean connected(String podName) {
+            return conns.containsRow(podName);
+        }
+
+        public boolean connected(String podName, String namespace) {
+            return !conns.get(podName, namespace).isEmpty();
+        }
+
+		public List<WebSocketSession> getConnections(String podName, String namespace) {
+			return conns.get(podName, namespace);
+        }
+
+		public Map<String, List<WebSocketSession>> getConnections(String podName) {
+			return conns.row(podName);
+		}
+
+		public List<WebSocketSession> removeConnections(String podName, String namespace) {
+            return conns.remove(podName, namespace);
+		}
+
+		public boolean removeAll(String podName, WebSocketSession in) {
+			return conns.removeAll(podName, in);
+        }
+        
+        /*
+         * for envs
+         */
+		public void setSync(String podName, String namespace) {
+            if( namespace == null ){
+                namespace = "*";
+            }
+
+            String list = envs.get(podName, SYNC_NS);
+            if(list == null){
+                envs.put(podName, SYNC_NS, namespace);
+            } else if(list.equals(namespace)){
+
+            }
+        }
+
+		public void unsetSync(String podName, String namespace) {
+            envs.put(podName, SYNC_NS, "");
+        }
+
+		public List<String> getSyncList(String podName) {
+            envs.get(podName, SYNC_NS);
+            return null;
+        }
+
+		public Set<String> getOutOfSync() {
+            Map<String, Map<String, String>> maps = envs.columnMap();
+            Map<String, String> pods = maps.get(SYNC_NS);
+            return pods != null ? pods.keySet() : Collections.emptySet();
+		}
+
+		public void putEnv(String podName, String key, String value) {
+            envs.put(podName, key, value);
+		}
+
+		public Map<String, String> getVariables(String podName) {
+			return envs.row(podName);
+		}
+
+		public Object getVariable(String podName, String key) {
+			return envs.get(podName, key);
+        }
+        
+        public StringBuilder getEnvAsString(String podName){
+            // create env file
+            StringBuilder content = new StringBuilder();
+            Map<String, String> env = envs.row(podName);
+            for(Entry<String, String> e : env.entrySet()){
+                content.append(e.getKey()).append("=").append(e.getValue()).append("\n");
+            } 
+            return content;
         }
     }
 }

@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.util.Map;
 
 import com.skcc.cloudz.zcp.iam.common.config.websocket.PodExecRelayHanlder;
-import com.skcc.cloudz.zcp.iam.common.config.websocket.WebSshHandler2;
+import com.skcc.cloudz.zcp.iam.common.config.websocket.WebSshHandler3;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.socket.BinaryMessage;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -25,6 +26,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 @Configuration
 @EnableWebSocket
+@EnableScheduling
 public class WebSocketConfig implements WebSocketConfigurer {
     /*
      * Spring WebSocket Support (Docs)
@@ -34,21 +36,20 @@ public class WebSocketConfig implements WebSocketConfigurer {
 	@Override
 	public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         HandshakeInterceptor interceptors = new HttpSessionHandshakeInterceptor();
-		registry.addHandler(handler(), "/iam/exec")
+		registry.addHandler(execHandler(), "/iam/exec")
                 .addInterceptors(interceptors)
-                .addHandler(handler2(), "/iam/wsh")
+                .addHandler(wshHandler(), "/iam/wsh")
                 .addInterceptors(interceptors);
 	}
 
 	@Bean
-	public WebSocketHandler handler() {
-        //PodExecRelayHanlder.test();
+	public WebSocketHandler execHandler() {
         return new PodExecRelayHanlder();
     }
 
 	@Bean
-	public WebSocketHandler handler2() {
-        return new WebSshHandler2();
+	public WebSocketHandler wshHandler() {
+        return new WebSshHandler3();
     }
 
     /*
