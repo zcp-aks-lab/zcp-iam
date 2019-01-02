@@ -195,18 +195,6 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
             for(String ns: pods.keySet()) {
                 int size = wsContext.getConnections(podName, ns).size();
                 wsContext.putEnv(podName, "conn_" + ns, String.valueOf(size));
-
-                if("0".equals(wsContext.getVariable(podName, "conn_" + ns))){
-                    /*
-                    * When try to send deleted pod, the thead is wait to connect forever with read-timeout zero(0).
-                    * So remove pod of namesapce from a connection registry.
-                    * 
-                    * Related source codes.
-                    * - WebSocketStreamHandler.open()  # this.notifyAll()
-                    * - WebSocketStreamHandler$WebSocketOutputStream.write()  # this.wait() when this.socket == null
-                    */
-                    wsContext.removeConnections(podName, ns);
-                }
             }
 
             StringBuilder content = wsContext.getEnvAsString(podName);
@@ -240,6 +228,18 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
 
     private void writeEnv(String podName, String namespace, String content){
         try {
+            if("0".equals(wsContext.getVariable(podName, "conn_" + namespace))){
+                /*
+                * When try to send deleted pod, the thead is wait to connect forever with read-timeout zero(0).
+                * So remove pod of namesapce from a connection registry.
+                * 
+                * Related source codes.
+                * - WebSocketStreamHandler.open()  # this.notifyAll()
+                * - WebSocketStreamHandler$WebSocketOutputStream.write()  # this.wait() when this.socket == null
+                */
+                wsContext.removeConnections(podName, namespace);
+            }
+
             // update matched pod
             log.debug("Update ssh pod env variables. [pod={}, ns={}]\n{}", podName, namespace, content);
             
