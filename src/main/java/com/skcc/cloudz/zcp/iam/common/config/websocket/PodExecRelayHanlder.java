@@ -80,7 +80,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
 
     private void sendSystemMessage(WebSocketSession in, String msg){
         try {
-            if(in != null)
+            if(in != null && in.isOpen())
                 in.sendMessage(new TextMessage("system: " + msg + "\r\n"));
         } catch (IOException e) {
             e.printStackTrace();
@@ -165,7 +165,8 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
                         Thread.currentThread().setName("OkHttp WebSocket Failure Replay");
                         log.info("Fail to create pod exec connection. ({} :: {})", code, message);
 
-                        res.body().close();
+                        IOUtils.closeQuietly(res.body());
+                        sendSystemMessage(in, "fail to connect pod. please check your authority.");
 
                         CloseStatus status = new CloseStatus(code + 2000, message);
                         out.close(status);
