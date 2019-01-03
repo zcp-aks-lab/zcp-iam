@@ -290,26 +290,13 @@ public class WebSocketUtils {
         /*
          * for envs
          */
-		public void setSync(String podName, String namespace) {
-            if( namespace == null ){
-                namespace = "*";
-            }
 
-            String list = envs.get(podName, SYNC_NS);
-            if(list == null){
-                envs.put(podName, SYNC_NS, namespace);
-            } else if(list.equals(namespace)){
-
-            }
+		public void inSync(String podName, String namespace) {
+            envs.remove(podName, SYNC_NS);
         }
 
-		public void unsetSync(String podName, String namespace) {
-            envs.put(podName, SYNC_NS, "");
-        }
-
-		public List<String> getSyncList(String podName) {
-            envs.get(podName, SYNC_NS);
-            return null;
+		public void setOutOfSync(String podName, String namespace) {
+            envs.put(podName, SYNC_NS, "*");
         }
 
 		public Set<String> getOutOfSync() {

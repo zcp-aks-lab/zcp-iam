@@ -95,7 +95,7 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
                 
             V1Pod pod = manager.getPod(namespace, podName);
             if("Running".equals(pod.getStatus().getPhase())){
-                wsContext.setSync(podName, namespace);
+                wsContext.setOutOfSync(podName, namespace);
 
                 WebSocketSession out = super.createSession(in);
                 List<String> cleanup = Lists.newArrayList();
@@ -173,21 +173,25 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
             boolean removed = wsContext.removeAll(podName, in);
 
             if(removed){
-                wsContext.setSync(podName, null);
+                wsContext.setOutOfSync(podName, null);
             }
         }
     }
 
+    /*
+     * Update ENV variables for web-ssh pod controlling
+     */
     @Scheduled(fixedDelay=5000)
     public void syncEnv(){
         for(String podName : wsContext.getOutOfSync()){
             for(String ns : wsContext.getNamespaces(podName)){
-                doSyncEnv(podName, ns);
+                doSyncPodEnv(podName, ns);
             }
+            wsContext.inSync(podName, null);
         }
     }
 
-    public void doSyncEnv(String podName, String namespace) {
+    private void doSyncPodEnv(String podName, String namespace) {
         try {
             // update connetion counts
             Map<String, List<WebSocketSession>> pods = wsContext.getConnections(podName);
@@ -210,11 +214,6 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
             }
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             log.info("Fail to sync envs. [pod={}, ns={}, thread={}]", podName, namespace, Thread.currentThread().getName());
-            // onFailure(e);
-
-            // if(!current.interrupted()){
-            //     current.interrupt();
-            // }
         } catch (Exception e) {
             if(e instanceof ApiException){
                 ApiException ae = (ApiException) e;
@@ -286,7 +285,7 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
     }
 
     /*
-     * private ResourceWatcher class
+     * Handle changes of resources
      */
     @Scheduled(fixedDelay=5000)
     public void watchSecret(){
@@ -396,6 +395,6 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
 
         String token = new String(secret.getData().get("token"));
         wsContext.putEnv(podName, "token", token);
-        wsContext.setSync(podName, null);
+        wsContext.setOutOfSync(podName, null);
     }
 }
