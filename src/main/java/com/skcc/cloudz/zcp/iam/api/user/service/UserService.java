@@ -1,13 +1,17 @@
 package com.skcc.cloudz.zcp.iam.api.user.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
@@ -238,15 +242,16 @@ public class UserService {
 
 		// 3. create keycloak user
 		user.setEnabled(Boolean.TRUE);
-		UserRepresentation userRepresentation = getKeyCloakUser(null, user);
+		UserRepresentation userRepresentation = getKeyCloakUser(null, user, new UserRepresentation());
 
 		keyCloakManager.createUser(userRepresentation);
 	}
 
 	public void updateUser(String id, MemberVO user) throws ZcpException {
-
-		try {
-			keyCloakManager.editUser(getKeyCloakUser(id, user));
+	    try {
+		    UserRepresentation userRepresentation = keyCloakManager.getUser(id);
+		    
+			keyCloakManager.editUser(getKeyCloakUser(id, user, userRepresentation));
 		} catch (KeyCloakException e) {
 			throw new ZcpException(ZcpErrorCode.EDIT_USER_ERROR, e);
 		}
@@ -610,11 +615,18 @@ public class UserService {
 		user.setEmailVerified(userRepresentation.isEmailVerified());
 		user.setTotp(userRepresentation.isTotp());
 		Map<String, List<String>> attributes = userRepresentation.getAttributes();
+		
 		if (attributes != null) {
-			List<String> defaultNamespaces = attributes.get(KeyCloakManager.DEFAULT_NAMESPACE_ATTRIBUTE_KEY);
+		    List<String> defaultNamespaces = attributes.get(KeyCloakManager.DEFAULT_NAMESPACE_ATTRIBUTE_KEY);
 			if (defaultNamespaces != null && !defaultNamespaces.isEmpty()) {
 				user.setDefaultNamespace(defaultNamespaces.get(0));
 			}
+			
+			/* zcp-1.1 add */
+			List<String> zdbEnableds = attributes.get(KeyCloakManager.ZDB_ENABLED_ATTRIBUTE_KEY);
+			if (zdbEnableds != null && !zdbEnableds.isEmpty()) {
+                user.setZdbEnabled(zdbEnableds.get(0).equals(Boolean.TRUE.toString()) ? true : false);
+            }
 		}
 
 		List<String> requiredActions = userRepresentation.getRequiredActions();
@@ -629,8 +641,7 @@ public class UserService {
 		return user;
 	}
 
-	private UserRepresentation getKeyCloakUser(String id, MemberVO user) {
-		UserRepresentation userRepresentation = new UserRepresentation();
+	private UserRepresentation getKeyCloakUser(String id, MemberVO user, UserRepresentation userRepresentation) {
 		userRepresentation.setId(id);
 		userRepresentation.setFirstName(user.getFirstName());
 		userRepresentation.setLastName(user.getLastName());
@@ -642,8 +653,8 @@ public class UserService {
 		if (StringUtils.isNotEmpty(user.getDefaultNamespace())) {
 			List<String> defaultNamespaces = new ArrayList<>();
 			defaultNamespaces.add(user.getDefaultNamespace());
-
-			Map<String, List<String>> attributes = new HashMap<>();
+	
+			Map<String, List<String>> attributes = ObjectUtils.defaultIfNull(userRepresentation.getAttributes(), new HashMap<String, List<String>>());
 			attributes.put(KeyCloakManager.DEFAULT_NAMESPACE_ATTRIBUTE_KEY, defaultNamespaces);
 
 			userRepresentation.setAttributes(attributes);
@@ -748,5 +759,13 @@ public class UserService {
 
 		return config;
 	}
+	
+	public void updateZdbEnabled(String id, Boolean enabled) throws ZcpException {
+	    try {
+            keyCloakManager.updateZdbEnabled(id, enabled);
+        } catch (KeyCloakException e) {
+            throw new ZcpException(ZcpErrorCode.ZDB_ENABLED_ERROR, e);
+        }
+    }
 
 }

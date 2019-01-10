@@ -142,5 +142,17 @@ public class UserController {
 		userService.resetUserServiceAccount(id);
 		return new Response<String>();
 	}
+	
+	@RequestMapping(value = "/user/{id}/zdbEnabled", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    public Response<Object> editZdbEnabled(@PathVariable("id") String id) throws Exception {
+        userService.updateZdbEnabled(id, Boolean.TRUE);
+	    return new Response<Object>();
+    }
+    
+    @RequestMapping(value = "/user/{id}/zdbEnabled", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public Response<Object> removeZdbEnabled(@PathVariable("id") String id) throws Exception {
+        userService.updateZdbEnabled(id, Boolean.FALSE);
+        return new Response<Object>();
+    }
 
 }
