@@ -77,6 +77,8 @@ public enum ZcpErrorCode {
 	ENABLE_USER_OTP_PASSWORD_ERROR					(51018, "error : Enable user otp password"),
 	LOGOUT_ERROR									(51019, "error : Logout"),
 	GET_SECRET_ERROR								(51020, "error : Get secret"),
+	EDIT_ATTRIBUTE_ERROR                            (51021, "error : Edit user attribute"),
+	GET_ATTRIBUTE_ERROR                             (51022, "error : Get user attribute"),
 
 	//addon
 	ADD_USER_NAMESPACE_ROLE							(61001, "error : Mapped cluster role bindings"),

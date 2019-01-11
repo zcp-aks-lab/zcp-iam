@@ -1,6 +1,7 @@
 package com.skcc.cloudz.zcp.iam.manager;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +55,8 @@ public class KeyCloakManager {
 	public static final String DEFAULT_NAMESPACE_ATTRIBUTE_KEY = "defaultNamespace";
 
 	public static final String NAMESPACES_ATTRIBUTE_KEY = "namespaces";
+	
+	public static final String ZDB_ADMIN_ATTRIBUTE_KEY = "zdb-admin";
 
 	@Autowired
 	@Qualifier("keycloak")
@@ -351,4 +354,20 @@ public class KeyCloakManager {
 
 		return users.get(cand.get(0));
 	}
+	
+	public void updateUserAttribute(String id, String key, String value) throws KeyCloakException {
+	    UsersResource usersRessource = keycloak.realm(realm).users();
+        UserResource userResource = usersRessource.get(id);
+        
+        UserRepresentation userRepresentation = userResource.toRepresentation();
+        userRepresentation.setId(id);
+        
+        Map<String, List<String>> attributes = userRepresentation.getAttributes();
+        attributes.put(key, Arrays.asList(value));
+        
+        userRepresentation.setAttributes(attributes);
+        
+        userResource.update(userRepresentation);
+	}
+
 }
