@@ -42,6 +42,7 @@ import org.springframework.web.socket.WebSocketSession;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Exec;
 import io.kubernetes.client.apis.CoreV1Api;
+import io.kubernetes.client.models.V1ContainerStatus;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Pod;
@@ -140,6 +141,7 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
         // add context variables
         vars.put("namespace", namespace);
         vars.put("name.suffix", username);
+        vars.put("var_namespace", wsContext.asShellSafe(namespace));
 
         V1ServiceAccount sa = manager.getServiceAccount("zcp-system", saName);
         V1ObjectReference ref = sa.getSecrets().get(0);
@@ -214,6 +216,9 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
             }
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             log.info("Fail to sync envs. [pod={}, ns={}, thread={}]", podName, namespace, Thread.currentThread().getName());
+            log.debug("", e);
+
+            wsContext.putConnection(podName, namespace, EMPTY);
         } catch (Exception e) {
             if(e instanceof ApiException){
                 ApiException ae = (ApiException) e;
@@ -354,10 +359,24 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
         String name = pod.getMetadata().getName();
         String status = pod.getStatus().getPhase();
 
-        if(!"DELETE".equals(res.type) && "Succeeded".equals(status)){
+        final boolean DELETE = "DELETE".equals(res.type);
+        final boolean RUNNING = "Running".equals(status);
+        final boolean SUCCEEDED = "Succeeded".equals(status);
+
+        final List<V1ContainerStatus> containers = pod.getStatus().getContainerStatuses();
+        final int RESTART_COUNT = containers == null ? -1 : containers.stream()
+                                                                      .mapToInt(container -> container.getRestartCount())
+                                                                      .sum();
+
+        if(DELETE){
+            return;
+        }
+
+        if(SUCCEEDED || 3 <= RESTART_COUNT){
             log.info("Delete unused ssh pod({}, ns={})", name, ns);
             try {
                 manager.deletePod(pod.getMetadata().getNamespace(), name);
+                return;
             } catch(ApiException ae){
                 if(ae.getCode() != 404){
                     log.error("Fail to handle watch event. [type={}, msg={}({})]", V1Pod.class.getSimpleName(), ae.getMessage(), ae.getCode());
@@ -367,7 +386,7 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
             }
         }
 
-        if("Running".equals(status)){
+        if(RUNNING){
             if(!wsContext.connected(name, ns)) {
                 return;
             }

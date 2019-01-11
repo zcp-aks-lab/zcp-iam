@@ -166,7 +166,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
                         log.info("Fail to create pod exec connection. ({} :: {})", code, message);
 
                         IOUtils.closeQuietly(res.body());
-                        sendSystemMessage(in, "fail to connect pod. please check your authority.");
+                        sendSystemMessage(in, "fail to connect pod. please check status of pod or authority.");
 
                         CloseStatus status = new CloseStatus(code + 2000, message);
                         out.close(status);

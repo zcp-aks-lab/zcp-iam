@@ -306,6 +306,7 @@ public class WebSocketUtils {
 		}
 
 		public void putEnv(String podName, String key, String value) {
+            key = asShellSafe(key);
             envs.put(podName, key, value);
 		}
 
@@ -326,5 +327,9 @@ public class WebSocketUtils {
             } 
             return content;
         }
+
+		public static String asShellSafe(String key) {
+			return key.replace('-', '_');
+		}
     }
 }
