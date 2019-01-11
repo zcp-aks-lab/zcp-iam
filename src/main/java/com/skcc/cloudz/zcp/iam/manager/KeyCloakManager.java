@@ -56,7 +56,7 @@ public class KeyCloakManager {
 
 	public static final String NAMESPACES_ATTRIBUTE_KEY = "namespaces";
 	
-	public static final String ZDB_ENABLED_ATTRIBUTE_KEY = "zdbEnabled";
+	public static final String ZDB_ADMIN_ATTRIBUTE_KEY = "zdb-admin";
 
 	@Autowired
 	@Qualifier("keycloak")
@@ -355,18 +355,19 @@ public class KeyCloakManager {
 		return users.get(cand.get(0));
 	}
 	
-	public void updateZdbEnabled(String id, Boolean enabled) throws KeyCloakException {
+	public void updateUserAttribute(String id, String key, String value) throws KeyCloakException {
 	    UsersResource usersRessource = keycloak.realm(realm).users();
         UserResource userResource = usersRessource.get(id);
-	    
-	    UserRepresentation userRepresentation = userResource.toRepresentation();
+        
+        UserRepresentation userRepresentation = userResource.toRepresentation();
         userRepresentation.setId(id);
         
         Map<String, List<String>> attributes = userRepresentation.getAttributes();
-        attributes.put(KeyCloakManager.ZDB_ENABLED_ATTRIBUTE_KEY, Arrays.asList(enabled.toString()));
+        attributes.put(key, Arrays.asList(value));
         
         userRepresentation.setAttributes(attributes);
         
         userResource.update(userRepresentation);
 	}
+
 }

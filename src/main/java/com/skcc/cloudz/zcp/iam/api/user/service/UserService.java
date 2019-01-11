@@ -1,7 +1,6 @@
 package com.skcc.cloudz.zcp.iam.api.user.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -10,8 +9,6 @@ import java.util.Map;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
@@ -26,6 +23,7 @@ import com.skcc.cloudz.zcp.iam.api.user.vo.ResetCredentialVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.ResetPasswordVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.UpdateClusterRoleVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.UpdatePasswordVO;
+import com.skcc.cloudz.zcp.iam.api.user.vo.UserAttributeVO;
 import com.skcc.cloudz.zcp.iam.common.exception.KeyCloakException;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpErrorCode;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpException;
@@ -623,9 +621,11 @@ public class UserService {
 			}
 			
 			/* zcp-1.1 add */
-			List<String> zdbEnableds = attributes.get(KeyCloakManager.ZDB_ENABLED_ATTRIBUTE_KEY);
-			if (zdbEnableds != null && !zdbEnableds.isEmpty()) {
-                user.setZdbEnabled(zdbEnableds.get(0).equals(Boolean.TRUE.toString()) ? true : false);
+			List<String> zdbAdmin = attributes.get(KeyCloakManager.ZDB_ADMIN_ATTRIBUTE_KEY);
+			if (zdbAdmin != null && !zdbAdmin.isEmpty()) {
+                user.setZdbAdmin(zdbAdmin.get(0).equals(Boolean.TRUE.toString()) ? true : false);
+            } else {
+                user.setZdbAdmin(Boolean.FALSE);
             }
 		}
 
@@ -760,12 +760,33 @@ public class UserService {
 		return config;
 	}
 	
-	public void updateZdbEnabled(String id, Boolean enabled) throws ZcpException {
+	public void updateUserAttribute(String id, UserAttributeVO vo) throws ZcpException {
 	    try {
-            keyCloakManager.updateZdbEnabled(id, enabled);
+            keyCloakManager.updateUserAttribute(id, vo.getKey(), vo.getValue());
         } catch (KeyCloakException e) {
-            throw new ZcpException(ZcpErrorCode.ZDB_ENABLED_ERROR, e);
+            throw new ZcpException(ZcpErrorCode.EDIT_ATTRIBUTE_ERROR, e);
         }
-    }
+	}
+	
+	public UserAttributeVO getUserAttribute(String id, String key) throws ZcpException {
+	    UserAttributeVO userAttributeVO = null;
+	    
+	    try {
+            UserRepresentation userRepresentation = keyCloakManager.getUser(id);
+            
+            Map<String, List<String>> attributes = userRepresentation.getAttributes();
+            if (attributes != null) {
+                List<String> attribute = attributes.get(key);
+                
+                if (attribute != null && !attribute.isEmpty()) {
+                    userAttributeVO = new UserAttributeVO(key, attribute.get(0));
+                }
+            }
+        } catch (KeyCloakException e) {
+            throw new ZcpException(ZcpErrorCode.GET_ATTRIBUTE_ERROR, e);
+        }
+	    
+	    return userAttributeVO;
+	}
 
 }

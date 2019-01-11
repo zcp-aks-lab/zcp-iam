@@ -26,7 +26,7 @@ public class ZcpUser {
 	private int usedNamespace;
 	private List<CredentialActionType> requiredActions;
 	private ClusterRole namespacedRole;
-	private Boolean zdbEnabled;
+	private Boolean zdbAdmin;
 
 	public ZcpUser() {
 		super();
@@ -159,13 +159,13 @@ public class ZcpUser {
 	public void setNamespacedRole(ClusterRole namespacedRole) {
 		this.namespacedRole = namespacedRole;
 	}
-
-	public Boolean getZdbEnabled() {
-        return zdbEnabled;
+	
+    public Boolean getZdbAdmin() {
+        return zdbAdmin;
     }
 
-    public void setZdbEnabled(Boolean zdbEnabled) {
-        this.zdbEnabled = zdbEnabled;
+    public void setZdbAdmin(Boolean zdbAdmin) {
+        this.zdbAdmin = zdbAdmin;
     }
 
     @Override
@@ -203,8 +203,8 @@ public class ZcpUser {
 		builder.append(requiredActions);
 		builder.append(", namespacedRole=");
 		builder.append(namespacedRole);
-		builder.append(", zdbEnabled=");
-        builder.append(zdbEnabled);
+		builder.append(", zdbAdmin=");
+        builder.append(zdbAdmin);
 		builder.append("]");
 		return builder.toString();
 	}
