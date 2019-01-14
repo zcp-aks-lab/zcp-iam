@@ -212,12 +212,12 @@ public class NamespaceService {
 
 		saveNamespaceLimitRange(vo.getLimitRange(), namespaceName);
 		
-		//addonService.onCreateNamespace(namespaceName);
-		
 		if (vo.getZdbAdmin() != null && vo.getZdbAdmin() == true) {
-		    String label = ResourcesLabelManager.SYSTEM_ZDB_LABEL_NAME + "=" + ResourcesLabelManager.SYSTEM_LABEL_VALUE;
+            String label = ResourcesLabelManager.SYSTEM_ZDB_LABEL_NAME + "=" + ResourcesLabelManager.SYSTEM_LABEL_VALUE;
             this.createNamespaceLabel(namespaceName, label);
         }
+		
+		addonService.onCreateNamespace(namespaceName);
 	}
 
 	public void deleteNamespace(String namespace, String userId) throws ZcpException {
