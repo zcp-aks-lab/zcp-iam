@@ -212,7 +212,7 @@ public class NamespaceService {
 
 		saveNamespaceLimitRange(vo.getLimitRange(), namespaceName);
 		
-		addonService.onCreateNamespace(namespaceName);
+		//addonService.onCreateNamespace(namespaceName);
 		
 		if (vo.getZdbAdmin() != null && vo.getZdbAdmin() == true) {
 		    String label = ResourcesLabelManager.SYSTEM_ZDB_LABEL_NAME + "=" + ResourcesLabelManager.SYSTEM_LABEL_VALUE;
