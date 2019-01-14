@@ -12,6 +12,8 @@ public class ResourcesLabelManager {
 	
 	public static final String SYSTEM_CLUSTERROLE_LABEL_NAME = "cloudzcp.io/zcp-system-cluster-role";
 	public static final String SYSTEM_ROLE_LABEL_NAME = "cloudzcp.io/zcp-system-namespace-role";
+	
+	public static final String SYSTEM_ZDB_LABEL_NAME = "cloudzcp.io/zdb-system";
 
 	public static String getSystemLabelSelector() {
 		StringBuilder builder = new StringBuilder();
@@ -84,6 +86,13 @@ public class ResourcesLabelManager {
 		
 		return labels;
 	}
+	
+	public static Map<String, String> getSystemZdbLabels() {
+        Map<String, String> labels = new HashMap<String, String>();
+        labels.put(SYSTEM_ZDB_LABEL_NAME, SYSTEM_LABEL_VALUE);
+        
+        return labels;
+    }
 
 
 }
