@@ -7,9 +7,14 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.collect.Maps;
 import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyAuth;
 
+import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.apache.commons.text.CaseUtils;
 import org.slf4j.Logger;
@@ -35,6 +40,8 @@ public class KubeResourceManager {
 	@Value("${kube.client.api.output.pretty}")
 	private String pretty;
 
+	private ObjectMapper mapper = new ObjectMapper();
+
 	public KubeResourceManager() throws IOException {
 		ClientBuilder builder = ClientBuilder.standard();
 		client = builder.build();
@@ -51,6 +58,10 @@ public class KubeResourceManager {
 		builder.getAuthentication().provide(client);
 
 		api = new CoreV1Api(this.client);
+
+		// for jackson
+		// https://stackoverflow.com/a/41645158
+		mapper.registerModule(new JodaModule());
 
 		logger.debug("KubeCoreManager is initialized");
 	}
@@ -97,5 +108,55 @@ public class KubeResourceManager {
 		}
 
 		return null;
+	}
+
+	public <T> T getResource(String namespace, String kind, String name, String type) throws ApiException {
+		try {
+			if("namespace".equalsIgnoreCase(kind)){
+				return (T) api.readNamespace(name, pretty, false, false);
+			}
+
+			// api.readNamespacedPod(name, namespace, pretty, exact, export)
+			// api.readNamespacedService(name, namespace, pretty, false, export)
+			String methodName = "readNamespaced" + kind;
+			return (T) MethodUtils.invokeMethod(api, methodName, name, namespace, pretty, true, false);
+			//Method method = ReflectionUtils.findMethod(CoreV1Api.class, "listNamespaced" + kind);
+			//return (T) method.invoke(api, namespace);
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+	public <T> T updateResource(String namespace, String kind, String name, String json) throws Exception {
+		try {
+			// if("namespace".equalsIgnoreCase(kind)){
+			// 	return (T) api.readNamespace(name, pretty, false, false);
+			// }
+
+
+			String className = "io.kubernetes.client.models.V1" + kind;
+			Class<?> clazz = ClassUtils.getClass(className);
+			Object body = mapper.readValue(json, clazz);
+
+			// api.replaceNamespacedPod(name, namespace, body, pretty)
+			String methodName = "replaceNamespaced" + kind;
+			return (T) MethodUtils.invokeMethod(api, methodName, name, namespace, body, pretty);
+			//Method method = ReflectionUtils.findMethod(CoreV1Api.class, "listNamespaced" + kind);
+			//return (T) method.invoke(api, namespace);
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+			| NoSuchMethodException | ClassNotFoundException e) {
+			logger.debug("", e);
+			throw e;
+		} catch (JsonParseException | JsonMappingException e) {
+			logger.debug("", e);
+			throw e;
+		} catch (IOException e) {
+			logger.debug("", e);
+			throw e;
+		}
 	}
 }

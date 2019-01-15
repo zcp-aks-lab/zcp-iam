@@ -53,4 +53,5 @@ dependencies {
         exclude(module: 'commons-logging')
     }
     compileOnly group: 'org.keycloak', name: 'keycloak-model-api', version:'1.8.1.Final'
+    compileOnly group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-joda', version:'2.8.11'
 }

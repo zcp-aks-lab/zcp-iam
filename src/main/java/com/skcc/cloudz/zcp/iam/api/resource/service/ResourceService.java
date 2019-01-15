@@ -34,13 +34,10 @@ public class ResourceService {
 	@Autowired
 	private KubeCoreManager coreManager;
 
-	public String toKind(String shortName) throws ZcpException {
-		return resourceManager.toKind(shortName);
-	}
-
 	public <T> T getList(String namespace, String kind) throws ZcpException {
 		try {
 			// kubectl get secret | grep -v account-token | grep -v Opaque | grep -v istio
+			kind = resourceManager.toKind(kind);
 			return resourceManager.getList(namespace, kind);
 		} catch (ApiException e) {
 			log.info("{}({})", e.getMessage(), e.getCode());
@@ -72,5 +69,32 @@ public class ResourceService {
 		list.items(items);
 
 		return list;
+	}
+
+	public <T> T getResource(String namespace, String kind, String name, String type) throws ZcpException {
+		try {
+			// kubectl get secret | grep -v account-token | grep -v Opaque | grep -v istio
+			kind = resourceManager.toKind(kind);
+			return resourceManager.getResource(namespace, kind, name, type);
+		} catch (ApiException e) {
+			log.info("{}({})", e.getMessage(), e.getCode());
+			log.debug("{}", e.getResponseBody());
+			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
+		}
+	}
+
+	public Object updateResource(String namespace, String kind, String name, String json) throws ZcpException {
+		try {
+			// kubectl get secret | grep -v account-token | grep -v Opaque | grep -v istio
+			kind = resourceManager.toKind(kind);
+			return resourceManager.updateResource(namespace, kind, name, json);
+		} catch (ApiException e) {
+			log.info("{}({})", e.getMessage(), e.getCode());
+			log.debug("{}", e.getResponseBody());
+			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
+		} catch (Exception e) {
+			log.info("{}({})", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
+		}
 	}
 }

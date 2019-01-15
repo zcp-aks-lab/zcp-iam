@@ -9,15 +9,16 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.skcc.cloudz.zcp.iam.api.resource.service.ResourceService;
 import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyHolder;
 
-import org.apache.commons.text.CaseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.kubernetes.client.custom.IntOrString;
@@ -46,8 +47,37 @@ public class ResourceController {
 
 		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
 
-		kind = resourceService.toKind(kind);
 		Object xxx = resourceService.getList(namespace, kind);
+		log.debug("Response Type :: {}", xxx.getClass());
+
+		return xxx;
+	}
+
+	@RequestMapping(value = "rbac/{username}/namespace/{namespace}/{kind}/{name}", method = RequestMethod.GET)
+	public Object getResource(@PathVariable String namespace,
+			@PathVariable String username,
+			@PathVariable String kind,
+			@PathVariable String name,
+			@RequestParam String type) throws Exception {
+
+		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
+
+		Object xxx = resourceService.getResource(namespace, kind, name, type);
+		log.debug("Response Type :: {}", xxx.getClass());
+
+		return xxx;
+	}
+
+	@RequestMapping(value = "rbac/{username}/namespace/{namespace}/{kind}/{name}", method = RequestMethod.PUT)
+	public Object putResource(@PathVariable String namespace,
+			@PathVariable String username,
+			@PathVariable String kind,
+			@PathVariable String name,
+			@RequestBody String json) throws Exception {
+
+		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
+
+		Object xxx = resourceService.updateResource(namespace, kind, name, json);
 		log.debug("Response Type :: {}", xxx.getClass());
 
 		return xxx;
