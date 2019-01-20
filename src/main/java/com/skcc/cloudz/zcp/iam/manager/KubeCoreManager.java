@@ -1,18 +1,22 @@
 package com.skcc.cloudz.zcp.iam.manager;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.Iterator;
 import java.util.List;
+
+import com.google.common.reflect.TypeToken;
+import com.google.gson.JsonSyntaxException;
+import com.squareup.okhttp.Call;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.google.gson.JsonSyntaxException;
-
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.ApiResponse;
 import io.kubernetes.client.Configuration;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1DeleteOptions;
@@ -21,6 +25,7 @@ import io.kubernetes.client.models.V1LimitRangeList;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1NodeList;
+import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1ResourceQuota;
 import io.kubernetes.client.models.V1ResourceQuotaList;
@@ -49,6 +54,29 @@ public class KubeCoreManager {
 		api = new CoreV1Api(this.client);
 
 		logger.debug("KubeCoreManager is initialized");
+	}
+
+	public V1Pod createPod(String namespace, V1Pod body) throws ApiException {
+		return api.createNamespacedPod(namespace, body, pretty);
+	}
+
+	public V1Pod getPod(String namespace, String name) throws ApiException {
+		return api.readNamespacedPod(name, namespace, pretty, null, null);
+	}
+
+	public V1Pod deletePod(String namespace, String name) throws ApiException {
+		V1DeleteOptions deleteOptions = new V1DeleteOptions();
+		deleteOptions.setGracePeriodSeconds(0l);
+
+		/*
+		 * https://github.com/kubernetes-client/java/issues/86#issuecomment-334981383
+		 * CoreV1Api.deleteNamespacedPodWithHttpInfo(...)
+		 */
+		Call call = api.deleteNamespacedPodCall(name, namespace, deleteOptions, pretty, null, null, null, null, null);
+        Type localVarReturnType = new TypeToken<V1Pod>(){}.getType();
+		ApiResponse<V1Pod> resp = client.execute(call, localVarReturnType);
+		return resp.getData();
+		// return api.deleteNamespacedPod(name, namespace, deleteOptions, pretty, null, null, null);
 	}
 
 	public V1ServiceAccount createServiceAccount(String namespace, V1ServiceAccount serviceAccount)

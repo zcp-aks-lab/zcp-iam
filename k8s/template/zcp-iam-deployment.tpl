@@ -2,9 +2,9 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: zcp-iam
-  namespace: zcp-system
+  namespace: ${namespace}
 spec:
-  replicas: 1
+  replicas: ${replicas}
   template:
     metadata:
       labels:
@@ -18,7 +18,7 @@ spec:
       tolerations:
       - key: "management"
         operator: "Equal"
-        value: "true"
+        value: 'true'
         effect: "NoSchedule"
       affinity:
         nodeAffinity:
@@ -35,7 +35,7 @@ spec:
                 - "management"
       containers:
       - name: zcp-iam
-        image: registry.au-syd.bluemix.net/cloudzcp/zcp-iam:1.0.0
+        image: ${image}
         imagePullPolicy: Always
         ports:
         - name: cont-port
@@ -73,15 +73,8 @@ spec:
               secretKeyRef:
                 name: zcp-iam-secret
                 key: JENKINS_USER_TOKEN
-        volumeMounts:
-        - mountPath: /etc/localtime
-          name: timezone
-      serviceAccount: zcp-system-admin
-      serviceAccountName: zcp-system-admin
-      volumes:
-      - hostPath:
-          path: /usr/share/zoneinfo/Asia/Seoul
-        name: timezone
+      serviceAccount: ${sa}
+      serviceAccountName: ${sa}
 ---
 
 apiVersion: v1
@@ -90,7 +83,7 @@ metadata:
   name: zcp-iam
   labels:
     name: zcp-iam
-  namespace: zcp-system
+  namespace: ${namespace}
 spec:
   type: ClusterIP
   ports:

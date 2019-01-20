@@ -6,7 +6,18 @@ keycloak:
     clientSecret: 237ef2ad-c5f3-491a-89ab-dab04c8bf268
     username: zcp-admin
     password: Password1!
-  
+
+# for actuator
+endpoints:
+  prometheus:
+    sensitive: false
+management:
+  port: 9000
+
+management.metrics.distribution:
+  sla[http.server.requests]: 100ms, 200ms, 400ms
+  percentiles-histogram[http.server.requests]: true
+
 logging:
   level:
     com:

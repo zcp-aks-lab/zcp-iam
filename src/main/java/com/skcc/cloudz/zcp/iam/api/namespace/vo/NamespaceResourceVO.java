@@ -10,6 +10,7 @@ public class NamespaceResourceVO {
 	private String namespace;
 	private ZcpResourceQuota resourceQuota;
 	private ZcpLimitRange limitRange;
+	private Boolean zdbAdmin;
 
 	public String getNamespace() {
 		return namespace;
@@ -34,5 +35,13 @@ public class NamespaceResourceVO {
 	public void setLimitRange(ZcpLimitRange limitRange) {
 		this.limitRange = limitRange;
 	}
+
+    public Boolean getZdbAdmin() {
+        return zdbAdmin;
+    }
+
+    public void setZdbAdmin(Boolean zdbAdmin) {
+        this.zdbAdmin = zdbAdmin;
+    }
 
 }

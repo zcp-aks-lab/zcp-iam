@@ -20,6 +20,7 @@ import com.skcc.cloudz.zcp.iam.api.user.vo.ResetCredentialVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.ResetPasswordVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.UpdateClusterRoleVO;
 import com.skcc.cloudz.zcp.iam.api.user.vo.UpdatePasswordVO;
+import com.skcc.cloudz.zcp.iam.api.user.vo.UserAttributeVO;
 import com.skcc.cloudz.zcp.iam.common.model.ZcpKubeConfig;
 import com.skcc.cloudz.zcp.iam.common.model.ZcpUser;
 import com.skcc.cloudz.zcp.iam.common.model.ZcpUserList;
@@ -142,5 +143,20 @@ public class UserController {
 		userService.resetUserServiceAccount(id);
 		return new Response<String>();
 	}
+	
+	@RequestMapping(value = "/user/{id}/attributes", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    public Response<Object> editUserAttribute(@PathVariable("id") String id,
+            @RequestBody UserAttributeVO userAttributeVO) throws Exception {
+	    userService.updateUserAttribute(id, userAttributeVO);
+        return new Response<Object>();
+    }
+	
+	@RequestMapping(value = "/user/{id}/attributes/{key}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public Response<Object> getUserAttribute(@PathVariable("id") String id,
+            @PathVariable("key") String key) throws Exception {
+	    Response<Object> response = new Response<Object>();
+	    response.setData(userService.getUserAttribute(id, key));
+        return response;
+    }
 
 }

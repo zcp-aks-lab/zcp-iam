@@ -1,0 +1,57 @@
+/*
+ * 1) gradlew.bat init  # with pom.xml
+ * 2) add spring boot plugin
+ *    - https://docs.spring.io/spring-boot/docs/2.1.1.RELEASE/gradle-plugin/reference/html/
+ */
+buildscript {
+  repositories {
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+  }
+  dependencies {
+    classpath "org.springframework.boot:spring-boot-gradle-plugin:2.1.1.RELEASE"
+  }
+}
+
+apply plugin: "org.springframework.boot"
+apply plugin: 'java'
+apply plugin: 'maven'
+
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+description = """zcp-iam"""
+
+sourceCompatibility = 1.8  //-> 1.5 
+targetCompatibility = 1.8  //-> 1.5
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+repositories {
+     maven { url "http://repo.maven.apache.org/maven2" }
+}
+dependencies {
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version:'1.5.12.RELEASE'
+    compile group: 'org.keycloak', name: 'keycloak-authz-client', version:'3.4.3.Final'
+    compile group: 'org.keycloak', name: 'keycloak-admin-client', version:'3.4.3.Final'
+    compile group: 'org.jboss.resteasy', name: 'resteasy-client', version:'3.5.0.Final'
+    compile group: 'org.jboss.resteasy', name: 'resteasy-jackson2-provider', version:'3.1.0.Final'
+    compile group: 'io.kubernetes', name: 'client-java-api', version:'1.0.0'
+    compile group: 'io.kubernetes', name: 'client-java', version:'1.0.0'
+    compile group: 'io.kubernetes', name: 'client-java-proto', version:'1.0.0'
+    compile group: 'com.googlecode.json-simple', name: 'json-simple', version:'1.1.1'
+    compile group: 'io.springfox', name: 'springfox-swagger2', version:'2.6.1'
+    compile group: 'io.springfox', name: 'springfox-swagger-ui', version:'2.6.1'
+    compile group: 'org.apache.commons', name: 'commons-text', version:'1.4'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-websocket', version:'1.5.12.RELEASE'
+    compile group: 'org.apache.commons', name: 'commons-compress', version:'1.14'
+    runtime group: 'org.springframework.boot', name: 'spring-boot-devtools', version:'1.5.12.RELEASE'
+    testCompile(group: 'org.springframework.boot', name: 'spring-boot-starter-test', version:'1.5.12.RELEASE') {
+        exclude(module: 'commons-logging')
+    }
+    compileOnly group: 'org.keycloak', name: 'keycloak-model-api', version:'1.8.1.Final'
+    compileOnly group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-joda', version:'2.8.11'
+}

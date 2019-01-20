@@ -6,7 +6,18 @@ keycloak:
     clientSecret: ${KEYCLOAK_MASTER_CLIENT_SECRET}
     username: ${KEYCLOAK_MASTER_USERNAME}
     password: ${KEYCLOAK_MASTER_PASSWORD}
-  
+
+# for actuator
+endpoints:
+  prometheus:
+    sensitive: false
+management:
+  port: 9000
+
+management.metrics.distribution:
+  sla[http.server.requests]: 100ms, 200ms, 400ms
+  percentiles-histogram[http.server.requests]: true
+
 logging:
   level:
     com:
@@ -21,7 +32,7 @@ logging:
       keycloak: DEBUG
       springframework:
         security: DEBUG
-        web: DEBUG
+        web: INFO
         
 kube:
   client:

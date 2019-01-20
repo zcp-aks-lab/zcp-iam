@@ -7,6 +7,17 @@ keycloak:
     password: admin1234
     username: 1800275@partner.skcc.com
 
+# for actuator
+endpoints:
+  prometheus:
+    sensitive: false
+management:
+  port: 9000
+
+management.metrics.distribution:
+  sla[http.server.requests]: 100ms, 200ms, 400ms
+  percentiles-histogram[http.server.requests]: true
+
 logging:
   level:
     com:
