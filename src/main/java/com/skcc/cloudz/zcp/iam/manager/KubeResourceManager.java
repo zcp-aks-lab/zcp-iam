@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -191,18 +192,25 @@ public class KubeResourceManager {
 
 	public <T> T updateResource(String namespace, String alias, String name, String json) throws Exception {
 		Object api = mapping.get("api", alias);
-		// Boolean namespaced = (Boolean) mapping.get("namespaced", alias);
+		Boolean namespaced = (Boolean) mapping.get("namespaced", alias);
 		String kind = (String) mapping.get("kind", alias);
 
 		try {
-			String className = "io.kubernetes.client.models.V1" + kind;
-			Class<?> clazz = ClassUtils.getClass(className);
+			String methodName = (!namespaced ? "replace" : "replaceNamespaced") + kind;
+			Method method = Arrays.stream(api.getClass().getDeclaredMethods())
+								.filter(m -> m.getName().equals(methodName))
+								.findFirst()
+								.get();
+			Class<?> clazz = method.getParameterTypes()[ !namespaced ? 1 : 2 ];
 			Object body = mapper.readValue(json, clazz);
 
-			String methodName = "replaceNamespaced" + kind;
-			return (T) MethodUtils.invokeMethod(api, methodName, name, namespace, body, pretty);
-		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
-			| NoSuchMethodException | ClassNotFoundException e) {
+			if(!namespaced){
+				return (T) method.invoke(api, name, body, pretty);
+			} else {
+				return (T) method.invoke(api, name, namespace, body, pretty);
+			}
+			// return (T) MethodUtils.invokeMethod(api, methodName, name, namespace, body, pretty);
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.debug("", e);
 			throw e;
 		} catch (JsonParseException | JsonMappingException e) {
