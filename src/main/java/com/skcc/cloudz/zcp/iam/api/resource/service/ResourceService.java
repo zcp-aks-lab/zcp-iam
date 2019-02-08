@@ -1,6 +1,7 @@
 package com.skcc.cloudz.zcp.iam.api.resource.service;
 
 import java.util.List;
+import java.util.Map;
 
 import com.google.common.collect.Lists;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpErrorCode;
@@ -83,7 +84,7 @@ public class ResourceService {
 		}
 	}
 
-	public Object updateResource(String namespace, String kind, String name, String json) throws ZcpException {
+	public <T> T updateResource(String namespace, String kind, String name, String json) throws ZcpException {
 		try {
 			// kubectl get secret | grep -v account-token | grep -v Opaque | grep -v istio
 			kind = resourceManager.toKind(kind);
@@ -94,6 +95,19 @@ public class ResourceService {
 			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
 		} catch (Exception e) {
 			log.info("{}({})", e.getMessage());
+			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
+		}
+	}
+
+	public <T> T getLogs(Map<String, Object> params) throws ZcpException {
+		try {
+			return resourceManager.readLogs(params);
+		} catch (ApiException e) {
+			log.info("{}({})", e.getMessage(), e.getCode());
+			log.debug("{}", e.getResponseBody());
+			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
+		} catch (Exception e) {
+			log.info("{}({})", e.getMessage(), e.getClass());
 			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
 		}
 	}

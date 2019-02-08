@@ -1,6 +1,7 @@
 package com.skcc.cloudz.zcp.iam.api.resource.controller;
 
 import java.io.IOException;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jackson.JsonComponent;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -81,6 +83,24 @@ public class ResourceController {
 		log.debug("Response Type :: {}", xxx.getClass());
 
 		return xxx;
+	}
+
+	@GetMapping(value = "rbac/{username}/namespace/{namespace}/{kind}/{name}/logs")
+	public Object getLogs(@PathVariable String namespace,
+			@PathVariable String username,
+			@PathVariable String kind,
+			@PathVariable String name,
+			@RequestParam Map<String, Object> param) throws Exception {
+
+		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
+
+		param.put("namespace", namespace);
+		param.put("name", name);
+		// InputStream is = resourceService.getLogs(param);
+		// InputStreamResource resource = new InputStreamResource(is);
+		String ret = resourceService.getLogs(param);
+
+		return ret;
 	}
 
 	@JsonComponent

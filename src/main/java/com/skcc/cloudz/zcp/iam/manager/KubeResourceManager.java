@@ -17,7 +17,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyAuth;
 
-import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -77,7 +77,7 @@ public class KubeResourceManager {
 
 		for(Object api : apis)
 			mapping(mapping, api);
-		
+
 		/* START : RBAC Token Provider by User */
 		Map<String, Authentication> auth = Maps.newHashMap(client.getAuthentications());
 		auth.put("BearerToken", new ServiceAccountApiKeyAuth("header", "authorization"));
@@ -116,7 +116,7 @@ public class KubeResourceManager {
 				mapping.put("kind", kind, resource.getKind());
 				mapping.put("api", kind, api);
 				mapping.put("namespaced", kind, resource.isNamespaced());
-			});
+		});
 	}
 
 	private V1APIResourceList getAPIResources(Object api)
@@ -179,7 +179,7 @@ public class KubeResourceManager {
 			if(!namespaced){
 				return (T) MethodUtils.invokeMethod(api, "read" + kind, name, pretty, false, false);
 			} else {
-				return (T) MethodUtils.invokeMethod(api, "readNamespaced" + kind , name, namespace, pretty, true, false);
+				return (T) MethodUtils.invokeMethod(api, "readNamespaced" + kind, name, namespace, pretty, true, false);
 			}
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
@@ -198,9 +198,9 @@ public class KubeResourceManager {
 		try {
 			String methodName = (!namespaced ? "replace" : "replaceNamespaced") + kind;
 			Method method = Arrays.stream(api.getClass().getDeclaredMethods())
-								.filter(m -> m.getName().equals(methodName))
-								.findFirst()
-								.get();
+					.filter(m -> m.getName().equals(methodName))
+					.findFirst()
+					.get();
 			Class<?> clazz = method.getParameterTypes()[ !namespaced ? 1 : 2 ];
 			Object body = mapper.readValue(json, clazz);
 
@@ -217,6 +217,34 @@ public class KubeResourceManager {
 			logger.debug("", e);
 			throw e;
 		} catch (IOException e) {
+			logger.debug("", e);
+			throw e;
+		}
+	}
+
+	public <T> T readLogs(Map<String, Object> params) throws Exception {
+
+		try {
+			// https://github.com/kubernetes-client/java/blob/master/examples/src/main/java/io/kubernetes/client/examples/LogsExample.java#L40
+			String namespace = (String) params.get("ns");
+			String podName = (String) params.get("name");
+			String container = (String) params.get("con");
+			Boolean follow = Boolean.parseBoolean((String) params.get("follow"));
+			Integer limitBytes = NumberUtils.createInteger((String) params.get("limit"));
+			Boolean previous = Boolean.parseBoolean((String) params.get("previous"));
+			Integer sinceSeconds = NumberUtils.createInteger((String) params.get("since"));
+			Integer tailLines = NumberUtils.createInteger((String) params.get("tail"));
+			boolean timestamps = Boolean.parseBoolean((String) params.get("timestamps"));
+
+			// PodLogs logs = new PodLogs(client);
+			// InputStream in = logs.streamNamespacedPodLog(namespace, podName, container, sinceSeconds, tailLines, timestamps);
+			// byte[] stream = IOUtils.toByteArray(in);
+			// return (T) new ByteArrayInputStream(stream);
+			CoreV1Api core = (CoreV1Api) mapping.get("api", "pod");
+			String logs = core.readNamespacedPodLog(podName, namespace, container, follow, limitBytes, pretty,
+					previous, sinceSeconds, tailLines, timestamps);
+			return (T) logs;
+		} catch (ApiException e) {
 			logger.debug("", e);
 			throw e;
 		}

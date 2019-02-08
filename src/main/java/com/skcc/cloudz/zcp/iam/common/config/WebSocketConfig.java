@@ -3,6 +3,7 @@ package com.skcc.cloudz.zcp.iam.common.config;
 import java.io.IOException;
 import java.util.Map;
 
+import com.skcc.cloudz.zcp.iam.common.config.websocket.LogFollowHandler;
 import com.skcc.cloudz.zcp.iam.common.config.websocket.PodExecRelayHanlder;
 import com.skcc.cloudz.zcp.iam.common.config.websocket.WebSshHandler3;
 
@@ -39,6 +40,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
 		registry.addHandler(execHandler(), "/iam/exec")
                 .addInterceptors(interceptors)
                 .addHandler(wshHandler(), "/iam/wsh")
+                .addInterceptors(interceptors)
+                .addHandler(logsHandler(), "/iam/logs")
                 .addInterceptors(interceptors);
 	}
 
@@ -50,6 +53,11 @@ public class WebSocketConfig implements WebSocketConfigurer {
 	@Bean
 	public WebSocketHandler wshHandler() {
         return new WebSshHandler3();
+    }
+
+	@Bean
+	public WebSocketHandler logsHandler() {
+        return new LogFollowHandler();
     }
 
     /*
