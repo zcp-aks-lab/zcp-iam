@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -32,74 +31,69 @@ public class ResourceController {
 
 	@Autowired
 	private ResourceService resourceService;
-	
+
 	@Value("${zcp.kube.namespace}")
 	private String zcpSystemNamespace;
 
-	@RequestMapping(value = "rbac/{username}/namespace", method = RequestMethod.GET)
-	public Object namespaces(@PathVariable String username) throws Exception {
-		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
-		return resourceService.getListNamespace(username);
-	}
-
-	@RequestMapping(value = "rbac/{username}/namespace/{namespace}/{kind}", method = RequestMethod.GET)
-	public Object list(@PathVariable String namespace,
-			@PathVariable String username,
+	@RequestMapping(value = "resource/{kind}", method = RequestMethod.GET)
+	public Object list(@RequestParam(required=false, name="ns") String namespace,
+			@RequestParam String username,
 			@PathVariable String kind) throws Exception {
 
 		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
+		
+		Object ret = null;
+		if("Namespace".equals(resourceService.toKind(kind))){
+			ret = resourceService.getListNamespace(username);
+		} else {
+			ret = resourceService.getList(namespace, kind);
+		}
+		log.debug("Response Type :: {}", ret.getClass());
 
-		Object xxx = resourceService.getList(namespace, kind);
-		log.debug("Response Type :: {}", xxx.getClass());
-
-		return xxx;
+		return ret;
 	}
 
-	@RequestMapping(value = "rbac/{username}/namespace/{namespace}/{kind}/{name}", method = RequestMethod.GET)
-	public Object getResource(@PathVariable String namespace,
-			@PathVariable String username,
+	@RequestMapping(value = "resource/{kind}/{name:.+}", method = RequestMethod.GET)
+	public Object getResource(@RequestParam(name="ns") String namespace,
+			@RequestParam String username,
+			@RequestParam String type,
 			@PathVariable String kind,
-			@PathVariable String name,
-			@RequestParam String type) throws Exception {
+			@PathVariable String name) throws Exception {
 
 		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
 
-		Object xxx = resourceService.getResource(namespace, kind, name, type);
-		log.debug("Response Type :: {}", xxx.getClass());
+		Object ret = resourceService.getResource(namespace, kind, name, type);
+		log.debug("Response Type :: {}", ret.getClass());
 
-		return xxx;
+		return ret;
 	}
 
-	@RequestMapping(value = "rbac/{username}/namespace/{namespace}/{kind}/{name}", method = RequestMethod.PUT)
-	public Object putResource(@PathVariable String namespace,
-			@PathVariable String username,
+	@RequestMapping(value = "resource/{kind}/{name:.+}", method = RequestMethod.PUT)
+	public Object putResource(@RequestParam(name="ns") String namespace,
+			@RequestParam String username,
+			@RequestParam String type,
 			@PathVariable String kind,
-			@PathVariable String name,
-			@RequestBody String json) throws Exception {
+			@PathVariable String name) throws Exception {
 
 		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
 
-		Object xxx = resourceService.updateResource(namespace, kind, name, json);
-		log.debug("Response Type :: {}", xxx.getClass());
+		Object ret = resourceService.updateResource(namespace, kind, name, type);
+		log.debug("Response Type :: {}", ret.getClass());
 
-		return xxx;
+		return ret;
 	}
 
-	@GetMapping(value = "rbac/{username}/namespace/{namespace}/{kind}/{name}/logs")
-	public Object getLogs(@PathVariable String namespace,
-			@PathVariable String username,
+	@GetMapping(value = "resource/{kind}/{name}/logs")
+	public Object getLogs(@RequestParam(name="ns") String namespace,
+			@RequestParam String username,
+			@RequestParam Map<String, Object> param,
 			@PathVariable String kind,
-			@PathVariable String name,
-			@RequestParam Map<String, Object> param) throws Exception {
+			@PathVariable String name) throws Exception {
 
 		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
 
-		param.put("namespace", namespace);
 		param.put("name", name);
-		// InputStream is = resourceService.getLogs(param);
-		// InputStreamResource resource = new InputStreamResource(is);
 		String ret = resourceService.getLogs(param);
-
 		return ret;
 	}
 

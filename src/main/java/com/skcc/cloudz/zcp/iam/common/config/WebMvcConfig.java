@@ -25,5 +25,4 @@ public class WebMvcConfig extends WebMvcConfigurerAdapter {
 				.addPathPatterns("/**")
 				.excludePathPatterns("/user/**");
 	}
-	
 }

@@ -17,6 +17,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyAuth;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.json.simple.JSONObject;
@@ -125,29 +126,9 @@ public class KubeResourceManager {
 		return (V1APIResourceList) method.invoke(api);
 	}
 
-	public String toKind(String shortName) {
-		// String cand = CaseUtils.toCamelCase(shortName, true);
-		// try {
-		// 	V1APIResourceList list = api.getAPIResources();
-		// 	Optional<String> kind = list.getResources().stream()
-		// 		.filter(r -> {
-		// 			if (r.getName().equalsIgnoreCase(shortName))
-		// 				return true;
-		// 			if (r.getShortNames() != null && r.getShortNames().contains(shortName))
-		// 				return true;
-		//
-		// 			return false;
-		// 		})
-		// 		.map(r -> r.getKind())
-		// 		.findFirst();
-		//
-		// 	return kind.orElse(cand);
-		// } catch (ApiException e) {
-		// 	e.printStackTrace();
-		// }
-		//
-		// return cand;
-		return shortName;
+	public String toKind(String alias) {
+		String kind = (String) mapping.get("kind", alias);
+		return ObjectUtils.defaultIfNull(kind, alias);
 	}
 
 	public <T> T getList(String namespace, String alias) throws ApiException {
