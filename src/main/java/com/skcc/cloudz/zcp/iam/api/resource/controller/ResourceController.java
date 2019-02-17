@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -71,13 +72,13 @@ public class ResourceController {
 	@RequestMapping(value = "resource/{kind}/{name:.+}", method = RequestMethod.PUT)
 	public Object putResource(@RequestParam(name="ns") String namespace,
 			@RequestParam String username,
-			@RequestParam String type,
 			@PathVariable String kind,
-			@PathVariable String name) throws Exception {
+			@PathVariable String name,
+			@RequestBody String jsonBody) throws Exception {
 
 		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
 
-		Object ret = resourceService.updateResource(namespace, kind, name, type);
+		Object ret = resourceService.updateResource(namespace, kind, name, jsonBody);
 		log.debug("Response Type :: {}", ret.getClass());
 
 		return ret;

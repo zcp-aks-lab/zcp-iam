@@ -78,7 +78,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
         }
     }
 
-    private void sendSystemMessage(WebSocketSession in, String msg){
+    protected void sendSystemMessage(WebSocketSession in, String msg){
         try {
             if(in != null && in.isOpen())
                 in.sendMessage(new TextMessage("system: " + msg + "\r\n"));
@@ -88,7 +88,7 @@ public class PodExecRelayHanlder extends AbstractRelayHandler {
     }
 
     protected WebSocketSession createSession(WebSocketSession in) throws Exception {
-        sendSystemMessage(in, "connection...");
+        sendSystemMessage(in, "connecting...");
 
         Map<String, String> vars = getQueryParams(in);
         String podName = POD_NAME.of(in, vars.get("pod"));

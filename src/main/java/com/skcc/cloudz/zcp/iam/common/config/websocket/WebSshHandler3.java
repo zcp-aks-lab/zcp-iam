@@ -131,6 +131,8 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
     }
 
     private V1Pod createPod(WebSocketSession in) throws ApiException, IOException {
+        sendSystemMessage(in, "be creating pod...");
+
         Map<String, String> vars = getQueryParams(in);
 
         String namespace = vars.get("ns");
