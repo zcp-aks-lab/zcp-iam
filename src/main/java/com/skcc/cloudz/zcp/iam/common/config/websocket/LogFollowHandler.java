@@ -46,8 +46,8 @@ public class LogFollowHandler extends AbstractRelayHandler {
 
             coreApi = new CoreV1Api(client);
 
-            if (log.isTraceEnabled())
-                client.setDebugging(true);
+            // if (log.isTraceEnabled())
+            //     client.setDebugging(true);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -88,7 +88,7 @@ public class LogFollowHandler extends AbstractRelayHandler {
             .subscribe(l -> {
                 while( !source.exhausted() ){
                     String line = source.readUtf8Line();
-                    log.debug("!!!!! kubectl logs -- {}", line);
+                    // log.debug("!!!!! kubectl logs -- {}", line);
                     TextMessage message = new TextMessage(line);
                     in.sendMessage(message);
                 }
