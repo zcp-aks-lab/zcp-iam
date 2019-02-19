@@ -627,6 +627,8 @@ public class UserService {
             } else {
                 user.setZdbAdmin(Boolean.FALSE);
             }
+		} else {
+		    user.setZdbAdmin(Boolean.FALSE);
 		}
 
 		List<String> requiredActions = userRepresentation.getRequiredActions();
