@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.common.collect.Lists;
+import com.skcc.cloudz.zcp.iam.common.actuator.SystemEndpoint.EndpointSource;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpErrorCode;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpException;
 import com.skcc.cloudz.zcp.iam.common.model.ClusterRole;
@@ -24,7 +25,7 @@ import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1RoleBindingList;
 
 @Service
-public class ResourceService {
+public class ResourceService implements EndpointSource<Object> {
 	private final Logger log = LoggerFactory.getLogger(ResourceService.class);
 
 	@Autowired
@@ -117,5 +118,16 @@ public class ResourceService {
 			log.info("{}({})", e.getMessage(), e.getClass());
 			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
 		}
+	}
+
+    /* for actuator (/system) */
+	@Override
+	public String getEndpointPath() {
+		return "/k8s/supports";
+	}
+
+	@Override
+	public Object getEndpointData(Map<String, Object> vars) {
+		return resourceManager.getMapping();
 	}
 }

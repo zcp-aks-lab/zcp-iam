@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -14,13 +15,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
+import com.google.common.collect.Table.Cell;
 import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyAuth;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -97,7 +99,6 @@ public class KubeResourceManager {
 
 	public void mapping(Table<String, String, Object> mapping, Object api) throws Exception {
 		V1APIResourceList resources = getAPIResources(api);
-		System.out.println(new JSONObject(mapping.rowMap()));
 		resources.getResources()
 			.stream()
 			.forEach(resource -> {
@@ -229,5 +230,27 @@ public class KubeResourceManager {
 			logger.debug("", e);
 			throw e;
 		}
+	}
+
+	public Map<String, Map<String, Object>> getMapping() {
+		Map<String, Map<String, Object>> ret = Maps.newHashMap();
+		// (key, alias, value)
+		for(Cell<String, String, Object> cell : mapping.cellSet()){
+			String key = cell.getRowKey();
+			String alias = cell.getColumnKey();
+			Object val = key.equals("api") ? cell.getValue().getClass() : cell.getValue();
+
+			String kind = (String) mapping.get("kind", alias);
+			Map<String, Object> map = ret.get(kind);
+			if(map == null) {
+				map = Maps.newHashMap();
+				map.put("alias", Sets.newHashSet());
+				ret.put(kind, map);
+			}
+
+			map.put(key, val);
+			((Set<Object>) map.get("alias")).add(alias);
+		}
+		return ret;
 	}
 }

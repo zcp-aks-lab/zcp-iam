@@ -5,6 +5,8 @@ metadata:
   namespace: ${namespace}
   labels:
     app: web-ssh
+  annotations:
+    iam.host: ${iam.host}
 spec:
   #serviceAccountName: zcp-system:zcp-system-sa-cloudzcp-admin
   #automountServiceAccountToken: false

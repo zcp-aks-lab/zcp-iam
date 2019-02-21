@@ -15,11 +15,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
 import com.google.common.reflect.TypeToken;
+import com.skcc.cloudz.zcp.iam.common.actuator.SystemEndpoint.EndpointSource;
 import com.skcc.cloudz.zcp.iam.common.config.websocket.WebSocketUtils.PodConnectionContext;
 import com.skcc.cloudz.zcp.iam.manager.KubeCoreManager;
 import com.squareup.okhttp.Call;
@@ -55,7 +57,7 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Yaml;
 
-public class WebSshHandler3 extends PodExecRelayHanlder {
+public class WebSshHandler3 extends PodExecRelayHanlder implements EndpointSource<Object> {
     private final Type TYPE_SECRET = new TypeToken<Watch.Response<V1Secret>>() {}.getType();
     private final Type TYPE_POD = new TypeToken<Watch.Response<V1Pod>>() {}.getType();
 
@@ -144,12 +146,14 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
         String namespace = vars.get("ns");
         String username = vars.get("username");
         String token = updateToken(username);
+        String host = getHostName();
 
         // add context variables
         vars.put("namespace", namespace);
         vars.put("name.suffix", username);
         vars.put("var_namespace", wsContext.asShellSafe(namespace));
         vars.put("token", token);
+        vars.put("iam.host", host);
 
         // read config.xml template
         TextStringBuilder template = new TextStringBuilder();
@@ -161,7 +165,7 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
         V1Pod spec = Yaml.loadAs(template.asReader(), V1Pod.class);
         String podName = spec.getMetadata().getName();
 
-        wsContext.putEnv(podName, "iam-host", getHostName());
+        wsContext.putEnv(podName, "iam.host", getHostName());
         wsContext.putEnv(podName, "token", token);
 
         POD_NAME.to(in, podName);
@@ -442,5 +446,19 @@ public class WebSshHandler3 extends PodExecRelayHanlder {
         }
 
         return cand;
+    }
+
+    /* for actuator (/system) */
+    @Override
+    public String getEndpointPath() {
+        return "/wsh/envs";
+    }
+
+    @Override
+    public Object getEndpointData(Map<String, Object> vars) {
+        return wsContext.getPodNames()
+                    .stream()
+                    .map(p->wsContext.getVariables(p))
+                    .collect(Collectors.toList());
     }
 }

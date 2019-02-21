@@ -330,6 +330,13 @@ public class WebSocketUtils {
 
 		public static String asShellSafe(String key) {
 			return key.replace('-', '_');
-		}
+        }
+        
+        /*
+         * for inspection
+         */
+        public Set<String> getPodNames() {
+            return envs.rowKeySet();
+        }
     }
 }
