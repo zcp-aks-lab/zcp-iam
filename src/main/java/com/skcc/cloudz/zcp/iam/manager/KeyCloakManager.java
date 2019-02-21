@@ -362,7 +362,7 @@ public class KeyCloakManager {
         UserRepresentation userRepresentation = userResource.toRepresentation();
         userRepresentation.setId(id);
         
-        Map<String, List<String>> attributes = userRepresentation.getAttributes();
+        Map<String, List<String>> attributes = ObjectUtils.defaultIfNull(userRepresentation.getAttributes(), new HashMap<String, List<String>>());
         attributes.put(key, Arrays.asList(value));
         
         userRepresentation.setAttributes(attributes);
