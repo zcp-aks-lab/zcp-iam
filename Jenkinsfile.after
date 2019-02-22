@@ -1,0 +1,2 @@
+sh 'wget https://raw.githubusercontent.com/cnpst/zcp-snippet/master/jenkins/slack/slack-send.groovy'
+evaluate readFile('slack-send.groovy')
