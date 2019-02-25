@@ -43,10 +43,8 @@ public class ResourceService implements EndpointSource<Object> {
 			// kubectl get secret | grep -v account-token | grep -v Opaque | grep -v istio
 			// kind = resourceManager.toKind(kind);
 			return resourceManager.getList(namespace, kind);
-		} catch (ApiException e) {
-			log.info("{}({})", e.getMessage(), e.getCode());
-			log.debug("{}", e.getResponseBody());
-			throw new ZcpException(ZcpErrorCode.GET_SECRET_LIST, e.getMessage());
+		} catch (Exception e) {
+			throw handleException(e);
 		}
 	}
 
@@ -55,10 +53,8 @@ public class ResourceService implements EndpointSource<Object> {
 			// kubectl get secret | grep -v account-token | grep -v Opaque | grep -v istio
 			// kind = resourceManager.toKind(kind);
 			return resourceManager.getResource(namespace, kind, name, type);
-		} catch (ApiException e) {
-			log.info("{}({})", e.getMessage(), e.getCode());
-			log.debug("{}", e.getResponseBody());
-			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
+		} catch (Exception e) {
+			throw handleException(e);
 		}
 	}
 
@@ -67,57 +63,71 @@ public class ResourceService implements EndpointSource<Object> {
 			// kubectl get secret | grep -v account-token | grep -v Opaque | grep -v istio
 			// kind = resourceManager.toKind(kind);
 			return resourceManager.updateResource(namespace, kind, name, json);
-		} catch (ApiException e) {
-			log.info("{}({})", e.getMessage(), e.getCode());
-			log.debug("{}", e.getResponseBody());
-			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
 		} catch (Exception e) {
-			log.info("{}({})", e.getMessage());
-			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
+			throw handleException(e);
 		}
 	}
 
 	/*
 	 * For custom action
 	 */
-	public V1NamespaceList getListNamespace(String username) throws ApiException {
-		V1ClusterRoleBinding crb = rbacManager.getClusterRoleBindingByUsername(username);
-		ClusterRole role = ClusterRole.getClusterRole(crb.getRoleRef().getName());
+	public V1NamespaceList getListNamespace(String username) throws Exception {
+		try {
+			V1ClusterRoleBinding crb = rbacManager.getClusterRoleBindingByUsername(username);
+			ClusterRole role = ClusterRole.getClusterRole(crb.getRoleRef().getName());
 
-		List<V1Namespace> items = Lists.newArrayList();
+			List<V1Namespace> items = Lists.newArrayList();
 
-		// for cluster-admin
-		if (ClusterRole.CLUSTER_ADMIN == role) {
-			return resourceManager.getList("", "namespace");	
+			// for cluster-admin
+			if (ClusterRole.CLUSTER_ADMIN == role) {
+				return resourceManager.getList("", "namespace");	
+			}
+
+			// for non cluster-admin
+			V1RoleBindingList rbs = rbacManager.getRoleBindingListByUsername(username);
+			for(V1RoleBinding rb : rbs.getItems()){
+				String namespace = rb.getMetadata().getNamespace();
+				V1Namespace ns = resourceManager.getResource("", "namespace", namespace, null);
+				items.add(ns);
+			}
+
+			V1NamespaceList list = new V1NamespaceList();
+			list.kind("List");
+			list.metadata(new V1ListMeta());
+			list.items(items);
+
+			return list;
+		} catch (Exception e){
+			throw handleException(e);
 		}
-
-		// for non cluster-admin
-		V1RoleBindingList rbs = rbacManager.getRoleBindingListByUsername(username);
-		for(V1RoleBinding rb : rbs.getItems()){
-			String namespace = rb.getMetadata().getNamespace();
-			V1Namespace ns = resourceManager.getResource("", "namespace", namespace, null);
-			items.add(ns);
-		}
-
-		V1NamespaceList list = new V1NamespaceList();
-		list.kind("List");
-		list.metadata(new V1ListMeta());
-		list.items(items);
-
-		return list;
 	}
 
 	public <T> T getLogs(Map<String, Object> params) throws ZcpException {
 		try {
 			return resourceManager.readLogs(params);
-		} catch (ApiException e) {
-			log.info("{}({})", e.getMessage(), e.getCode());
-			log.debug("{}", e.getResponseBody());
-			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
 		} catch (Exception e) {
-			log.info("{}({})", e.getMessage(), e.getClass());
-			throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
+			throw handleException(e);
 		}
+	}
+
+	public ZcpException handleException(Exception e) throws ZcpException {
+		ApiException ae = null;
+		if (e instanceof ApiException) { ae = (ApiException) e; }
+		if (e.getCause() instanceof ApiException) { ae = (ApiException) e.getCause(); }
+
+		if (ae != null){
+			log.info("{}({})", ae.getMessage(), ae.getCode());
+			log.debug("{}", ae.getResponseBody());
+
+			ZcpErrorCode zcpCode = ZcpErrorCode.KUBERNETES_UNKNOWN_ERROR; 
+			switch(ae.getCode()){
+				case 404: zcpCode = ZcpErrorCode.RESOURCE_NOT_FOUND; break;
+			}
+			throw new ZcpException(zcpCode);
+		}
+
+		log.info("{}({})", e.getMessage(), e.getClass());
+		throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
 	}
 
     /* for actuator (/system) */

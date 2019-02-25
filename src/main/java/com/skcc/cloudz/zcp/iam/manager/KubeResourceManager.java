@@ -132,7 +132,7 @@ public class KubeResourceManager {
 		return ObjectUtils.defaultIfNull(kind, alias);
 	}
 
-	public <T> T getList(String namespace, String alias) throws ApiException {
+	public <T> T getList(String namespace, String alias) throws Exception {
 		Object api = mapping.get("api", alias);
 		Boolean namespaced = (Boolean) mapping.get("namespaced", alias);
 		String kind = (String) mapping.get("kind", alias);
@@ -144,15 +144,15 @@ public class KubeResourceManager {
 				return (T) MethodUtils.invokeMethod(api, "listNamespaced" + kind, namespace, pretty, null, null, null, null, null, null, null, null);
 			}
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			e.printStackTrace();
+			logger.debug("", e);
+			throw e;
 		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
+			logger.debug("", e);
+			throw e;
 		}
-
-		return null;
 	}
 
-	public <T> T getResource(String namespace, String alias, String name, String type) throws ApiException {
+	public <T> T getResource(String namespace, String alias, String name, String type) throws Exception {
 		Object api = mapping.get("api", alias);
 		Boolean namespaced = (Boolean) mapping.get("namespaced", alias);
 		String kind = (String) mapping.get("kind", alias);
@@ -164,12 +164,12 @@ public class KubeResourceManager {
 				return (T) MethodUtils.invokeMethod(api, "readNamespaced" + kind, name, namespace, pretty, true, false);
 			}
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			e.printStackTrace();
+			logger.debug("", e);
+			throw e;
 		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
+			logger.debug("", e);
+			throw e;
 		}
-
-		return null;
 	}
 
 	public <T> T updateResource(String namespace, String alias, String name, String json) throws Exception {
