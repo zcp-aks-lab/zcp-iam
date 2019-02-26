@@ -7,6 +7,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fatboyindustrial.gsonjodatime.Converters;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.skcc.cloudz.zcp.iam.api.resource.service.ResourceService;
 import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyHolder;
 
@@ -36,6 +39,14 @@ public class ResourceController {
 	@Value("${zcp.kube.namespace}")
 	private String zcpSystemNamespace;
 
+	private Gson gson;
+
+	public ResourceController(){
+		GsonBuilder builder = new GsonBuilder();
+		Converters.registerDateTime(builder);
+		gson = builder.create();
+	}
+
 	@RequestMapping(value = "resource/{kind}", method = RequestMethod.GET)
 	public Object list(@RequestParam(required=false, name="ns") String namespace,
 			@RequestParam String username,
@@ -51,7 +62,7 @@ public class ResourceController {
 		}
 		log.debug("Response Type :: {}", ret.getClass());
 
-		return ret;
+		return gson.toJson(ret);
 	}
 
 	@RequestMapping(value = "resource/{kind}/{name:.+}", method = RequestMethod.GET)
@@ -66,7 +77,7 @@ public class ResourceController {
 		Object ret = resourceService.getResource(namespace, kind, name, type);
 		log.debug("Response Type :: {}", ret.getClass());
 
-		return ret;
+		return gson.toJson(ret);
 	}
 
 	@RequestMapping(value = "resource/{kind}/{name:.+}", method = RequestMethod.PUT)
@@ -81,7 +92,7 @@ public class ResourceController {
 		Object ret = resourceService.updateResource(namespace, kind, name, jsonBody);
 		log.debug("Response Type :: {}", ret.getClass());
 
-		return ret;
+		return gson.toJson(ret);
 	}
 
 	@GetMapping(value = "resource/{kind}/{name}/logs")

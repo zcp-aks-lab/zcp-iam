@@ -87,7 +87,8 @@ public enum ZcpErrorCode {
 	DELETE_USER_CLUSTER_ROLE						(61004, "error : Mapped role binding"),
 	
 	//resources
-	RESOURCE_NOT_FOUND								(70404, "Not Found")
+	RESOURCE_NOT_FOUND								(70404, "Not Found"),
+	RESOURCE_INVALID								(70422, "Invalid")
 	;
 
 	

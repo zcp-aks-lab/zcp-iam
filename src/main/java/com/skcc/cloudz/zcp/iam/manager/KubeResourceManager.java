@@ -1,26 +1,28 @@
 package com.skcc.cloudz.zcp.iam.manager;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.fatboyindustrial.gsonjodatime.Converters;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import com.google.common.collect.Table.Cell;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyAuth;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.slf4j.Logger;
@@ -55,7 +57,8 @@ public class KubeResourceManager {
 	@Value("${kube.client.api.output.pretty}")
 	private String pretty;
 
-	private ObjectMapper mapper = new ObjectMapper();
+	// private ObjectMapper mapper = new ObjectMapper();
+	private Gson gson;
 
 	public KubeResourceManager() throws Exception {
 		ClientBuilder builder = ClientBuilder.standard();
@@ -63,7 +66,10 @@ public class KubeResourceManager {
 
 		// for jackson
 		// https://stackoverflow.com/a/41645158
-		mapper.registerModule(new JodaModule());
+		// mapper.registerModule(new JodaModule());
+		GsonBuilder gson = new GsonBuilder();
+		Converters.registerDateTime(gson);
+		this.gson = gson.create();
 
 		// Create Api Object for each non CoreApi
 		Object[] apis = {
@@ -184,7 +190,7 @@ public class KubeResourceManager {
 					.findFirst()
 					.get();
 			Class<?> clazz = method.getParameterTypes()[ !namespaced ? 1 : 2 ];
-			Object body = mapper.readValue(json, clazz);
+			Object body = gson.fromJson(json, clazz);
 
 			if(!namespaced){
 				return (T) method.invoke(api, name, body, pretty);
@@ -195,12 +201,12 @@ public class KubeResourceManager {
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.debug("", e);
 			throw e;
-		} catch (JsonParseException | JsonMappingException e) {
-			logger.debug("", e);
-			throw e;
-		} catch (IOException e) {
-			logger.debug("", e);
-			throw e;
+		// } catch (JsonParseException | JsonMappingException e) {
+		// 	logger.debug("", e);
+		// 	throw e;
+		// } catch (IOException e) {
+		// 	logger.debug("", e);
+		// 	throw e;
 		}
 	}
 
@@ -252,5 +258,86 @@ public class KubeResourceManager {
 			((Set<Object>) map.get("alias")).add(alias);
 		}
 		return ret;
+	}
+
+	public String handleExceptionMessage(ApiException ae){
+		try {
+			// see io.kubernetes.client.proto.Meta.Status
+			StringBuilder sb = new StringBuilder();
+			Status status = gson.fromJson(ae.getResponseBody(), Status.class);
+			status.headline(sb);
+			status.message(sb);
+			return sb.toString();
+
+			// JsonObject s = gson.fromJson(ae.getResponseBody(), JsonObject.class);
+
+			// StringBuilder sb = new StringBuilder();
+			// if (s.has("details")) {
+			// 	JsonObject d = s.getAsJsonObject("details");
+			// 	println(sb, d.get("kind").getAsString(), d.get("name"), "is", s.get("reason").getAsString());
+			// 	if (d.has("causes")) {
+			// 		JsonArray c = d.getAsJsonArray("causes");
+			// 		c.forEach(r -> {
+			// 			JsonObject o = (JsonObject) r;
+			// 			println(sb, "*", o.get("field").getAsString() + ":", o.get("message").getAsString());
+			// 		});
+			// 	} else {
+			// 		println(sb, s.get("message").getAsString());
+			// 	}
+			// } else {
+			// 	println(sb, s.get("reason").getAsString());
+			// 	print(sb, "*", s.get("message").getAsString());
+			// }
+
+			// return sb.toString();
+		} catch (Exception e) {
+			logger.info("{}({})", e.getMessage(), e.getClass());
+		}
+		return ae.getMessage();
+	}
+
+	private void println(StringBuilder sb, Object... args){
+		print(sb, args);
+		sb.append("\n");
+	}
+
+	private void print(StringBuilder sb, Object... args){
+		sb.append(StringUtils.join(args, " "));
+	}
+	
+	/*
+	 * for make error message
+	 */
+	private class Status {
+		public int code;
+		public String reason;
+		public String message;
+		public Details details;
+
+		public void headline(StringBuilder sb){
+			if(details == null){
+				sb.append(reason).append('\n');
+			} else {
+				String line = String.format("%s '%s' is %s\n", details.kind, details.name, reason);
+				sb.append(line);
+			}
+		}
+
+		public void message(StringBuilder sb){
+			if(details == null || details.causes == null){
+				sb.append(message).append('\n');
+				return;
+			}
+
+			for(Map<String, Object> c : details.causes) {
+				sb.append("* ").append(c.get("field")).append(": ").append(c.get("message")).append('\n');
+			}
+		}
+	}
+
+	private class Details {
+		public String kind;
+		public String name;
+		public List<Map<String, Object>> causes;
 	}
 }

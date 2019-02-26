@@ -122,12 +122,22 @@ public class ResourceService implements EndpointSource<Object> {
 			ZcpErrorCode zcpCode = ZcpErrorCode.KUBERNETES_UNKNOWN_ERROR; 
 			switch(ae.getCode()){
 				case 404: zcpCode = ZcpErrorCode.RESOURCE_NOT_FOUND; break;
+				case 422: zcpCode = ZcpErrorCode.RESOURCE_INVALID; break;
 			}
-			throw new ZcpException(zcpCode);
+			throw new ZcpException(zcpCode, resourceManager.handleExceptionMessage(ae));
 		}
 
 		log.info("{}({})", e.getMessage(), e.getClass());
 		throw new ZcpException(ZcpErrorCode.GET_SECRET, e.getMessage());
+	}
+
+	public String handleExceptionMessage(ApiException ae){
+		try {
+
+		} catch (Exception e) {
+			log.info("{}({})", e.getMessage(), e.getClass());
+		}
+		return ae.getMessage();
 	}
 
     /* for actuator (/system) */
