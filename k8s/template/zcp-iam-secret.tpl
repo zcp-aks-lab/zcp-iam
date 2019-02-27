@@ -3,6 +3,8 @@ kind: Secret
 metadata:
   name: zcp-iam-secret
   namespace: ${namespace}
+  labels:
+    component: zcp-iam
 type: Opaque
 data:
   KEYCLOAK_MASTER_CLIENT_SECRET: ${client_secret}

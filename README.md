@@ -1,92 +1,85 @@
-# The zcp-iam Installation Guide
+# Installation Guide
 
 zcp-iam 은 zcp-portal-ui (Console)의 back-end api server 로서, KeyCloak 과 Kubernetes(이하 k8s) 의 Proxy 역할을 하는 API Server 이다.
 
 zcp-iam 을 설치하기 이전에 k8s cluster 가 설치되어 있어야 하고, cluster role 권한으로 `kubectl` 을 수행 할 수 있는 환경을 갖추어야 한다.
 
-## Clone this project into the desktop
+## Clone Project
+Clone this project into the desktop
 ```
 $ git clone https://github.com/cnpst/zcp-iam.git
 ```
 
-## Deploy the application
-프로젝트 별로 수정해야 하는 파일은 **configmap, ingress, secret** 세 가지이다.
+## Create ServiceAccount
+zcp-iam에서 사용 할 zcp-system-admin 및 Console Admin (cloudzcp-admin) 사용자 용 serviceAccount 을 생성한다.
 
-k8s configuration 파일 디렉토리로 이동한다.
-
-```
-$ cd zcp-iam/k8s
-```
-
-### :one: zcp-iam에서 사용 할 zcp-system-admin 및 Console Admin (cloudzcp-admin) 사용자 용 serviceAccount 을 생성한다.
 zcp-system namespace 에 **bluemix container registry** 용 secret - `bluemix-cloudzcp-secret` 이 생성 되어 있어야 한다.
 
 ```
 $ kubectl create -f zcp-system-admin-sa-crb.yaml
+
+$ kubectl get secret -n zcp-system  # check to create
 ```
 
-다음 명령어로 생성된 secret 을 확인한다.
-```
-$ kubectl get secret -n zcp-system
-```
+## Generate YAML (Kubernetes Resources)
+설치 환경에 맞게 `setenv.sh` 파일을 수정한 후, `template.sh` 파일을 실행한다.
 
-### :two: ConfigMap을 수정한 후 생성 한다.
-#### 프로젝트의 `api-server endpoint` 정보를 변경해야 한다.
-
-`api-server endpoint` 정보 확인
-```
-$ kubectl config view
-apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority-data: REDACTED
-    server: https://169.56.69.242:23078
-  name: zcp-demo
-  ...
-  ...
-```
-
-#### ConfigMap 에 `api-server endpoint` 정보 변경
-```
-$ vi zcp-iam-config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: zcp-iam-config
-  namespace: zcp-system
-data:
-  SPRING_ACTIVE_PROFILE: stage
-  KEYCLOAK_MASTER_REALM: master
-  KEYCLOAK_MASTER_CLIENTID: master-realm
-  KEYCLOAK_SERVER_URL: https://lawai-iam.cloudzcp.io/auth/
-  KUBE_APISERVER_URL: https://169.56.69.242:30439
-  JENKINS_SERVER_URL: https://jenkins.cloudzcp.io
-  JENKINS_TEMPLATE_PATH: classpath:jenkins/folder.xml
-```
-
-#### ConfigMap 생성
-```
-$ kubectl create -f zcp-iam-config.yaml
-```
-### :three: Secret을 수정한 후 생성 한다.
-
-#### KeyCloak 설치 시 admin crediential 정보와 KeyCloak의 master realm에 있는 master-realm client의 secret 값을 변경해야 한다. 
+각 정보를 확인하는 자세한 방법은 Appendix 를 참고한다.
 
 ```
-apiVersion: v1
-kind: Secret
-metadata:
-  name: zcp-iam-secret
-  namespace: zcp-system
-type: Opaque
-data:
-  KEYCLOAK_MASTER_CLIENT_SECRET: NjcyNDVhOWYtY2JjMy00YmJhLWE2NGYtMTc1MDM3Y2Y3YmI5  
-  KEYCLOAK_MASTER_USERNAME: Y2xvdWR6Y3AtYWRtaW4=
-  KEYCLOAK_MASTER_PASSWORD: Y2xvdWR6Y3AhMjMk
-  JENKINS_USER_TOKEN: dXNlcm5hbWU6YXBpLXRva2Vu # username:api-token
+$ cd zcp-iam/k8s/template
+
+$ cat setenv.sh 
+#!/bin/bash
+out_dir=.tmp
+
+# variables be set as jenkins job properties. use this variables when you install manually.
+keycloak_user=cloudzcp-admin
+keycloak_pwd=
+jenkins_user=cloudzcp-admin
+jenkins_token=api-token
+
+sa=zcp-system-admin
+domain_prefix=pog-dev-
+api_server=kubernetes.default
+namespace=zcp-system
+image=registry.au-syd.bluemix.net/cloudzcp/zcp-iam:1.1.0
+
+replicas=1
+...
 ```
 
-##### KeyCloak 의 master realm client 의 secret 정보를 확인하는 방법
+`template.sh` 파일은 템플릿 파일(`.tpl`/`.tpl2`)을 변환하여 YAML 파일을 생성한다.
+
+`.tmp` 는 `setenv.sh` 파일의 `out_dir` 값과 동일하다.
+```
+$ bash template.sh
+
+$ ls -l .tmp
+...
+```
+
+## Create Kubernetes Resource
+템플릿을 통해 생성된 YAML 파일을 아래의 명령으로 실행한다.
+
+
+```
+$ kubectl create -f .tmp
+
+## check to create
+$ kubectl get deploy,po,cm,secret,svc -n zcp-system -l component=zcp-iam
+```
+
+## Appendix
+### Jenkins 의 api-token 정보를 확인하는 방법
+
+* Jenkins에 로그인 한다. (폴더 생성권한 필요)
+* 우측 상단의 사용자 이름을 클릭한다.
+* 좌측 메뉴의 설정 페이지로 이동한다.
+* API Token > Legacy API Token 버튼을 클릭하여 값을 확인한다.
+* Secret 정보를 복사 한 후 base64로 incoding 한다.
+
+### ~~KeyCloak 의 master realm client 의 secret 정보를 확인하는 방법~~
 
 * KeyCloak 에서 사용하는 Postgresql 에 접속하여 Client 테이블에서 Secret 정보를 Select 한다.
 
@@ -116,29 +109,3 @@ KeyCloak 설치 시 설정한 admin id/password (KEYCLOAK_ADMIN_ID, KEYCLOAK_ADM
 
 (:white_check_mark: KeyCloak 설치 시 admin id/password 변경하지 않은 경우 그대로 사용하면 됨)
 
-##### Jenkins 의 api-token 정보를 확인하는 방법
-
-* Jenkins에 로그인 한다. (폴더 생성권한 필요)
-* 우측 상단의 사용자 이름을 클릭한다.
-* 좌측 메뉴의 설정 페이지로 이동한다.
-* API Token > Legacy API Token 버튼을 클릭하여 값을 확인한다.
-* Secret 정보를 복사 한 후 base64로 incoding 한다.
-
-#### Secret 생성
-
-```
-$ kubectl create -f zcp-iam-secret.yaml
-```
-
-### :four: Deployment와 Service를 생성 한다.
-zcp-iam 의 container image tag 정보를 확인 한 후, 생성 한다.
-현재는 bluemix container registry `image: registry.au-syd.bluemix.net/cloudzcp/zcp-iam:0.9.3` 를 사용한다.
-```
-$ cd ../
-$ kubectl create -f zcp-iam-deployment-ibm.yaml
-```
-
-다음 명령어로 zcp-iam 이 정상적으로 배포되었는지 확인한다.
-```
-$ kubectl get pod -n zcp-system
-```

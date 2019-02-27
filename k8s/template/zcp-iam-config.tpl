@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: zcp-iam-config
   namespace: ${namespace}
+  labels:
+    component: zcp-iam
 data:
   SPRING_ACTIVE_PROFILE: stage
   KEYCLOAK_MASTER_REALM: master
