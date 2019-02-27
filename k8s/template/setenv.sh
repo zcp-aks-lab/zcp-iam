@@ -2,10 +2,10 @@
 out_dir=.tmp
 
 # variables be set as jenkins job properties. use this variables when you install manually.
-#keycloak_user=cloudzcp-admin
-#keycloak_pwd=
-#jenkins_user=cloudzcp-admin
-#jenkins_token=api-token
+keycloak_user=cloudzcp-admin
+keycloak_pwd=
+jenkins_user=cloudzcp-admin
+jenkins_token=api-token
 
 sa=zcp-system-admin
 domain_prefix=pog-dev-

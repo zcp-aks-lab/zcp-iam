@@ -82,7 +82,7 @@ kind: Service
 metadata:
   name: zcp-iam
   labels:
-    name: zcp-iam
+    component: zcp-iam
   namespace: ${namespace}
 spec:
   type: ClusterIP
