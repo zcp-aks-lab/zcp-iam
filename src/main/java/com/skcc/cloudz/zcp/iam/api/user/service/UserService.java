@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -41,12 +42,16 @@ import com.skcc.cloudz.zcp.iam.common.model.ZcpUserList;
 import com.skcc.cloudz.zcp.iam.manager.KeyCloakManager;
 import com.skcc.cloudz.zcp.iam.manager.KubeCoreManager;
 import com.skcc.cloudz.zcp.iam.manager.KubeRbacAuthzManager;
+import com.skcc.cloudz.zcp.iam.manager.KubeResourceManager;
 import com.skcc.cloudz.zcp.iam.manager.ResourcesLabelManager;
 import com.skcc.cloudz.zcp.iam.manager.ResourcesNameManager;
+import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyHolder;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ClusterRoleBindingList;
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1RoleBinding;
@@ -71,7 +76,10 @@ public class UserService {
 
 	@Autowired
 	private KubeRbacAuthzManager kubeRbacAuthzManager;
-	
+
+	@Autowired
+	private KubeResourceManager kubeResourceManager;
+
 	@Autowired
 	private KeycloakService keycloakService;
 
@@ -158,27 +166,68 @@ public class UserService {
 			zcpUser.setClusterRole(ClusterRole.getClusterRole(userClusterRoleBinding.getRoleRef().getName()));
 		}
 
-		List<V1RoleBinding> userRoleBindings = null;
-		try {
-			userRoleBindings = kubeRbacAuthzManager.getRoleBindingListByUsername(username).getItems();
-		} catch (ApiException e) {
-			//e.printStackTrace();
-			//throw new ZcpException("ZCP-0001", e.getMessage());
-			// we can ignore this case becase the user registered by himself the clusterrole does not exist yet
-		}
-
-		if (userRoleBindings != null && !userRoleBindings.isEmpty()) {
-			List<String> userNamespaces = new ArrayList<>();
-			for (V1RoleBinding roleBinding : userRoleBindings) {
-				userNamespaces.add(roleBinding.getMetadata().getNamespace());
-			}
-
-			zcpUser.setNamespaces(userNamespaces);
-			zcpUser.setUsedNamespace(userNamespaces.size());
-		}
+		List<String> userNamespaces = getNamespace(username, zcpUser.getClusterRole());
+		zcpUser.setNamespaces(userNamespaces);
+		zcpUser.setUsedNamespace(userNamespaces.size());
 
 		return zcpUser;
+	}
 
+	public List<String> getNamespace(String username, ClusterRole role) throws ZcpException {
+		UserRepresentation userRepresentation = null;
+		try {
+			userRepresentation = keyCloakManager.getUserFromName(username).toRepresentation();
+		} catch (KeyCloakException e) {
+			throw new ZcpException(ZcpErrorCode.GET_USER_ERROR, e);
+		}
+
+		// Response namespaces for ecah ClusterRole
+		List<String> userNamespaces = new ArrayList<>();
+
+		boolean supperAdmin = Optional.ofNullable(userRepresentation.getAttributes())
+				.map(attr -> attr.get("superAdmin"))
+				.filter(v -> !v.isEmpty())
+				.map(v -> Boolean.parseBoolean(v.get(0)))
+				.orElse(false);
+
+		if (supperAdmin && ClusterRole.CLUSTER_ADMIN == role) {
+			try {
+				ServiceAccountApiKeyHolder.instance().setToken(username);
+				V1NamespaceList all = kubeResourceManager.getList("", "namespace");
+				List<V1Namespace> items = all.getItems();
+				if (all != null && !items.isEmpty()) {
+					for (V1Namespace ns : items) {
+						userNamespaces.add(ns.getMetadata().getName());
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		} else if (ClusterRole.CLUSTER_ADMIN == role) {
+			try {
+				List<V1Namespace> all = kubeCoreManager.getNamespaceList().getItems();
+				if (all != null && !all.isEmpty()) {
+					for (V1Namespace ns : all) {
+						userNamespaces.add(ns.getMetadata().getName());
+					}
+				}
+			} catch (ApiException e) {}
+		} else {
+			try {
+				List<V1RoleBinding> userRoleBindings = kubeRbacAuthzManager.getRoleBindingListByUsername(username).getItems();
+				if (userRoleBindings != null && !userRoleBindings.isEmpty()) {
+					for (V1RoleBinding roleBinding : userRoleBindings) {
+						userNamespaces.add(roleBinding.getMetadata().getNamespace());
+					}
+				}
+			} catch (ApiException e) {
+				//e.printStackTrace();
+				//throw new ZcpException("ZCP-0001", e.getMessage());
+				// we can ignore this case becase the user registered by himself the clusterrole does not exist yet
+			}
+		}
+
+		return userNamespaces;
 	}
 
 	public void createUser(MemberVO user) throws ZcpException {

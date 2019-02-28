@@ -3,6 +3,7 @@ package com.skcc.cloudz.zcp.iam.manager.client;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.google.common.collect.Maps;
@@ -22,6 +23,10 @@ public class ServiceAccountApiKeyHolder {
 	@Autowired
 	private KubeCoreManager manager;
 	private static ServiceAccountApiKeyHolder instance;
+
+
+	@Value("${zcp.kube.namespace}")
+	private String defaultNamespace;
 	
 	public ServiceAccountApiKeyHolder() {
 		if(instance != null)
@@ -47,6 +52,10 @@ public class ServiceAccountApiKeyHolder {
 		return token;
 	}
 	
+	public String setToken(String username) throws ApiException {
+		return setToken(defaultNamespace, username);
+	}
+
 	public String setToken(String namespace, String username) throws ApiException {
 		String serviceAccountName = ResourcesNameManager.getServiceAccountName(username);
 		V1ServiceAccount sa = manager.getServiceAccount(namespace, serviceAccountName);
@@ -80,5 +89,13 @@ public class ServiceAccountApiKeyHolder {
 	
 	public String getNamespace() {
 		return namespace.get();
+	}
+
+	public void setDefaultNamespace(String defaultNamespace) {
+		this.defaultNamespace = defaultNamespace;
+	}
+
+	public String getDefaultNamespace() {
+		return defaultNamespace;
 	}
 }

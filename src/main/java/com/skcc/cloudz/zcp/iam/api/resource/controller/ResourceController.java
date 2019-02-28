@@ -36,9 +36,6 @@ public class ResourceController {
 	@Autowired
 	private ResourceService resourceService;
 
-	@Value("${zcp.kube.namespace}")
-	private String zcpSystemNamespace;
-
 	private Gson gson;
 
 	public ResourceController(){
@@ -52,7 +49,7 @@ public class ResourceController {
 			@RequestParam String username,
 			@PathVariable String kind) throws Exception {
 
-		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
+		ServiceAccountApiKeyHolder.instance().setToken(username);
 		
 		Object ret = null;
 		if("Namespace".equals(resourceService.toKind(kind))){
@@ -72,7 +69,7 @@ public class ResourceController {
 			@PathVariable String kind,
 			@PathVariable String name) throws Exception {
 
-		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
+		ServiceAccountApiKeyHolder.instance().setToken(username);
 
 		Object ret = resourceService.getResource(namespace, kind, name, type);
 		log.debug("Response Type :: {}", ret.getClass());
@@ -87,7 +84,7 @@ public class ResourceController {
 			@PathVariable String name,
 			@RequestBody String jsonBody) throws Exception {
 
-		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
+		ServiceAccountApiKeyHolder.instance().setToken(username);
 
 		Object ret = resourceService.updateResource(namespace, kind, name, jsonBody);
 		log.debug("Response Type :: {}", ret.getClass());
@@ -102,7 +99,7 @@ public class ResourceController {
 			@PathVariable String kind,
 			@PathVariable String name) throws Exception {
 
-		ServiceAccountApiKeyHolder.instance().setToken(zcpSystemNamespace, username);
+		ServiceAccountApiKeyHolder.instance().setToken(username);
 
 		param.put("name", name);
 		String ret = resourceService.getLogs(param);

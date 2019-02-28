@@ -3,7 +3,7 @@ package com.skcc.cloudz.zcp.iam.api.resource.service;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.Lists;
+import com.skcc.cloudz.zcp.iam.api.user.service.UserService;
 import com.skcc.cloudz.zcp.iam.common.actuator.SystemEndpoint.EndpointSource;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpErrorCode;
 import com.skcc.cloudz.zcp.iam.common.exception.ZcpException;
@@ -18,11 +18,7 @@ import org.springframework.stereotype.Service;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
-import io.kubernetes.client.models.V1ListMeta;
-import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
-import io.kubernetes.client.models.V1RoleBinding;
-import io.kubernetes.client.models.V1RoleBindingList;
 
 @Service
 public class ResourceService implements EndpointSource<Object> {
@@ -33,6 +29,9 @@ public class ResourceService implements EndpointSource<Object> {
 
 	@Autowired
 	private KubeRbacAuthzManager rbacManager;
+
+	@Autowired
+	private UserService userService;
 
 	public String toKind(String alias) {
 		return resourceManager.toKind(alias);
@@ -76,25 +75,11 @@ public class ResourceService implements EndpointSource<Object> {
 			V1ClusterRoleBinding crb = rbacManager.getClusterRoleBindingByUsername(username);
 			ClusterRole role = ClusterRole.getClusterRole(crb.getRoleRef().getName());
 
-			List<V1Namespace> items = Lists.newArrayList();
-
-			// for cluster-admin
-			if (ClusterRole.CLUSTER_ADMIN == role) {
-				return resourceManager.getList("", "namespace");	
-			}
-
-			// for non cluster-admin
-			V1RoleBindingList rbs = rbacManager.getRoleBindingListByUsername(username);
-			for(V1RoleBinding rb : rbs.getItems()){
-				String namespace = rb.getMetadata().getNamespace();
-				V1Namespace ns = resourceManager.getResource("", "namespace", namespace, null);
-				items.add(ns);
-			}
-
-			V1NamespaceList list = new V1NamespaceList();
-			list.kind("List");
-			list.metadata(new V1ListMeta());
-			list.items(items);
+			List<String> names = userService.getNamespace(username, role);
+			V1NamespaceList list = resourceManager.getList("", "namespace");
+			list.getItems().removeIf(v -> {
+				return !names.contains(v.getMetadata().getName());
+			});
 
 			return list;
 		} catch (Exception e){
