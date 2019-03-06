@@ -7,6 +7,13 @@ keycloak:
     username: zcp-admin
     password: Password1!
   
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017
+      database: iam
+      # username: 
+      # password: 
 
 # for actuator
 endpoints:
@@ -24,7 +31,7 @@ logging:
     com:
       skcc:
         cloudz:
-          zcp: DEBUG
+          zcp: INFO
     io:
       kubernetes:
         client: DEBUG
@@ -33,7 +40,7 @@ logging:
       keycloak: DEBUG
       springframework:
         security: DEBUG
-        web: DEBUG
+        web: INFO
         
 kube:
   client:

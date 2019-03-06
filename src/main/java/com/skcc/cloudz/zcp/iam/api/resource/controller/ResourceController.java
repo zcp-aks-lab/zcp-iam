@@ -10,14 +10,15 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fatboyindustrial.gsonjodatime.Converters;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.skcc.cloudz.zcp.iam.api.resource.service.ResourceCollector;
 import com.skcc.cloudz.zcp.iam.api.resource.service.ResourceService;
 import com.skcc.cloudz.zcp.iam.manager.client.ServiceAccountApiKeyHolder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jackson.JsonComponent;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,6 +37,9 @@ public class ResourceController {
 	@Autowired
 	private ResourceService resourceService;
 
+	@Autowired
+	private ResourceCollector resourceCollector;
+
 	private Gson gson;
 
 	public ResourceController(){
@@ -47,15 +51,21 @@ public class ResourceController {
 	@RequestMapping(value = "resource/{kind}", method = RequestMethod.GET)
 	public Object list(@RequestParam(required=false, name="ns") String namespace,
 			@RequestParam String username,
-			@PathVariable String kind) throws Exception {
+			@PathVariable String kind,
+			@RequestParam(required=false) String keyword,
+			Pageable pageable) throws Exception {
 
 		ServiceAccountApiKeyHolder.instance().setToken(username);
 		
 		Object ret = null;
-		if("Namespace".equals(resourceService.toKind(kind))){
+		String alias = kind;
+		kind = resourceService.toKind(kind);
+		if("Namespace".equals(kind)){
 			ret = resourceService.getListNamespace(username);
+		} else if("Event".equals(kind)){
+			ret = resourceCollector.getList(namespace, keyword, pageable);
 		} else {
-			ret = resourceService.getList(namespace, kind);
+			ret = resourceService.getList(namespace, alias);
 		}
 		log.debug("Response Type :: {}", ret.getClass());
 
@@ -71,7 +81,14 @@ public class ResourceController {
 
 		ServiceAccountApiKeyHolder.instance().setToken(username);
 
-		Object ret = resourceService.getResource(namespace, kind, name, type);
+		Object ret = null;
+		String alias = kind;
+		kind = resourceService.toKind(kind);
+		if("Event".equals(kind)){
+			ret = resourceCollector.getResource(namespace, alias, name, type);
+		} else {
+			resourceService.getResource(namespace, alias, name, type);
+		}
 		log.debug("Response Type :: {}", ret.getClass());
 
 		return gson.toJson(ret);
