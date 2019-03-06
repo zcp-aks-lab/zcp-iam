@@ -7,6 +7,12 @@ keycloak:
     username: ${KEYCLOAK_MASTER_USERNAME}
     password: ${KEYCLOAK_MASTER_PASSWORD}
 
+spring:
+  data:
+    mongodb:
+      uri: mongodb://zcp-iam-db-mongo:27017
+      database: iam
+
 # for actuator
 endpoints:
   prometheus:
