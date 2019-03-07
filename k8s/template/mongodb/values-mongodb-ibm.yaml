@@ -1,12 +1,24 @@
 nameOverride: 'mongo'
+
+mongodbDatabase: iam
+mongodbUsername: iam
+mongodbPassword: iam!23$
+
+#image:
+#  registry: registry.au-syd.bluemix.net
+#  repository: /cloudzcp/mongodb
+#  tag: 3.4.9-r1
+
 persistence:
-  enabled: false
-image: registry.au-syd.bluemix.net/cloudzcp/mongodb:3.4.9-r1
+  enabled: true
+  existingClaim: zcp-iam-mongodb
+
 tolerations:
   - effect: NoSchedule
     key: management
     operator: Equal
     value: "true"
+
 affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:

@@ -12,8 +12,6 @@ spring:
     mongodb:
       uri: mongodb://localhost:27017
       database: iam
-      # username: 
-      # password: 
 
 # for actuator
 endpoints:

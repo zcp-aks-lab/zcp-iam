@@ -2,8 +2,8 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    cloudzcp.io/zcp-system-admin: "yes"
-  name: zcp-system-admin
+    cloudzcp.io/zcp-system-admin: 'yes'
+  name: ${sa}
   namespace: ${namespace}
 # TODO
 imagePullSecrets:
@@ -18,14 +18,14 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     cloudzcp.io/zcp-system-admin: 'yes'
-  name: zcp-system-admin
+  name: ${sa}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin
 subjects:
 - kind: ServiceAccount
-  name: zcp-system-admin
+  name: ${sa}
   namespace: ${namespace}
   
 ---

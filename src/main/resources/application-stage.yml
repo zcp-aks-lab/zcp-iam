@@ -10,8 +10,10 @@ keycloak:
 spring:
   data:
     mongodb:
-      uri: mongodb://zcp-iam-db-mongo:27017
-      database: iam
+      uri: ${DB_URI}
+      database: ${DB_NAME}
+      username: ${DB_USER}
+      password: ${DB_PWD}
 
 # for actuator
 endpoints:

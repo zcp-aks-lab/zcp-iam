@@ -1,6 +1,6 @@
 stage:
 - Build
-- Deploy
+# - Deploy
 
 Build:
 - maven:

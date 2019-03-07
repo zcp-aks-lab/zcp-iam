@@ -7,6 +7,12 @@ keycloak:
     password: admin1234
     username: 1800275@partner.skcc.com
 
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017
+      database: iam
+
 # for actuator
 endpoints:
   prometheus:

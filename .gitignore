@@ -26,3 +26,11 @@ hs_err_pid*
 # gradle
 /.gradle
 /build
+/bin/*
+
+mvnw*
+.classpath
+.settings/*
+.vscode/*
+src/main/resources/kube*.*
+docker/dist/*

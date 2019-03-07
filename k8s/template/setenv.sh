@@ -7,6 +7,11 @@ keycloak_pwd=
 jenkins_user=cloudzcp-admin
 jenkins_token=api-token
 
+db_uri=mongodb://localhost:27017
+db_name=iam
+db_user=
+db_pwd=
+
 sa=zcp-system-admin
 domain_prefix=pog-dev-
 api_server=kubernetes.default
@@ -27,4 +32,7 @@ replicas=1
   keycloak_pwd=$(echo -n $keycloak_pwd | base64)
   client_secret=$(echo -n $client_secret | base64)
   jenkins_user_token=$(echo -n $jenkins_user_token | base64)
+
+  db_user=$(echo -n $db_user | base64)
+  db_pwd=$(echo -n $db_pwd | base64)
 }

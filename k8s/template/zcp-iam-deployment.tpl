@@ -73,6 +73,16 @@ spec:
               secretKeyRef:
                 name: zcp-iam-secret
                 key: JENKINS_USER_TOKEN
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: zcp-iam-secret
+                key: DB_USER
+          - name: DB_PWD
+            valueFrom:
+              secretKeyRef:
+                name: zcp-iam-secret
+                key: DB_PWD
       serviceAccount: ${sa}
       serviceAccountName: ${sa}
 ---
