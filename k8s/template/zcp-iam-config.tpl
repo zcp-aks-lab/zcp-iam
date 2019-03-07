@@ -14,5 +14,7 @@ data:
   KUBE_APISERVER_URL: https://${api_server}
   JENKINS_SERVER_URL: http://zcp-jenkins:8080
   JENKINS_TEMPLATE_PATH: classpath:jenkins/folder.xml
-  DB_URI: ${db_uri}
+  #DB_URI: ${db_uri}
   DB_NAME: ${db_name}
+  DB_HOST: ${db_host}
+  DB_PORT: ${db_port}

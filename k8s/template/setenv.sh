@@ -7,7 +7,9 @@ keycloak_pwd=
 jenkins_user=cloudzcp-admin
 jenkins_token=api-token
 
-db_uri=mongodb://localhost:27017
+#db_uri=mongodb://localhost:27017
+db_host=localhost
+db_port=27017
 db_name=iam
 db_user=
 db_pwd=
