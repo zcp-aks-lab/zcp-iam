@@ -87,7 +87,7 @@ public class ResourceController {
 		if("Event".equals(kind)){
 			ret = resourceCollector.getResource(namespace, alias, name, type);
 		} else {
-			resourceService.getResource(namespace, alias, name, type);
+			ret = resourceService.getResource(namespace, alias, name, type);
 		}
 		log.debug("Response Type :: {}", ret.getClass());
 
