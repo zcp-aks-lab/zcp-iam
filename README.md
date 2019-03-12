@@ -24,9 +24,9 @@ $ kubectl create -f zcp-system-admin-sa-crb.yaml
 $ kubectl get secret -n zcp-system  # check to create
 ```
 
-## Generate YAML (Kubernetes Resources)
+## Update Environment Variables
 
-설치 환경에 맞게 `setenv.sh` 파일을 수정한 후, `template.sh` 파일을 실행한다.
+설치 환경에 맞게 `setenv.sh` 파일을 수정한다.
 
 각 정보를 확인하는 자세한 방법은 Appendix 를 참고한다.
 
@@ -52,6 +52,45 @@ image=registry.au-syd.bluemix.net/cloudzcp/zcp-iam:1.1.0
 replicas=1
 ...
 ```
+
+## Install MongoDB
+
+helm chart 를 이용하여 mongodb 를 설치한다.
+
+```
+$ cd mongodb
+
+$ kubectl create -f zcp-iam-mongodb-pvc.yaml
+$ kubectl get pvc -w | grep zcp-iam-mongo
+zcp-iam-mongodb    Bound   pvc-xxx-xxx   20Gi    RWO    ibmc-block-retain-silver  yy
+
+$ bash install.sh
+LAST DEPLOYED: Thu Mar  7 16:44:10 2019
+NAMESPACE: zcp-system
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1/Secret
+NAME              TYPE    DATA  AGE
+zcp-iam-db-mongo  Opaque  2     5d
+
+==> v1/Service
+NAME              TYPE       CLUSTER-IP     EXTERNAL-IP  PORT(S)    AGE
+zcp-iam-db-mongo  ClusterIP  172.21.46.189  <none>       27017/TCP  5d
+
+==> v1beta1/Deployment
+NAME              DESIRED  CURRENT  UP-TO-DATE  AVAILABLE  AGE
+zcp-iam-db-mongo  1        1        1           1          5d
+
+==> v1/Pod(related)
+NAME                               READY  STATUS   RESTARTS  AGE
+zcp-iam-db-mongo-7794bdcfbb-cs8xw  1/1    Running  0         5d
+...
+```
+
+## Generate YAML (Kubernetes Resources)
+
+설정된 `setenv.sh` 파일을 바탕으로 `template.sh` 파일을 실행한다.
 
 `template.sh` 파일은 템플릿 파일(`.tpl`/`.tpl2`)을 변환하여 YAML 파일을 생성한다.
 
@@ -83,7 +122,6 @@ $ kubectl get deploy,po,cm,secret,svc -n zcp-system -l component=zcp-iam
 - 우측 상단의 사용자 이름을 클릭한다.
 - 좌측 메뉴의 설정 페이지로 이동한다.
 - API Token > Legacy API Token 버튼을 클릭하여 값을 확인한다.
-- Secret 정보를 복사 한 후 base64로 incoding 한다.
 
 ### ~~KeyCloak 의 master realm client 의 secret 정보를 확인하는 방법~~
 
