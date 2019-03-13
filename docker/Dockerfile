@@ -1,14 +1,19 @@
-FROM java:8
-ENV SPRING_ACTIVE_PROFILE default
+FROM openjdk:8-alpine
+
 ADD dist/zcp-iam-0.0.1-SNAPSHOT.jar app.jar
 VOLUME /tmp
 VOLUME /target
+
 #RUN apt-get update && \
 #    apt-get install -y net-tools
-RUN bash -c 'touch /app.jar'
+RUN touch /app.jar
 #CMD echo 'test'
 #EXPOSE 8081
-ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-Dspring.profiles.active=${SPRING_ACTIVE_PROFILE}","-jar","/app.jar"]
+
+ENV SPRING_ACTIVE_PROFILE default
+ENV JAVA_OPTS -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2
+
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-Dspring.profiles.active=${SPRING_ACTIVE_PROFILE}","${JAVA_OPTS}","-jar","/app.jar"]
 
 #docker run -d --rm --name skb-account-service \
 #           -p 8081:8081 \
