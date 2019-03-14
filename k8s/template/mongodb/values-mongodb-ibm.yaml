@@ -1,8 +1,8 @@
-nameOverride: 'mongo'
+nameOverride: "mongo"
 
 mongodbDatabase: iam
 mongodbUsername: iam
-mongodbPassword: iam!23$
+mongodbPassword: iam # CHANGE
 
 #image:
 #  registry: registry.au-syd.bluemix.net
@@ -23,12 +23,12 @@ affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
-      - matchExpressions:
-        - key: beta.kubernetes.io/arch
-          operator: In
-          values:
-          - amd64
-        - key: role
-          operator: In
-          values:
-          - management
+        - matchExpressions:
+            - key: beta.kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
+            - key: role
+              operator: In
+              values:
+                - management
