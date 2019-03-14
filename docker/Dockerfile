@@ -11,9 +11,9 @@ RUN touch /app.jar
 #EXPOSE 8081
 
 ENV SPRING_ACTIVE_PROFILE default
-ENV JAVA_ARGS -Djava.security.egd=file:/dev/./urandom -Dspring.profiles.active=${SPRING_ACTIVE_PROFILE}
-ENV JAVA_OPTS -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2
-ENV JAVA_DEBUG ""
+ENV JAVA_ARGS '-Djava.security.egd=file:/dev/./urandom -Dspring.profiles.active=${SPRING_ACTIVE_PROFILE}'
+ENV JAVA_OPTS '-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2'
+ENV JAVA_DEBUG ''
 
 ENTRYPOINT ["/bin/sh", "-c", "java ${JAVA_ARGS} ${JAVA_OPTS} ${JAVA_DEBUG} -jar /app.jar"]
 
