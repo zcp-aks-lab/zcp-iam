@@ -30,7 +30,7 @@ $ kubectl get secret -n zcp-system  # check to create
 
 각 정보를 확인하는 자세한 방법은 Appendix 를 참고한다.
 
-> `jenkins_token` 값은 Jenknis 설치/설정 이후 값을 확인가능하다. 설정이 누락되지 않도록 주의한다.
+> `jenkins_token` 값은 Jenkins 설치/설정 이후 값을 확인가능하다. 설정이 누락되지 않도록 주의한다.
 
 ```
 $ cd zcp-iam/k8s/template
@@ -149,7 +149,10 @@ service/zcp-iam   ClusterIP   172.21.17.89   <none>        80/TCP    17d
 - API Token > Legacy API Token 버튼을 클릭하여 값을 확인한다.
 
 ### ~~KeyCloak 의 master realm client 의 secret 정보를 확인하는 방법~~
-> setenv.sh 에서 자동으로 설정되도록 변경됨
+
+```
+!) setenv.sh 에서 자동으로 설정되도록 변경됨
+```
 
 - KeyCloak 에서 사용하는 Postgresql 에 접속하여 Client 테이블에서 Secret 정보를 Select 한다.
 
