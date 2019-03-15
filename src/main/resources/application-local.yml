@@ -57,6 +57,9 @@ zcp:
     token-url: /realms/zcp/protocol/openid-connect/token
   kube:
     namespace: zcp-system
+  wsh:
+    template: classpath:ssh/pod.yaml
+    image: cloudzcp/wsh:1.1.0
 
 jenkins:
   url: https://jenkins.cloudzcp.io

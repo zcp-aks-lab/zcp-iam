@@ -36,6 +36,7 @@ import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.commons.text.StringSubstitutor;
 import org.apache.commons.text.TextStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
 import org.springframework.core.task.TaskExecutor;
@@ -61,8 +62,11 @@ public class WebSshHandler3 extends PodExecRelayHanlder implements EndpointSourc
     private final Type TYPE_SECRET = new TypeToken<Watch.Response<V1Secret>>() {}.getType();
     private final Type TYPE_POD = new TypeToken<Watch.Response<V1Pod>>() {}.getType();
 
-    // @Value("${jenkins.template.folder}")
+    @Value("${zcp.wsh.template}")
     private String templatePath = "classpath:/ssh/pod.yaml";
+
+	@Value("${zcp.wsh.image}")
+	private String image = "cloudzcp/wsh:latest";
 
     @Autowired
     private ApplicationContext context;
@@ -154,6 +158,7 @@ public class WebSshHandler3 extends PodExecRelayHanlder implements EndpointSourc
         vars.put("var_namespace", wsContext.asShellSafe(namespace));
         vars.put("token", token);
         vars.put("iam.host", host);
+        vars.put("image", image);
 
         // read config.xml template
         TextStringBuilder template = new TextStringBuilder();

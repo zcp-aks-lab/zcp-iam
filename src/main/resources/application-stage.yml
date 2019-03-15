@@ -42,7 +42,7 @@ logging:
       springframework:
         security: DEBUG
         web: INFO
-        
+
 kube:
   client:
     api:
@@ -51,7 +51,7 @@ kube:
   server:
     apiserver:
       endpoint: ${KUBE_APISERVER_URL}
-    
+
 server:
   port: 8181
 zcp:
@@ -60,11 +60,14 @@ zcp:
     token-url: /realms/zcp/protocol/openid-connect/token
   kube:
     namespace: zcp-system
+  wsh:
+    template: ${WSH_TEMPLATE}
+    image: ${WSH_IMAGE}
 
 jenkins:
   url: ${JENKINS_SERVER_URL}
   token: ${JENKINS_USER_TOKEN}
-  template: 
+  template:
     folder: ${JENKINS_TEMPLATE_PATH}
 
 role:
