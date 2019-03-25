@@ -61,7 +61,7 @@ helm chart 를 이용하여 mongodb 를 설치한다.
 $ cd mongodb
 
 $ kubectl create -f zcp-iam-mongodb-pvc.yaml
-$ kubectl get pvc -w | grep zcp-iam-mongo
+$ kubectl get pvc -n zcp-system -w | grep zcp-iam-mongo
 zcp-iam-mongodb    Bound   pvc-xxx-xxx   20Gi    RWO    ibmc-block-retain-silver  yy
 
 $ bash install.sh
