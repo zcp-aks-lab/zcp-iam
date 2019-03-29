@@ -34,3 +34,4 @@ mvnw*
 .vscode/*
 src/main/resources/kube*.*
 docker/dist/*
+.tmp

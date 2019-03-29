@@ -13,7 +13,7 @@ public class ResourcesLabelManager {
 	public static final String SYSTEM_CLUSTERROLE_LABEL_NAME = "cloudzcp.io/zcp-system-cluster-role";
 	public static final String SYSTEM_ROLE_LABEL_NAME = "cloudzcp.io/zcp-system-namespace-role";
 	
-	public static final String SYSTEM_ZDB_LABEL_NAME = "cloudzcp.io/zdb-system";
+	public static final String SYSTEM_ZDB_LABEL_NAME = "cloudzdb.io/zdb-system";
 
 	public static String getSystemLabelSelector() {
 		StringBuilder builder = new StringBuilder();
