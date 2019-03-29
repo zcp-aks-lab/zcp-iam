@@ -30,6 +30,8 @@ $ kubectl get secret -n zcp-system  # check to create
 
 각 정보를 확인하는 자세한 방법은 Appendix 를 참고한다.
 
+> `jenkins_token` 값은 Jenkins 설치/설정 이후 값을 확인가능하다. 설정이 누락되지 않도록 주의한다.
+
 ```
 $ cd zcp-iam/k8s/template
 
@@ -100,7 +102,12 @@ zcp-iam-db-mongo-7794bdcfbb-cs8xw  1/1    Running  0         5d
 $ bash template.sh
 
 $ ls -l .tmp
-...
+-rw-r--r--  1 hoon  staff  1312  3 15 12:27 setenv.sh
+-rw-r--r--  1 hoon  staff   608  3 15 12:27 varlables.log
+-rw-r--r--  1 hoon  staff   686  3 15 12:28 zcp-iam-config.yaml
+-rw-r--r--  1 hoon  staff  2748  3 15 12:27 zcp-iam-deployment.yaml
+-rw-r--r--  1 hoon  staff   404  3 15 12:27 zcp-iam-secret.yaml
+-rw-r--r--  1 hoon  staff  1743  3 15 12:27 zcp-system-admin-sa-crb.yaml
 ```
 
 ## Create Kubernetes Resource
@@ -108,10 +115,28 @@ $ ls -l .tmp
 템플릿을 통해 생성된 YAML 파일을 아래의 명령으로 실행한다.
 
 ```
-$ kubectl create -f .tmp
+$ kubectl create -f .tmpconfigmap/zcp-iam-config created
+deployment.apps/zcp-iam created
+service/zcp-iam created
+secret/zcp-iam-secret created
+...
 
 ## check to create
 $ kubectl get deploy,po,cm,secret,svc -n zcp-system -l component=zcp-iam
+NAME                            DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+deployment.extensions/zcp-iam   1         1         1            1           17d
+
+NAME                          READY     STATUS    RESTARTS   AGE
+pod/zcp-iam-68649d9bf-6n8gn   1/1       Running   0          1d
+
+NAME                       DATA      AGE
+configmap/zcp-iam-config   10        17d
+
+NAME                    TYPE      DATA      AGE
+secret/zcp-iam-secret   Opaque    6         17d
+
+NAME              TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+service/zcp-iam   ClusterIP   172.21.17.89   <none>        80/TCP    17d
 ```
 
 ## Appendix
@@ -124,6 +149,10 @@ $ kubectl get deploy,po,cm,secret,svc -n zcp-system -l component=zcp-iam
 - API Token > Legacy API Token 버튼을 클릭하여 값을 확인한다.
 
 ### ~~KeyCloak 의 master realm client 의 secret 정보를 확인하는 방법~~
+
+```
+!) setenv.sh 에서 자동으로 설정되도록 변경됨
+```
 
 - KeyCloak 에서 사용하는 Postgresql 에 접속하여 Client 테이블에서 Secret 정보를 Select 한다.
 
@@ -141,7 +170,7 @@ keycloak=# select secret from client where realm_id = 'master' and client_id = '
 keycloak=# \q
 ```
 
-Secret 정보를 복사 한 후 base64로 incoding 한다.
+Secret 정보를 복사 한 후 base64로 encoding 한다.
 
 ```
 $ echo -n "secret of master realm client" | base64
