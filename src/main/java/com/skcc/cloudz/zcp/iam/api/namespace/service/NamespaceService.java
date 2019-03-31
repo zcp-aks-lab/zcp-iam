@@ -526,7 +526,7 @@ public class NamespaceService {
 			}
 
 			double formattedValue = value / 1024 / 1024;
-			if (formattedValue < 1024) {
+			if (formattedValue % 1024 != 0) {
 				return Integer.valueOf(StringUtils.substringBefore(String.valueOf(formattedValue), "."));
 			} else {
 				formattedValue = formattedValue / 1024;
@@ -537,7 +537,7 @@ public class NamespaceService {
 				return Integer.valueOf(StringUtils.substringBefore(String.valueOf(value), "."));
 			}
 
-			if (value < 1) {
+			if (value % 1 != 0) {
 				double formattedValue = value * 1000;
 				return Integer.valueOf(StringUtils.substringBefore(String.valueOf(formattedValue), "."));
 			} else {
@@ -559,7 +559,7 @@ public class NamespaceService {
 				return CPUUnit.Core;
 			}
 
-			if (value < 1) {
+			if (value % 1 != 0) {
 				return CPUUnit.MilliCore;
 			} else {
 				return CPUUnit.Core;
@@ -581,7 +581,7 @@ public class NamespaceService {
 			}
 
 			double formattedValue = value / 1024 / 1024;
-			if (formattedValue < 1024) {
+			if (formattedValue % 1024 != 0) {
 				return MemoryUnit.Mi;
 			} else {
 				return MemoryUnit.Gi;
