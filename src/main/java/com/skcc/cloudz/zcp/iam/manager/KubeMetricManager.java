@@ -26,6 +26,9 @@ public class KubeMetricManager {
 
 	@Value("${kube.client.api.output.pretty}")
 	private String pretty;
+	
+	@Value("${kube.server.metrics.type}")
+	private String kubeMetric;
 
 	public KubeMetricManager() throws IOException {
 		client = Config.defaultClient();
@@ -33,10 +36,11 @@ public class KubeMetricManager {
 		api = new MetricV1alph1Api(this.client);
 
 		logger.debug("KubeMetricManager is initialized");
+		logger.debug("kubernetes metrics type is "+kubeMetric+" (default is metrics-server)");
 	}
 
 	public V1alpha1NodeMetricList listNodeMetrics() throws ApiException {
-		return api.listNodeMetrics(null, pretty, null, null, null, null, null, null, null, null);
+		return api.listNodeMetrics(null, pretty, null, null, null, null, null, null, null, null, kubeMetric);
 	}
 
 }

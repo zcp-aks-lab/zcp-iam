@@ -37,6 +37,7 @@ public class MetricV1alph1Api {
 		this.apiClient = apiClient;
 	}
 
+	
 	/**
 	 * Build call for listNamespacedService
 	 * 
@@ -105,6 +106,10 @@ public class MetricV1alph1Api {
 	 *            Watch for changes to the described resources and return them as a
 	 *            stream of add, update, and remove notifications. Specify
 	 *            resourceVersion. (optional)
+	 * @param kubeMetric
+	 *            Type of kubernetes metrics.
+	 *            k8s version ~1.11 is heaster, version 1.12~ metrics-server.
+	 *            default is metrics-servier
 	 * @param progressListener
 	 *            Progress listener
 	 * @param progressRequestListener
@@ -117,11 +122,82 @@ public class MetricV1alph1Api {
 			String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit,
 			String resourceVersion, Integer timeoutSeconds, Boolean watch,
 			final ProgressResponseBody.ProgressListener progressListener,
+			final ProgressRequestBody.ProgressRequestListener progressRequestListener, String kubeMetric) throws ApiException {
+		Object localVarPostBody = null;
+
+		// create path and map variables
+		
+		// (default) metircs by 'metrics-server' > kube version 1.12~ 
+		String localVarPath = "/apis/metrics.k8s.io/v1beta1/nodes";
+		if (kubeMetric != null) {
+			// metrics by 'heapster' > kube version ~1.11
+			if ("heapster".equals(kubeMetric.toLowerCase())) {
+				localVarPath = "/api/v1/namespaces/kube-system/services/http:heapster:/proxy/apis/metrics/v1alpha1/nodes";
+			}
+		}
+
+		List<Pair> localVarQueryParams = new ArrayList<Pair>();
+		List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+		if (pretty != null)
+			localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
+		if (_continue != null)
+			localVarQueryParams.addAll(apiClient.parameterToPair("continue", _continue));
+		if (fieldSelector != null)
+			localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
+		if (includeUninitialized != null)
+			localVarQueryParams.addAll(apiClient.parameterToPair("includeUninitialized", includeUninitialized));
+		if (labelSelector != null)
+			localVarQueryParams.addAll(apiClient.parameterToPair("labelSelector", labelSelector));
+		if (limit != null)
+			localVarQueryParams.addAll(apiClient.parameterToPair("limit", limit));
+		if (resourceVersion != null)
+			localVarQueryParams.addAll(apiClient.parameterToPair("resourceVersion", resourceVersion));
+		if (timeoutSeconds != null)
+			localVarQueryParams.addAll(apiClient.parameterToPair("timeoutSeconds", timeoutSeconds));
+		if (watch != null)
+			localVarQueryParams.addAll(apiClient.parameterToPair("watch", watch));
+
+		Map<String, String> localVarHeaderParams = new HashMap<String, String>();
+
+		Map<String, Object> localVarFormParams = new HashMap<String, Object>();
+
+		final String[] localVarAccepts = { "application/json", "application/yaml",
+				"application/vnd.kubernetes.protobuf", "application/json;stream=watch",
+				"application/vnd.kubernetes.protobuf;stream=watch" };
+		final String localVarAccept = apiClient.selectHeaderAccept(localVarAccepts);
+		if (localVarAccept != null)
+			localVarHeaderParams.put("Accept", localVarAccept);
+
+		final String[] localVarContentTypes = { "*/*" };
+		final String localVarContentType = apiClient.selectHeaderContentType(localVarContentTypes);
+		localVarHeaderParams.put("Content-Type", localVarContentType);
+
+		if (progressListener != null) {
+			apiClient.getHttpClient().networkInterceptors().add(new com.squareup.okhttp.Interceptor() {
+				@Override
+				public com.squareup.okhttp.Response intercept(com.squareup.okhttp.Interceptor.Chain chain)
+						throws IOException {
+					com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
+					return originalResponse.newBuilder().body(new ProgressResponseBody(originalResponse.body(), progressListener)).build();
+				}
+			});
+		}
+
+		String[] localVarAuthNames = new String[] { "BearerToken" };
+		return apiClient.buildCall(localVarPath, "GET", localVarQueryParams, localVarCollectionQueryParams, localVarPostBody, localVarHeaderParams, localVarFormParams, localVarAuthNames, progressRequestListener);
+	}
+	
+	@Deprecated
+	public com.squareup.okhttp.Call listNodeMetricsCall(String namespace, String pretty, String _continue,
+			String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit,
+			String resourceVersion, Integer timeoutSeconds, Boolean watch,
+			final ProgressResponseBody.ProgressListener progressListener,
 			final ProgressRequestBody.ProgressRequestListener progressRequestListener) throws ApiException {
 		Object localVarPostBody = null;
 
 		// create path and map variables
-		String localVarPath = "/api/v1/namespaces/kube-system/services/http:heapster:/proxy/apis/metrics/v1alpha1/nodes";
+//		String localVarPath = "/api/v1/namespaces/kube-system/services/http:heapster:/proxy/apis/metrics/v1alpha1/nodes";
+		String localVarPath = "/apis/metrics.k8s.io/v1beta1/nodes";
 		// .replaceAll("\\{" + "namespace" + "\\}",
 		// apiClient.escapeString(namespace.toString()));
 
@@ -177,7 +253,8 @@ public class MetricV1alph1Api {
 		return apiClient.buildCall(localVarPath, "GET", localVarQueryParams, localVarCollectionQueryParams,
 				localVarPostBody, localVarHeaderParams, localVarFormParams, localVarAuthNames, progressRequestListener);
 	}
-
+	
+	
 	/**
 	 * 
 	 * list or watch objects of kind Service
@@ -247,11 +324,23 @@ public class MetricV1alph1Api {
 	 *            Watch for changes to the described resources and return them as a
 	 *            stream of add, update, and remove notifications. Specify
 	 *            resourceVersion. (optional)
+	 * @param kubeMetric
+	 *            Type of kubernetes metrics.
+	 *            k8s version ~1.11 is heaster, version 1.12~ metrics-server.
+	 *            default is metrics-servier
 	 * @return V1ServiceList
 	 * @throws ApiException
 	 *             If fail to call the API, e.g. server error or cannot deserialize
 	 *             the response body
 	 */
+	public V1alpha1NodeMetricList listNodeMetrics(String namespace, String pretty, String _continue, String fieldSelector,
+			Boolean includeUninitialized, String labelSelector, Integer limit, String resourceVersion,
+			Integer timeoutSeconds, Boolean watch, String kubeMetric) throws ApiException {
+		ApiResponse<V1alpha1NodeMetricList> resp = listNodeMetricsWithHttpInfo(namespace, pretty, _continue, fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, kubeMetric);
+		return resp.getData();
+	}
+	
+	@Deprecated
 	public V1alpha1NodeMetricList listNodeMetrics(String namespace, String pretty, String _continue, String fieldSelector,
 			Boolean includeUninitialized, String labelSelector, Integer limit, String resourceVersion,
 			Integer timeoutSeconds, Boolean watch) throws ApiException {
@@ -260,6 +349,7 @@ public class MetricV1alph1Api {
 		return resp.getData();
 	}
 
+	
 	/**
 	 * 
 	 * list or watch objects of kind Service
@@ -329,6 +419,10 @@ public class MetricV1alph1Api {
 	 *            Watch for changes to the described resources and return them as a
 	 *            stream of add, update, and remove notifications. Specify
 	 *            resourceVersion. (optional)
+	 * @param kubeMetric
+	 *            Type of kubernetes metrics.
+	 *            k8s version ~1.11 is heaster, version 1.12~ metrics-server.
+	 *            default is metrics-servier.
 	 * @return ApiResponse&lt;V1ServiceList&gt;
 	 * @throws ApiException
 	 *             If fail to call the API, e.g. server error or cannot deserialize
@@ -336,15 +430,36 @@ public class MetricV1alph1Api {
 	 */
 	public ApiResponse<V1alpha1NodeMetricList> listNodeMetricsWithHttpInfo(String namespace, String pretty,
 			String _continue, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit,
+			String resourceVersion, Integer timeoutSeconds, Boolean watch, String kubeMetric) throws ApiException {
+		com.squareup.okhttp.Call call = listNodeMetricsValidateBeforeCall(namespace, pretty, _continue, fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null, kubeMetric);
+		Type localVarReturnType = new TypeToken<V1alpha1NodeMetricList>() { }.getType();
+		return apiClient.execute(call, localVarReturnType);
+	}
+	
+	@Deprecated
+	public ApiResponse<V1alpha1NodeMetricList> listNodeMetricsWithHttpInfo(String namespace, String pretty,
+			String _continue, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit,
 			String resourceVersion, Integer timeoutSeconds, Boolean watch) throws ApiException {
 		com.squareup.okhttp.Call call = listNodeMetricsValidateBeforeCall(namespace, pretty, _continue,
 				fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null,
 				null);
-		Type localVarReturnType = new TypeToken<V1alpha1NodeMetricList>() {
-		}.getType();
+		Type localVarReturnType = new TypeToken<V1alpha1NodeMetricList>() { }.getType();
 		return apiClient.execute(call, localVarReturnType);
 	}
+	
+	
+	private com.squareup.okhttp.Call listNodeMetricsValidateBeforeCall(String namespace, String pretty,
+			String _continue, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit,
+			String resourceVersion, Integer timeoutSeconds, Boolean watch,
+			final ProgressResponseBody.ProgressListener progressListener,
+			final ProgressRequestBody.ProgressRequestListener progressRequestListener, String kubeMetric) throws ApiException {
 
+		com.squareup.okhttp.Call call = listNodeMetricsCall(namespace, pretty, _continue, fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, progressListener, progressRequestListener, kubeMetric);
+		return call;
+
+	}
+
+	@Deprecated
 	private com.squareup.okhttp.Call listNodeMetricsValidateBeforeCall(String namespace, String pretty,
 			String _continue, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit,
 			String resourceVersion, Integer timeoutSeconds, Boolean watch,
@@ -363,4 +478,6 @@ public class MetricV1alph1Api {
 		return call;
 
 	}
+	
+
 }

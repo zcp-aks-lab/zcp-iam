@@ -48,6 +48,8 @@ kube:
   server:
     apiserver:
       endpoint: https://169.56.69.242:23078
+    metrics:
+      type: heapster
     
 server:
   port: 8282
