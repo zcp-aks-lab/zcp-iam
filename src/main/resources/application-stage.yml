@@ -52,7 +52,7 @@ kube:
     apiserver:
       endpoint: ${KUBE_APISERVER_URL}
     metrics:
-      type: heapster
+      type: metrics-server
 
 server:
   port: 8181

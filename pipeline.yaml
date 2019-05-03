@@ -20,7 +20,7 @@ Deploy:
   - kubectl scale deploy zcp-iam --replicas 1 -n $namespace
 
 env:
-  image: cloudzcp/zcp-iam:1.1.0-alpha
+  image: cloudzcp/zcp-iam:1.1.0-beta
   yaml: k8s/template
 
 agent:
