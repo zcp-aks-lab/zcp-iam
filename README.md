@@ -28,9 +28,11 @@ $ kubectl get secret -n zcp-system  # check to create
 
 설치 환경에 맞게 `setenv.sh` 파일을 수정한다.
 
-각 정보를 확인하는 자세한 방법은 Appendix 를 참고한다.
+각 정보를 확인하는 자세한 방법은 Appendix를 참고한다.
 
 > `jenkins_token` 값은 Jenkins 설치/설정 이후 값을 확인가능하다. 설정이 누락되지 않도록 주의한다.
+> 차후, Jenkins 설치/설정 완료 후 zcp-iam-secret을 변경하여 zcp-iam pod를 다시 올린다.
+> (warn) 최초 설치시에 `jenkins_token` 값을 비워두지 않고 dump값을 넣어둔다.
 
 ```
 $ cd zcp-iam/k8s/template
@@ -146,7 +148,7 @@ service/zcp-iam   ClusterIP   172.21.17.89   <none>        80/TCP    17d
 - Jenkins에 로그인 한다. (폴더 생성권한 필요)
 - 우측 상단의 사용자 이름을 클릭한다.
 - 좌측 메뉴의 설정 페이지로 이동한다.
-- API Token > Legacy API Token 버튼을 클릭하여 값을 확인한다.
+- API Token > SHOW API TOKEN... 버튼을 클릭하여 값을 확인한다.
 
 ### ~~KeyCloak 의 master realm client 의 secret 정보를 확인하는 방법~~
 
