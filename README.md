@@ -49,7 +49,7 @@ jenkins_token=api-token
 
 sa=zcp-system-admin
 domain_prefix=pog-dev-
-api_server=kubernetes.default
+api_server=kubernetes.default  # api-server endpoint 정보 변경
 namespace=zcp-system
 image=registry.au-syd.bluemix.net/cloudzcp/zcp-iam:1.1.0
 
