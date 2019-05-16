@@ -43,15 +43,15 @@ out_dir=.tmp
 
 # variables be set as jenkins job properties. use this variables when you install manually.
 keycloak_user=cloudzcp-admin
-keycloak_pwd=
+keycloak_pwd=                   #변경
 jenkins_user=cloudzcp-admin
-jenkins_token=api-token
+jenkins_token=api-token         #변경
 
 sa=zcp-system-admin
-domain_prefix=pog-dev-
-api_server=kubernetes.default  # api-server endpoint 정보 변경
+domain_prefix=pog-dev-          #변경
+api_server=kubernetes.default   #api-server endpoint 정보 변경
 namespace=zcp-system
-image=registry.au-syd.bluemix.net/cloudzcp/zcp-iam:1.1.0
+image=registry.au-syd.bluemix.net/cloudzcp/zcp-iam:1.1.0  #확인
 
 replicas=1
 ...
@@ -149,6 +149,19 @@ service/zcp-iam   ClusterIP   172.21.17.89   <none>        80/TCP    17d
 - 우측 상단의 사용자 이름을 클릭한다.
 - 좌측 메뉴의 설정 페이지로 이동한다.
 - API Token > SHOW API TOKEN... 버튼을 클릭하여 값을 확인한다.
+
+### api-server endpoint 정보 확인
+```
+$ kubectl config view
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: REDACTED
+    server: https://169.56.69.242:23078
+  name: zcp-demo
+  ...
+  ...
+```
 
 ### ~~KeyCloak 의 master realm client 의 secret 정보를 확인하는 방법~~
 
