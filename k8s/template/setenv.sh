@@ -16,7 +16,7 @@ db_pwd=iam   # CHANGE
 
 sa=zcp-system-admin
 domain_prefix=pog-dev-   # CHANGE
-api_server=kubernetes.default
+api_server=kubernetes.default # CHANGE
 namespace=zcp-system
 image=registry.au-syd.bluemix.net/cloudzcp/zcp-iam:1.1.0
 wsh_image=registry.au-syd.bluemix.net/cloudzcp/wsh:1.1.0
