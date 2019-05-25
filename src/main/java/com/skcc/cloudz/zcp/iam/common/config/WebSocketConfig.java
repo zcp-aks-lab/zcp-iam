@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.skcc.cloudz.zcp.iam.common.config.websocket.LogFollowHandler;
 import com.skcc.cloudz.zcp.iam.common.config.websocket.PodExecRelayHanlder;
-import com.skcc.cloudz.zcp.iam.common.config.websocket.WebSshHandler3;
+import com.skcc.cloudz.zcp.iam.common.config.websocket.WebSshHandler4;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +52,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
 	@Bean
 	public WebSocketHandler wshHandler() {
-        return new WebSshHandler3();
+        return new WebSshHandler4();
     }
 
 	@Bean

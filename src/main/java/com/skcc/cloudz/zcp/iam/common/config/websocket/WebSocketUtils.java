@@ -264,7 +264,8 @@ public class WebSocketUtils {
 		}
 
         public boolean connected(String podName) {
-            return conns.containsRow(podName);
+            // return conns.containsRow(podName);
+            return !conns.row(podName).isEmpty();
         }
 
         public boolean connected(String podName, String namespace) {
@@ -314,8 +315,12 @@ public class WebSocketUtils {
 			return envs.row(podName);
 		}
 
-		public Object getVariable(String podName, String key) {
+		public String getVariable(String podName, String key) {
 			return envs.get(podName, key);
+        }
+
+		public String removeVariable(String podName, String key) {
+			return envs.remove(podName, key);
         }
         
         public StringBuilder getEnvAsString(String podName){
