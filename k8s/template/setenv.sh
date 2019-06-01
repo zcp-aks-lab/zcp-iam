@@ -16,7 +16,7 @@ db_pwd=iam   # CHANGE
 
 sa=zcp-system-admin
 domain_prefix=pog-dev-   # CHANGE
-api_server=kubernetes.default # CHANGE
+api_server=              # CHANGE
 namespace=zcp-system
 image=registry.au-syd.bluemix.net/cloudzcp/zcp-iam:1.2.0
 wsh_image=${domain_prefix}registry.cloudzcp.io/cloudzcp/wsh:1.2.0   # private
@@ -27,9 +27,17 @@ replicas=1
 {
   # for secret
   jenkins_user_token=$jenkins_user:$jenkins_token
+  if [ "$jenkins_token" == 'api-token' ]; then
+    # use installed secret
+    j_token=$(kubectl get secret zcp-iam-secret -n zcp-system -o jsonpath='{.data.JENKINS_USER_TOKEN}' | base64 -D)
+    jenkins_user_token=${j_token:-$jenkins_user_token}
+  fi
 
   pod=$(kubectl get pod -n zcp-system | grep 'zcp-oidc-postgresql' | grep -v 'backup' | awk '{print $1}')
   client_secret=$(kubectl exec $pod -n zcp-system -- psql -c "select secret from client where realm_id = 'master' and client_id = 'master-realm';" -tA)
+
+  api_server=${api_server:-$(kubectl config view | grep server)}
+  api_server=${api_server#*//}
 
   #TODO: for loop
   keycloak_user=$(echo -n $keycloak_user | base64)
