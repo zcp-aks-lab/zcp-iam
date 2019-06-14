@@ -19,6 +19,8 @@ zcp-iam에서 사용 할 zcp-system-admin 및 Console Admin (cloudzcp-admin) 사
 zcp-system namespace 에 **bluemix container registry** 용 secret - `bluemix-cloudzcp-secret` 이 생성 되어 있어야 한다.
 
 ```
+$ cd zcp-iam/k8s
+
 $ kubectl create -f zcp-system-admin-sa-crb.yaml
 
 $ kubectl get secret -n zcp-system  # check to create
@@ -35,9 +37,9 @@ $ kubectl get secret -n zcp-system  # check to create
 > (warn) 최초 설치시에 `jenkins_token` 값을 비워두지 않고 dump값을 넣어둔다.
 
 ```
-$ cd zcp-iam/k8s/template
+$ cd template
 
-$ cat setenv.sh
+$ vi setenv.sh
 #!/bin/bash
 out_dir=.tmp
 
@@ -117,7 +119,8 @@ $ ls -l .tmp
 템플릿을 통해 생성된 YAML 파일을 아래의 명령으로 실행한다.
 
 ```
-$ kubectl create -f .tmpconfigmap/zcp-iam-config created
+$ kubectl create -f .tmp
+configmap/zcp-iam-config created
 deployment.apps/zcp-iam created
 service/zcp-iam created
 secret/zcp-iam-secret created
