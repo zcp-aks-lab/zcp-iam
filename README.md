@@ -12,20 +12,6 @@ Clone this project into the desktop
 $ git clone https://github.com/cnpst/zcp-iam.git
 ```
 
-## Create ServiceAccount
-
-zcp-iam에서 사용 할 zcp-system-admin 및 Console Admin (cloudzcp-admin) 사용자 용 serviceAccount 을 생성한다.
-
-zcp-system namespace 에 **bluemix container registry** 용 secret - `bluemix-cloudzcp-secret` 이 생성 되어 있어야 한다.
-
-```
-$ cd zcp-iam/k8s
-
-$ kubectl create -f zcp-system-admin-sa-crb.yaml
-
-$ kubectl get secret -n zcp-system  # check to create
-```
-
 ## Update Environment Variables
 
 설치 환경에 맞게 `setenv.sh` 파일을 수정한다.
@@ -111,7 +97,6 @@ $ ls -l .tmp
 -rw-r--r--  1 hoon  staff   686  3 15 12:28 zcp-iam-config.yaml
 -rw-r--r--  1 hoon  staff  2748  3 15 12:27 zcp-iam-deployment.yaml
 -rw-r--r--  1 hoon  staff   404  3 15 12:27 zcp-iam-secret.yaml
--rw-r--r--  1 hoon  staff  1743  3 15 12:27 zcp-system-admin-sa-crb.yaml
 ```
 
 ## Create Kubernetes Resource
