@@ -52,7 +52,10 @@ helm chart 를 이용하여 mongodb 를 설치한다.
 ```
 $ cd mongodb
 
-$ kubectl create -f zcp-iam-mongodb-pvc.yaml
+# 설치하는 클러스터 종류에 맞는 Provider 값을 입력한다. iks, aks, eks
+$ export PROVIDER=iks
+
+$ kubectl create -f zcp-iam-mongodb-pvc-${PROVIDER}.yaml
 $ kubectl get pvc -n zcp-system -w | grep zcp-iam-mongo
 zcp-iam-mongodb    Bound   pvc-xxx-xxx   20Gi    RWO    ibmc-block-retain-silver  yy
 
