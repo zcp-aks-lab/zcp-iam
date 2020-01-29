@@ -22,6 +22,8 @@ $ git clone https://github.com/cnpst/zcp-iam.git
 > 차후, Jenkins 설치/설정 완료 후 zcp-iam-secret을 변경하여 zcp-iam pod를 다시 올린다.
 > (warn) 최초 설치시에 `jenkins_token` 값을 비워두지 않고 dump값을 넣어둔다.
 
+api_server 는 kubeconfig 다운로드 시 사용되므로 반드시 api server 의 public endpoint 를 확인하여 수정해야 한다.
+
 ```
 $ cd template
 

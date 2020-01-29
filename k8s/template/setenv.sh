@@ -12,7 +12,7 @@ db_host=zcp-iam-db-mongo
 db_port=27017
 db_name=iam
 db_user=iam
-db_pwd=iam   # CHANGE
+db_pwd=iam
 
 sa=zcp-system-admin
 domain_prefix=pog-dev-   # CHANGE
