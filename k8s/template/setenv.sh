@@ -19,7 +19,7 @@ domain_prefix=pog-dev-   # CHANGE
 api_server=kubernetes.default # CHANGE
 namespace=zcp-system
 image=registry.au-syd.bluemix.net/cloudzcp/zcp-iam:1.2.0
-wsh_image=${domain_prefix}registry.cloudzcp.io/cloudzcp/wsh:1.2.0   # private
+wsh_image=zcr.cloudzcp.io/cloudzcp/wsh:1.2.0
 #wsh_image=cloudzcp/wsh:1.2.0   # public
 
 replicas=1
