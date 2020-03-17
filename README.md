@@ -129,31 +129,6 @@ NAME              TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
 service/zcp-iam   ClusterIP   172.21.17.89   <none>        80/TCP    17d
 ```
 
-## Push a Docker Image for Web SSH 
-
-Private 환경의 클러스터에서는 Web SSH 실행에 필요한 Docker Image 를 Harbor 에 Push 한다.
-
-```
-$ bash push.sh
-Move a web ssh docker image cloudzcp/wsh:1.1.0 -> pog-dev-registry.cloudzcp.io/cloudzcp/wsh:1.1.0
-1.1.0: Pulling from cloudzcp/wsh
-Digest: sha256:5e5173702bc7ac92ee66afc348e5f9f3e470697d77446fb6965030b2a56f8244
-Status: Image is up to date for cloudzcp/wsh:1.1.0
-
-Authenticating with existing credentials...
-Username:
-Password:
-The push refers to repository [pog-dev-registry.cloudzcp.io/cloudzcp/wsh]
-07113e56211b: Layer already exists 
-ce209fc58fa6: Layer already exists 
-503e53e365f3: Layer already exists 
-1.1.0: digest: sha256:5e5173702bc7ac92ee66afc348e5f9f3e470697d77446fb6965030b2a56f8244 size: 948
-
-1.1.0: Pulling from cloudzcp/wsh
-Digest: sha256:5e5173702bc7ac92ee66afc348e5f9f3e470697d77446fb6965030b2a56f8244
-Status: Image is up to date for pog-dev-registry.cloudzcp.io/cloudzcp/wsh:1.1.0
-```
-
 ## Appendix
 
 ### Jenkins 의 api-token 정보를 확인하는 방법
