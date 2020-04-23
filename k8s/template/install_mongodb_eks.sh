@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ../setenv.sh
+. setenv.sh
 
 #version='0.4.17'  # at catalog
 version='5.7.0'
@@ -10,4 +10,6 @@ helm install stable/mongodb \
   --version "${version}" \
   --namespace "${namespace}" \
   --name "${name}" \
-  -f values-mongodb-ibm.yaml
+  --set persistence.storageClass=efs-zcp \
+  --set persistence.size=20Gi \
+  -f values-mongodb.yaml

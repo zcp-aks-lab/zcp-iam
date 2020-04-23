@@ -23,7 +23,7 @@ $ git clone https://github.com/cnpst/zcp-iam.git
 > (warn) 최초 설치시에 `jenkins_token` 값을 비워두지 않고 dump값을 넣어둔다.
 
 ```
-$ cd template
+$ cd k8s/template
 
 $ vi setenv.sh
 #!/bin/bash
@@ -49,34 +49,17 @@ replicas=1
 
 helm chart 를 이용하여 mongodb 를 설치한다.
 
+### for IKS
+
 ```
-$ cd mongodb
+$ ./install_mongodb_iks.sh
+...
+```
 
-$ kubectl create -f zcp-iam-mongodb-pvc.yaml
-$ kubectl get pvc -n zcp-system -w | grep zcp-iam-mongo
-zcp-iam-mongodb    Bound   pvc-xxx-xxx   20Gi    RWO    ibmc-block-retain-silver  yy
+### for EKS
 
-$ bash install.sh
-LAST DEPLOYED: Thu Mar  7 16:44:10 2019
-NAMESPACE: zcp-system
-STATUS: DEPLOYED
-
-RESOURCES:
-==> v1/Secret
-NAME              TYPE    DATA  AGE
-zcp-iam-db-mongo  Opaque  2     5d
-
-==> v1/Service
-NAME              TYPE       CLUSTER-IP     EXTERNAL-IP  PORT(S)    AGE
-zcp-iam-db-mongo  ClusterIP  172.21.46.189  <none>       27017/TCP  5d
-
-==> v1beta1/Deployment
-NAME              DESIRED  CURRENT  UP-TO-DATE  AVAILABLE  AGE
-zcp-iam-db-mongo  1        1        1           1          5d
-
-==> v1/Pod(related)
-NAME                               READY  STATUS   RESTARTS  AGE
-zcp-iam-db-mongo-7794bdcfbb-cs8xw  1/1    Running  0         5d
+```
+$ ./install_mongodb_eks.sh
 ...
 ```
 
@@ -140,15 +123,9 @@ service/zcp-iam   ClusterIP   172.21.17.89   <none>        80/TCP    17d
 
 ### api-server endpoint 정보 확인
 ```
-$ kubectl config view
-apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority-data: REDACTED
-    server: https://169.56.69.242:23078
-  name: zcp-demo
-  ...
-  ...
+$ kubectl cluster-info
+Kubernetes master is running at https://c4.seo01.containers.cloud.ibm.com:26245
+...
 ```
 
 ### ~~KeyCloak 의 master realm client 의 secret 정보를 확인하는 방법~~

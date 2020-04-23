@@ -11,7 +11,7 @@ image:
 
 persistence:
   enabled: true
-  existingClaim: zcp-iam-mongodb
+#  existingClaim: zcp-iam-mongodb
 
 tolerations:
   - effect: NoSchedule
