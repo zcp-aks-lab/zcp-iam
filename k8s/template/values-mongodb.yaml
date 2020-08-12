@@ -1,34 +1,65 @@
+image:
+  ## Bitnami MongoDB registry
+  ##
+  registry: au.icr.io
+  ## Bitnami MongoDB image name
+  ##
+  repository: cloudzcp/mongodb
+  ## Bitnami MongoDB image tag
+  ## ref: https://hub.docker.com/r/bitnami/mongodb/tags/
+  ##
+  tag: 4.2.8-debian-10-r47
+
+## String to partially override mongodb.fullname template (will maintain the release name)
+##
 nameOverride: "mongo"
 
-mongodbDatabase: iam
-mongodbUsername: iam
-mongodbPassword: iam # CHANGE
-
-image:
-  registry: registry.au-syd.bluemix.net
-  repository: cloudzcp/mongodb
-  tag: 4.0.6
-
-persistence:
-  enabled: true
-#  existingClaim: zcp-iam-mongodb
-
-tolerations:
-  - effect: NoSchedule
-    key: management
-    operator: Equal
-    value: "true"
-
+## Affinity for pod assignment. Evaluated as a template.
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+##
 affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
-        - matchExpressions:
-            - key: beta.kubernetes.io/arch
-              operator: In
-              values:
-                - amd64
-            - key: role
-              operator: In
-              values:
-                - management
+      - matchExpressions:
+        - key: beta.kubernetes.io/arch
+          operator: In
+          values:
+          - amd64
+        - key: role
+          operator: In
+          values:
+          - management
+
+## Tolerations for pod assignment. Evaluated as a template.
+## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
+tolerations:
+- effect: NoSchedule
+  key: management
+  operator: Equal
+  value: "true"
+
+## Enable persistence using Persistent Volume Claims
+## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+##
+persistence:
+  enabled: true
+  ## A manually managed Persistent Volume and Claim
+  ## Requires persistence.enabled: true
+  ## If defined, PVC must be created manually before volume will be bound
+  ## Ignored when mongodb.architecture=replicaset
+  ##
+  # existingClaim: zcp-iam-mongodb
+
+## ServiceAccount
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+##
+serviceAccount:
+  ## Specifies whether a ServiceAccount should be created
+  ##
+  create: false
+  ## The name of the ServiceAccount to use.
+  ## If not set and create is true, a name is generated using the rabbitmq.fullname template
+  ##
+  name: zcp-system-admin

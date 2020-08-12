@@ -1,10 +1,14 @@
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: zcp-iam
   namespace: ${namespace}
 spec:
   replicas: ${replicas}
+  selector:
+    matchLabels:
+      component: zcp-iam
+      app: zcp-iam
   template:
     metadata:
       labels:
